@@ -77,7 +77,7 @@ export default async function UsersPage({
                             {t("importCSV")}
                         </Button>
                     </Link>
-                    <a href="/api/admin/export/users" download>
+                    <a href="/lms/api/admin/export/users" download>
                         <Button className="bg-green-600 hover:bg-green-700 text-white">
                             <Upload className="w-4 h-4 mr-2 rotate-180" />
                             {t("exportCSV")}

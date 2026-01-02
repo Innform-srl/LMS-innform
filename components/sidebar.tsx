@@ -216,7 +216,7 @@ export function Sidebar({ user }: SidebarProps) {
                                     {t("settings")}
                                 </Button>
                             </Link>
-                            <a href="/api/auth/signout?callbackUrl=/login" className="w-full">
+                            <a href="/lms/api/auth/signout?callbackUrl=/lms/it/login" className="w-full">
                                 <Button variant="outline" size="sm" className="w-full border-border hover:bg-accent hover:text-destructive hover:border-destructive/20 text-xs">
                                     <LogOut className="h-3 w-3 mr-2" />
                                     {t("logout")}

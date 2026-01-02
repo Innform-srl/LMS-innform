@@ -7,6 +7,14 @@ import { routing } from './i18n/navigation'
 const intlMiddleware = createMiddleware(routing)
 
 export function middleware(request: NextRequest) {
+    // Handle root path redirect to default locale
+    // When basePath is '/lms', visiting '/lms' results in pathname '/'
+    if (request.nextUrl.pathname === '/') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/it'
+        return NextResponse.redirect(url)
+    }
+
     // Rate limiting for API routes
     if (request.nextUrl.pathname.startsWith('/api/')) {
         const forwardedFor = request.headers.get('x-forwarded-for')
@@ -67,6 +75,8 @@ export function middleware(request: NextRequest) {
 // Configure which routes use this middleware
 export const config = {
     matcher: [
+        // Match root path explicitly for redirect
+        '/',
         // Match all pathnames except for
         // - … if they start with `/api`, `/_next` or `/_vercel`
         // - … the ones containing a dot (e.g. `favicon.ico`)

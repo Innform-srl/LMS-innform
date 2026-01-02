@@ -34,7 +34,7 @@ export function EnrollButton({ courseId }: { courseId: string }) {
                         description: "Verrai reindirizzato al login...",
                     })
                     setTimeout(() => {
-                        window.location.href = "/api/auth/signin"
+                        window.location.href = "/lms/api/auth/signin"
                     }, 1500)
                     return
                 }

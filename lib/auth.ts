@@ -76,8 +76,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             },
         }),
     ],
+    basePath: "/lms/api/auth",
     pages: {
         signIn: "/login",
+        error: "/login",
     },
     session: {
         strategy: "jwt"
@@ -106,4 +108,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
     },
     secret: process.env.AUTH_SECRET,
+    trustHost: true,
 })
