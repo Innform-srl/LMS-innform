@@ -1,11 +1,4 @@
 {
-    "redirects": [
-        {
-            "source": "/lms",
-            "destination": "/lms/it",
-            "permanent": false
-        }
-    ],
     "crons": [
         {
             "path": "/api/cron/check-deadlines",
