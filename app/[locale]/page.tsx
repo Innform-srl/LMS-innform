@@ -78,9 +78,6 @@ export default async function Home() {
               <p className="text-muted-foreground">{t("learningPath")}</p>
             </div>
 
-
-            // ...
-
             <div className="flex gap-3 items-center">
               {/* Controls moved to global header */}
             </div>

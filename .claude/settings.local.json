@@ -13,7 +13,25 @@
       "Bash(npx ts-node:*)",
       "Bash(npx shadcn@latest add alert-dialog:*)",
       "Bash(git remote add:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git reset:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(if [ -f .env ])",
+      "Bash(then cat .env)",
+      "Bash(elif [ -f .env.local ])",
+      "Bash(then cat .env.local)",
+      "Bash(else echo \"No .env file found\")",
+      "Bash(fi)",
+      "Bash(node -e \"console.log\\(encodeURIComponent\\(''cK\\\\`Oe|R#ENE*9|''\\)\\)\")",
+      "Bash(node -e:*)",
+      "Bash(npm install:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(npm run start:*)",
+      "Bash(git push)",
+      "Bash(dir:*)"
     ]
   }
 }
