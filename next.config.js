@@ -3,6 +3,17 @@ const nextConfig = {
     // Serve the app under /lms path
     basePath: '/lms',
 
+    async redirects() {
+        return [
+            {
+                // Redirect /lms to /lms/it (default locale)
+                source: '/',
+                destination: '/it',
+                permanent: false,
+            },
+        ]
+    },
+
     async headers() {
         return [
             {
