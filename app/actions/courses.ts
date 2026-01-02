@@ -229,7 +229,7 @@ export async function deleteCourse(courseId: string) {
             const quizzes = await db.quiz.findMany({ where: { moduleId: mod.id } })
             for (const quiz of quizzes) {
                 await db.quizAttempt.deleteMany({ where: { quizId: quiz.id } })
-                await db.quizQuestion.deleteMany({ where: { quizId: quiz.id } })
+                await db.question.deleteMany({ where: { quizId: quiz.id } })
             }
             await db.quiz.deleteMany({ where: { moduleId: mod.id } })
         }
