@@ -60,12 +60,7 @@ export function middleware(request: NextRequest) {
         return response
     }
 
-    // Handle root path redirect to default locale
-    if (request.nextUrl.pathname === '/' || request.nextUrl.pathname === '') {
-        return NextResponse.redirect(new URL('/it', request.url))
-    }
-
-    // Handle i18n for non-API routes
+    // Handle i18n for non-API routes (next-intl handles root path redirect)
     return intlMiddleware(request)
 }
 
