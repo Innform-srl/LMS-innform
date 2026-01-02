@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth"
 import { ThemeProvider } from "@/components/theme-provider"
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
+import { AuthProvider } from "@/components/auth-provider";
 
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
@@ -45,19 +46,21 @@ export default async function RootLayout({
         className={`antialiased`}
         suppressHydrationWarning
       >
-        <NextIntlClientProvider messages={messages}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="light"
-            enableSystem={false}
-            disableTransitionOnChange
-          >
-            <ClientLayout user={session?.user}>
-              {children}
-            </ClientLayout>
-            <Toaster />
-          </ThemeProvider>
-        </NextIntlClientProvider>
+        <AuthProvider>
+          <NextIntlClientProvider messages={messages}>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="light"
+              enableSystem={false}
+              disableTransitionOnChange
+            >
+              <ClientLayout user={session?.user}>
+                {children}
+              </ClientLayout>
+              <Toaster />
+            </ThemeProvider>
+          </NextIntlClientProvider>
+        </AuthProvider>
       </body>
     </html>
   );
