@@ -60,7 +60,17 @@ export function middleware(request: NextRequest) {
         return response
     }
 
-    // Handle i18n for non-API routes (next-intl handles root path redirect)
+    // Redirect root path to default locale
+    // With basePath: '/lms', the pathname here is relative to basePath
+    // So '/' means '/lms' was requested
+    const pathname = request.nextUrl.pathname
+    if (pathname === '/') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/it'
+        return NextResponse.redirect(url)
+    }
+
+    // Handle i18n for non-API routes
     return intlMiddleware(request)
 }
 
