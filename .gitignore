@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/app/generated/prisma
+
+# Temporary/debug files
+*.backup
+*_output.txt
+auth-debug.txt
+test-write.txt
+nul
+.emails_ignore/

@@ -1,0 +1,279 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { RichTextEditor } from "@/components/rich-text-editor"
+import { Label } from "@/components/ui/label"
+import { updateModule } from "@/app/actions/modules"
+import { FileText, Video, Upload, Calendar } from "lucide-react"
+
+type Module = {
+    id: string
+    title: string
+    description: string | null
+    videoUrl: string | null
+    videoDuration: number | null
+    contentType?: string | null
+    pdfUrl?: string | null
+    minimumDuration?: number | null
+    position: number
+    liveSession?: any
+}
+
+export function EditModuleForm({ module, courseId }: { module: any, courseId: string }) {
+    const router = useRouter()
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isUploading, setIsUploading] = useState(false)
+    const [form, setForm] = useState({
+        title: module.title,
+        description: module.description || "",
+        videoUrl: module.videoUrl || "",
+        videoDuration: Math.round((module.videoDuration || 0) / 60),
+        contentType: module.contentType || "VIDEO",
+        pdfUrl: module.pdfUrl || "",
+        totalPages: module.totalPages || 0,
+        minimumDuration: module.minimumDuration || 0,
+        startTime: module.liveSession?.startTime ? new Date(module.liveSession.startTime).toISOString().slice(0, 16) : "",
+        endTime: module.liveSession?.endTime ? new Date(module.liveSession.endTime).toISOString().slice(0, 16) : "",
+        meetingUrl: module.liveSession?.meetingUrl || ""
+    })
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        setIsUploading(true)
+        const formData = new FormData()
+        formData.append('file', file)
+
+        try {
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            })
+            const data = await res.json()
+            if (data.success) {
+                setForm(prev => ({ ...prev, pdfUrl: data.url }))
+            } else {
+                alert("Errore upload: " + data.message)
+            }
+        } catch (err) {
+            alert("Errore durante l'upload")
+        } finally {
+            setIsUploading(false)
+        }
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setIsSubmitting(true)
+
+        const result = await updateModule(module.id, {
+            title: form.title,
+            description: form.description || null,
+            videoUrl: form.videoUrl || null,
+            videoDuration: form.videoDuration ? form.videoDuration * 60 : null,
+            contentType: form.contentType,
+            pdfUrl: form.pdfUrl || null,
+            totalPages: form.totalPages || null,
+            minimumDuration: form.minimumDuration,
+            startTime: form.startTime,
+            endTime: form.endTime,
+            meetingUrl: form.meetingUrl
+        })
+
+        if (result.success) {
+            router.push(`/admin/courses/${courseId}`)
+            router.refresh()
+        } else {
+            alert(result.error || "Errore durante l'aggiornamento")
+        }
+
+        setIsSubmitting(false)
+    }
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="bg-card border border-border rounded-xl p-6 space-y-6">
+                <div>
+                    <Label htmlFor="title">Titolo Modulo *</Label>
+                    <Input
+                        id="title"
+                        value={form.title}
+                        onChange={(e) => setForm({ ...form, title: e.target.value })}
+                        placeholder="Es: Introduzione al Corso"
+                        required
+                        className="mt-2"
+                    />
+                </div>
+
+                <div>
+                    <Label htmlFor="description">Descrizione</Label>
+                    <RichTextEditor
+                        value={form.description}
+                        onChange={(val) => setForm({ ...form, description: val })}
+                        placeholder="Descrizione breve del modulo..."
+                    />
+                </div>
+
+                <div>
+                    <Label htmlFor="minimumDuration">Durata Minima (minuti)</Label>
+                    <Input
+                        id="minimumDuration"
+                        type="number"
+                        value={form.minimumDuration}
+                        onChange={(e) => setForm({ ...form, minimumDuration: parseInt(e.target.value) || 0 })}
+                        min="0"
+                        placeholder="0 per nessuna durata minima"
+                        className="mt-2"
+                    />
+                    <p className="text-xs text-muted-foreground">Tempo minimo che l'utente deve passare su questo modulo per completarlo.</p>
+                </div>
+
+                <div className="space-y-4">
+                    <Label>Tipo di Contenuto</Label>
+                    <div className="flex gap-4">
+                        <div
+                            className={`flex items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${form.contentType === 'VIDEO' ? 'border-primary bg-primary/10' : 'border-border hover:bg-accent'}`}
+                            onClick={() => setForm({ ...form, contentType: 'VIDEO' })}
+                        >
+                            <Video className="w-5 h-5" />
+                            <span className="font-semibold">Video</span>
+                        </div>
+                        <div
+                            className={`flex items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${form.contentType === 'PDF' ? 'border-primary bg-primary/10' : 'border-border hover:bg-accent'}`}
+                            onClick={() => setForm({ ...form, contentType: 'PDF' })}
+                        >
+                            <FileText className="w-5 h-5" />
+                            <span className="font-semibold">PDF / Slide</span>
+                        </div>
+                        <div
+                            className={`flex items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${form.contentType === 'LIVE' ? 'border-primary bg-primary/10' : 'border-border hover:bg-accent'}`}
+                            onClick={() => setForm({ ...form, contentType: 'LIVE' })}
+                        >
+                            <Calendar className="w-5 h-5" />
+                            <span className="font-semibold">Live Session</span>
+                        </div>
+                    </div>
+                </div>
+
+                {form.contentType === 'VIDEO' && (
+                    <>
+                        <div>
+                            <Label htmlFor="videoUrl">URL Video</Label>
+                            <Input
+                                id="videoUrl"
+                                type="url"
+                                value={form.videoUrl}
+                                onChange={(e) => setForm({ ...form, videoUrl: e.target.value })}
+                                placeholder="https://www.youtube.com/watch?v=..."
+                                className="mt-2"
+                            />
+                        </div>
+
+                        <div>
+                            <Label htmlFor="videoDuration">Durata Video (minuti)</Label>
+                            <Input
+                                id="videoDuration"
+                                type="number"
+                                value={form.videoDuration}
+                                onChange={(e) => setForm({ ...form, videoDuration: parseInt(e.target.value) || 0 })}
+                                placeholder="Es: 5"
+                                className="mt-2"
+                            />
+                        </div>
+                    </>
+                )}
+
+                {form.contentType === 'PDF' && (
+                    <div className="space-y-4">
+                        <Label>Carica PDF</Label>
+                        <div className="flex items-center gap-4">
+                            <Input
+                                type="file"
+                                accept=".pdf"
+                                onChange={handleFileUpload}
+                                disabled={isUploading}
+                                className="cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                            />
+                            {isUploading && <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>}
+                        </div>
+
+                        <div>
+                            <Label htmlFor="pdfUrl">URL PDF</Label>
+                            <Input
+                                id="pdfUrl"
+                                value={form.pdfUrl}
+                                onChange={(e) => setForm({ ...form, pdfUrl: e.target.value })}
+                                placeholder="https://..."
+                                required
+                                className="mt-2"
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {form.contentType === 'LIVE' && (
+                    <div className="space-y-4 border border-purple-500/30 p-4 rounded-lg bg-purple-500/5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="startTime">Inizio Sessione</Label>
+                                <Input
+                                    id="startTime"
+                                    type="datetime-local"
+                                    value={form.startTime}
+                                    onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+                                    required
+                                    className="bg-white/5 border-white/10"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="endTime">Fine Sessione</Label>
+                                <Input
+                                    id="endTime"
+                                    type="datetime-local"
+                                    value={form.endTime}
+                                    onChange={(e) => setForm({ ...form, endTime: e.target.value })}
+                                    required
+                                    className="bg-white/5 border-white/10"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="meetingUrl">Link Meeting (Zoom, Meet, Teams)</Label>
+                            <Input
+                                id="meetingUrl"
+                                type="url"
+                                value={form.meetingUrl}
+                                onChange={(e) => setForm({ ...form, meetingUrl: e.target.value })}
+                                placeholder="https://..."
+                                required
+                                className="bg-white/5 border-white/10"
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="flex gap-4">
+                <Button
+                    type="submit"
+                    disabled={isSubmitting || isUploading}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                    {isSubmitting ? "Salvataggio..." : "Salva Modifiche"}
+                </Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.push(`/admin/courses/${courseId}`)}
+                    disabled={isSubmitting}
+                >
+                    Annulla
+                </Button>
+            </div>
+        </form>
+    )
+}

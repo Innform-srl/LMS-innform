@@ -1,0 +1,342 @@
+"use server"
+
+import { db } from "@/lib/db"
+import { auth } from "@/lib/auth"
+import { revalidatePath } from "next/cache"
+import { notifyTMSProgressUpdate } from "@/lib/tms-webhook-service"
+
+/**
+ * Update video progress for a module
+ * This updates the playback position (watchedSeconds) but does NOT necessarily mark as complete
+ * if there is a minimum duration requirement.
+ */
+export async function updateVideoProgress(
+    moduleId: string,
+    watchedSeconds: number,
+    totalSeconds: number,
+    currentPosition: number
+) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { success: false, error: "Non autorizzato" }
+    }
+
+    try {
+        // Get module to check minimum duration
+        const module = await db.module.findUnique({
+            where: { id: moduleId },
+            // @ts-ignore
+            select: { minimumDuration: true, courseId: true }
+        })
+
+        // Check if video content is "watched" (90% threshold of video length)
+        // This is about CONTENT completion, not TIME requirement
+        let isContentComplete = totalSeconds > 0 && (watchedSeconds / totalSeconds) >= 0.9
+
+        // Get current progress to check timeSpent (wall clock time)
+        const currentProgress = await db.moduleProgress.findUnique({
+            where: {
+                userId_moduleId: {
+                    userId: session.user.id,
+                    moduleId
+                }
+            }
+        })
+
+        // @ts-ignore
+        const timeSpent = currentProgress?.timeSpent || 0
+        // @ts-ignore
+        const minDurationSeconds = (module?.minimumDuration || 0) * 60
+
+        // Complete only if content is watched AND time requirement is met
+        // If minimumDuration is 0, minDurationSeconds is 0, so timeSpent >= 0 is always true
+
+        // RELAXED LOGIC: If the user has met the time requirement (and there IS one),
+        // we consider the content complete. This handles cases where the video is shorter
+        // than the minimum duration or if duration tracking is imperfect.
+        if (minDurationSeconds > 0 && timeSpent >= minDurationSeconds) {
+            isContentComplete = true
+        }
+
+        const isComplete = isContentComplete && timeSpent >= minDurationSeconds
+
+        // Upsert module progress
+        const progress = await db.moduleProgress.upsert({
+            where: {
+                userId_moduleId: {
+                    userId: session.user.id,
+                    moduleId
+                }
+            },
+            update: {
+                watchedSeconds, // Video playback position/accumulated watch
+                totalSeconds,
+                lastPosition: currentPosition,
+                completed: isComplete,
+                completedAt: isComplete && !currentProgress?.completed ? new Date() : undefined
+            },
+            create: {
+                userId: session.user.id,
+                moduleId,
+                watchedSeconds,
+                totalSeconds,
+                lastPosition: currentPosition,
+                completed: isComplete,
+                completedAt: isComplete ? new Date() : undefined
+            }
+        })
+
+        // If module is completed, update enrollment progress
+        if (isComplete && module) {
+            await updateCourseProgress(module.courseId, session.user.id)
+        }
+
+        return { success: true, progress }
+    } catch (error) {
+        console.error("Error updating video progress:", error)
+        return { success: false, error: "Errore durante il salvataggio del progresso" }
+    }
+}
+
+/**
+ * Get video progress for a module
+ */
+export async function getVideoProgress(moduleId: string) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return null
+    }
+
+    try {
+        const progress = await db.moduleProgress.findUnique({
+            where: {
+                userId_moduleId: {
+                    userId: session.user.id,
+                    moduleId
+                }
+            }
+        })
+
+        return progress
+    } catch (error) {
+        console.error("Error getting video progress:", error)
+        return null
+    }
+}
+
+/**
+ * Update overall course progress based on completed modules
+ */
+import { checkAndCompleteCourse } from "@/lib/progress"
+
+/**
+ * Update overall course progress based on completed modules
+ */
+async function updateCourseProgress(courseId: string, userId: string) {
+    try {
+        // Get total published modules
+        const totalModules = await db.module.count({
+            where: {
+                courseId,
+                published: true
+            }
+        })
+
+        if (totalModules === 0) return
+
+        // Get completed modules for this user
+        const completedModules = await db.moduleProgress.count({
+            where: {
+                userId,
+                completed: true,
+                module: {
+                    courseId,
+                    published: true
+                }
+            }
+        })
+
+        // Calculate progress percentage (visual only)
+        const progressPercentage = Math.min(100, Math.round((completedModules / totalModules) * 100))
+
+        // Get current enrollment to check previous progress
+        const currentEnrollment = await db.enrollment.findUnique({
+            where: {
+                userId_courseId: {
+                    userId,
+                    courseId
+                }
+            },
+            select: { progress: true, tmsEnrollmentId: true }
+        })
+
+        const previousProgress = currentEnrollment?.progress || 0
+
+        // Update enrollment progress (visual)
+        await db.enrollment.update({
+            where: {
+                userId_courseId: {
+                    userId,
+                    courseId
+                }
+            },
+            data: {
+                progress: progressPercentage
+            }
+        })
+
+        // Notify TMS if progress increased by 10% or more
+        if (progressPercentage >= previousProgress + 10 || progressPercentage === 100) {
+            notifyTMSProgressUpdate(userId, courseId, currentEnrollment?.tmsEnrollmentId || undefined).catch(err =>
+                console.error("[TMS_WEBHOOK] Progress update notification failed:", err)
+            )
+        }
+
+        // Check for strict completion (Certificates, etc.)
+        await checkAndCompleteCourse(courseId, userId)
+
+        revalidatePath(`/courses/${courseId}`)
+        revalidatePath('/')
+    } catch (error) {
+        console.error("Error updating course progress:", error)
+    }
+}
+
+/**
+ * Track time spent on a module (incremental)
+ * This updates the 'timeSpent' field which tracks wall-clock time
+ */
+export async function trackModuleTime(moduleId: string, seconds: number) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { success: false, error: "Non autorizzato" }
+    }
+
+    try {
+        // Get module to find courseId
+        const module = await db.module.findUnique({
+            where: { id: moduleId },
+            select: { courseId: true }
+        })
+
+        if (!module) {
+            return { success: false, error: "Modulo non trovato" }
+        }
+
+        const progress = await db.moduleProgress.upsert({
+            where: {
+                userId_moduleId: {
+                    userId: session.user.id,
+                    moduleId
+                }
+            },
+            update: {
+                // @ts-ignore
+                timeSpent: { increment: seconds },
+                updatedAt: new Date()
+            },
+            create: {
+                userId: session.user.id,
+                moduleId,
+                // @ts-ignore
+                timeSpent: seconds,
+                updatedAt: new Date()
+            }
+        })
+
+        // Also update Enrollment timeSpent
+        await db.enrollment.update({
+            where: {
+                userId_courseId: {
+                    userId: session.user.id,
+                    courseId: module.courseId
+                }
+            },
+            data: {
+                timeSpent: { increment: seconds },
+                lastActivityAt: new Date()
+            }
+        })
+
+        // @ts-ignore
+        return { success: true, timeSpent: progress.timeSpent }
+    } catch (error) {
+        console.error("Error tracking module time:", error)
+        return { success: false, error: "Errore durante il tracciamento del tempo" }
+    }
+}
+
+/**
+ * Mark module as complete manually (for non-video modules or admin override)
+ * Also performs the final check for minimum duration
+ */
+export async function markModuleComplete(moduleId: string) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { success: false, error: "Non autorizzato" }
+    }
+
+    try {
+        // Check minimum duration requirement
+        const module = await db.module.findUnique({
+            where: { id: moduleId },
+            // @ts-ignore
+            select: { minimumDuration: true, courseId: true, contentType: true }
+        })
+
+        if (!module) return { success: false, error: "Modulo non trovato" }
+
+        // @ts-ignore
+        if (module.minimumDuration > 0 && module.contentType !== 'LIVE') {
+            const progress = await db.moduleProgress.findUnique({
+                where: {
+                    userId_moduleId: {
+                        userId: session.user.id,
+                        moduleId
+                    }
+                }
+            })
+
+            // Check timeSpent (wall clock), NOT watchedSeconds (video position)
+            // @ts-ignore
+            const timeSpent = progress?.timeSpent || 0
+            // @ts-ignore
+            const requiredSeconds = module.minimumDuration * 60
+
+            if (timeSpent < requiredSeconds) {
+                const remainingMinutes = Math.ceil((requiredSeconds - timeSpent) / 60)
+                return {
+                    success: false,
+                    error: `Devi studiare questo modulo per altri ${remainingMinutes} minuti prima di completarlo.`
+                }
+            }
+        }
+
+        await db.moduleProgress.upsert({
+            where: {
+                userId_moduleId: {
+                    userId: session.user.id,
+                    moduleId
+                }
+            },
+            update: {
+                completed: true,
+                completedAt: new Date()
+            },
+            create: {
+                userId: session.user.id,
+                moduleId,
+                completed: true,
+                completedAt: new Date()
+            }
+        })
+
+        // Update course progress
+        await updateCourseProgress(module.courseId, session.user.id)
+
+        return { success: true }
+    } catch (error) {
+        console.error("Error marking module complete:", error)
+        return { success: false, error: "Errore durante il completamento del modulo" }
+    }
+}
