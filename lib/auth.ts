@@ -76,8 +76,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             },
         }),
     ],
-    // Con Next.js basePath: '/lms', dobbiamo specificare il basePath completo per NextAuth
-    basePath: "/lms/api/auth",
+    // Con Next.js basePath: '/lms', Auth.js riceve il path SENZA il basePath
+    // quindi dobbiamo lasciare il default "/api/auth"
+    basePath: "/api/auth",
     pages: {
         signIn: "/login",
         error: "/login",

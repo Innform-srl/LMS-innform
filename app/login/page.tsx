@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -21,13 +21,18 @@ import { registerUser } from "@/app/actions/register"
 import { useToast } from "@/components/ui/use-toast"
 import { motion, AnimatePresence } from "framer-motion"
 
-export default function AuthPage() {
+function AuthPageContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { toast } = useToast()
-    const [activeTab, setActiveTab] = useState<"login" | "register">(
-        searchParams.get("tab") === "register" ? "register" : "login"
-    )
+    const [activeTab, setActiveTab] = useState<"login" | "register">("login")
+
+    // Sync tab state with URL params on client side only
+    useEffect(() => {
+        if (searchParams.get("tab") === "register") {
+            setActiveTab("register")
+        }
+    }, [searchParams])
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -318,5 +323,26 @@ export default function AuthPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+// Wrap with Suspense to handle useSearchParams hydration
+export default function AuthPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center p-6 bg-background">
+                <div className="w-full max-w-md">
+                    <div className="bg-card/50 backdrop-blur-xl rounded-3xl p-8 border border-border shadow-2xl">
+                        <div className="animate-pulse space-y-4">
+                            <div className="h-16 w-16 bg-muted rounded-2xl mx-auto"></div>
+                            <div className="h-8 bg-muted rounded w-3/4 mx-auto"></div>
+                            <div className="h-4 bg-muted rounded w-1/2 mx-auto"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }>
+            <AuthPageContent />
+        </Suspense>
     )
 }
