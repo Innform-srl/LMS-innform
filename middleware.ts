@@ -2,23 +2,7 @@ import { NextResponse } from 'next/server'
 import { NextRequest } from 'next/server'
 import { checkRateLimit } from './lib/security'
 
-const PRODUCTION_DOMAIN = 'innform.eu'
-
 export function middleware(request: NextRequest) {
-    const hostname = request.headers.get('host') || ''
-
-    // Redirect from Vercel domain to production domain
-    if (
-        process.env.NODE_ENV === 'production' &&
-        hostname.includes('vercel.app') &&
-        !hostname.includes(PRODUCTION_DOMAIN)
-    ) {
-        const url = request.nextUrl.clone()
-        url.host = PRODUCTION_DOMAIN
-        url.protocol = 'https'
-        return NextResponse.redirect(url, { status: 301 })
-    }
-
     // Rate limiting for API routes
     if (request.nextUrl.pathname.startsWith('/api/')) {
         const forwardedFor = request.headers.get('x-forwarded-for')
@@ -78,7 +62,7 @@ export function middleware(request: NextRequest) {
 // Configure which routes use this middleware
 export const config = {
     matcher: [
-        // Match all routes for domain redirect
-        '/((?!_next/static|_next/image|favicon.ico).*)',
+        // Match API routes for rate limiting
+        '/api/:path*'
     ]
 }
