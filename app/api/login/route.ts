@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
-import { encode } from "next-auth/jwt"
+import * as jose from "jose"
 
 export async function POST(request: Request) {
     try {
@@ -46,18 +46,43 @@ export async function POST(request: Request) {
             ? "__Secure-authjs.session-token"
             : "authjs.session-token"
 
-        // Crea il token JWT usando le stesse impostazioni di Auth.js
+        // Crea il token JWT compatibile con Auth.js
         const secret = process.env.AUTH_SECRET!
-        const token = await encode({
-            token: {
-                sub: user.id,
-                email: user.email,
-                name: user.name,
-                role: user.role,
+        // Auth.js deriva la chiave usando HKDF
+        const encoder = new TextEncoder()
+        const keyMaterial = encoder.encode(secret)
+        const hkdfKey = await crypto.subtle.importKey(
+            "raw",
+            keyMaterial,
+            "HKDF",
+            false,
+            ["deriveBits"]
+        )
+        const derivedBits = await crypto.subtle.deriveBits(
+            {
+                name: "HKDF",
+                hash: "SHA-256",
+                salt: encoder.encode(cookieName),
+                info: encoder.encode("Auth.js Generated Encryption Key"),
             },
-            secret,
-            salt: cookieName, // Il salt deve corrispondere al nome del cookie
+            hkdfKey,
+            512 // A256CBC-HS512 richiede 512 bit
+        )
+        const encryptionKey = new Uint8Array(derivedBits)
+
+        const now = Math.floor(Date.now() / 1000)
+        const maxAge = 30 * 24 * 60 * 60 // 30 giorni
+
+        const token = await new jose.EncryptJWT({
+            sub: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            iat: now,
+            exp: now + maxAge,
         })
+            .setProtectedHeader({ alg: "dir", enc: "A256CBC-HS512" })
+            .encrypt(encryptionKey)
 
         // Crea audit log
         try {
@@ -82,7 +107,7 @@ export async function POST(request: Request) {
             secure: isProduction,
             sameSite: "lax",
             path: "/",
-            maxAge: 30 * 24 * 60 * 60, // 30 giorni
+            maxAge: maxAge,
         })
 
         return NextResponse.json({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } })
