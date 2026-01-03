@@ -6,25 +6,33 @@ import { encode } from "@auth/core/jwt"
 
 export async function POST(request: Request) {
     try {
+        console.log("[LOGIN] Starting login request")
         const { email, password } = await request.json()
+        console.log("[LOGIN] Email:", email)
 
         if (!email || !password) {
+            console.log("[LOGIN] Missing email or password")
             return NextResponse.json(
                 { error: "Email e password richiesti" },
                 { status: 400 }
             )
         }
 
+        console.log("[LOGIN] Looking up user in database...")
         const user = await db.user.findUnique({ where: { email } })
+        console.log("[LOGIN] User found:", user ? "yes" : "no")
 
         if (!user || !user.password) {
+            console.log("[LOGIN] User not found or no password")
             return NextResponse.json(
                 { error: "Credenziali non valide" },
                 { status: 401 }
             )
         }
 
+        console.log("[LOGIN] Comparing passwords...")
         const passwordMatch = await bcrypt.compare(password, user.password)
+        console.log("[LOGIN] Password match:", passwordMatch)
 
         if (!passwordMatch) {
             return NextResponse.json(
@@ -33,6 +41,7 @@ export async function POST(request: Request) {
             )
         }
 
+        console.log("[LOGIN] Checking isApproved:", (user as any).isApproved)
         if (!(user as any).isApproved) {
             return NextResponse.json(
                 { error: "Account non ancora approvato" },
@@ -90,9 +99,10 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } })
     } catch (error) {
-        console.error("Login error:", error)
+        console.error("[LOGIN] Error:", error)
+        console.error("[LOGIN] Error stack:", error instanceof Error ? error.stack : "no stack")
         return NextResponse.json(
-            { error: "Errore durante il login" },
+            { error: "Errore durante il login", details: error instanceof Error ? error.message : String(error) },
             { status: 500 }
         )
     }
