@@ -45,10 +45,26 @@ const nextConfig = {
     // Enable React strict mode for development
     reactStrictMode: true,
 
-    // Configure image domains if using Next/Image
+    // Configure image domains for Next/Image optimization
     images: {
-        domains: [],
-        unoptimized: true
+        remotePatterns: [
+            {
+                protocol: 'https',
+                hostname: '**',
+            },
+        ],
+        // Enable image optimization
+        unoptimized: false,
+        // Optimize image formats
+        formats: ['image/avif', 'image/webp'],
+        // Cache optimized images for 1 year
+        minimumCacheTTL: 31536000,
+    },
+
+    // Enable experimental features for performance
+    experimental: {
+        // Optimize package imports
+        optimizePackageImports: ['lucide-react', 'recharts', '@radix-ui/react-icons'],
     }
 }
 

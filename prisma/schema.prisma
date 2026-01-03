@@ -39,6 +39,13 @@ model User {
 
   // Audit
   auditLogs AuditLog[]
+
+  // Performance indexes
+  @@index([role])
+  @@index([isApproved])
+  @@index([departmentId])
+  @@index([createdAt])
+  @@index([isApproved, createdAt])
 }
 
 model Department {
@@ -100,6 +107,11 @@ model Course {
 
   // TMS Integration
   tmsMappings CourseTMSMapping[]
+
+  // Performance indexes
+  @@index([published])
+  @@index([published, createdAt])
+  @@index([archived])
 }
 
 model Module {
@@ -127,6 +139,12 @@ model Module {
 
   liveSessionId String?      @unique
   liveSession   LiveSession? @relation(fields: [liveSessionId], references: [id])
+
+  // Performance indexes
+  @@index([courseId])
+  @@index([published])
+  @@index([courseId, published])
+  @@index([position])
 }
 
 model Enrollment {
@@ -153,6 +171,12 @@ model Enrollment {
   @@unique([userId, courseId])
   @@index([dueDate])
   @@index([tmsEnrollmentId])
+  // Performance indexes
+  @@index([userId])
+  @@index([courseId])
+  @@index([completed])
+  @@index([userId, completed])
+  @@index([createdAt])
 }
 
 model Quiz {

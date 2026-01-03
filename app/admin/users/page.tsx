@@ -11,10 +11,12 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import Link from "next/link"
-import { Upload, Search, UserPlus, Edit } from "lucide-react"
+import { Upload, Search, UserPlus, Edit, ChevronLeft, ChevronRight } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { ResetPasswordDialog } from "./reset-password-dialog"
 import { ApproveUserButton } from "./approve-button"
+
+const PAGE_SIZE = 20
 
 export default async function UsersPage({
     searchParams,
@@ -27,6 +29,7 @@ export default async function UsersPage({
     const params = await searchParams
     const departmentId = typeof params.department === 'string' ? params.department : undefined
     const search = typeof params.search === 'string' ? params.search : undefined
+    const page = typeof params.page === 'string' ? Math.max(1, parseInt(params.page)) : 1
 
     const where: any = {}
     if (departmentId) where.departmentId = departmentId
@@ -37,24 +40,47 @@ export default async function UsersPage({
         ]
     }
 
-    const [users, departments, pendingUsers] = await Promise.all([
+    const [users, totalCount, departments, pendingUsers] = await Promise.all([
         db.user.findMany({
             where: { ...where, isApproved: true },
-            include: {
-                department: true,
-                enrollments: {
-                    select: { timeSpent: true }
-                },
-                company: true
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                createdAt: true,
+                department: { select: { id: true, name: true } },
+                company: { select: { id: true, name: true } },
+                _count: { select: { enrollments: true } },
+                enrollments: { select: { timeSpent: true } }
             },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            take: PAGE_SIZE,
+            skip: (page - 1) * PAGE_SIZE
         }),
-        db.department.findMany({ orderBy: { name: 'asc' } }),
+        db.user.count({ where: { ...where, isApproved: true } }),
+        db.department.findMany({
+            select: { id: true, name: true },
+            orderBy: { name: 'asc' }
+        }),
         db.user.findMany({
             where: { isApproved: false },
-            orderBy: { createdAt: 'desc' }
+            select: { id: true, name: true, email: true, createdAt: true },
+            orderBy: { createdAt: 'desc' },
+            take: 10 // Limit pending users shown
         })
-    ]) as [any[], any[], any[]]
+    ])
+
+    const totalPages = Math.ceil(totalCount / PAGE_SIZE)
+
+    // Build pagination URL params
+    const buildPageUrl = (pageNum: number) => {
+        const params = new URLSearchParams()
+        if (search) params.set('search', search)
+        if (departmentId) params.set('department', departmentId)
+        params.set('page', pageNum.toString())
+        return `?${params.toString()}`
+    }
 
     return (
         <div className="space-y-8">
@@ -76,7 +102,7 @@ export default async function UsersPage({
                         </Button>
                     </Link>
                     <a href="/lms/api/admin/export/users" download>
-                        <Button className="bg-green-600 hover:bg-green-700 text-white">
+                        <Button className="bg-success hover:bg-success/90 text-white">
                             <Upload className="w-4 h-4 mr-2 rotate-180" />
                             Esporta CSV
                         </Button>
@@ -209,6 +235,64 @@ export default async function UsersPage({
                     </TableBody>
                 </Table>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 bg-card border border-border rounded-xl">
+                    <div className="text-sm text-muted-foreground">
+                        Mostrando {(page - 1) * PAGE_SIZE + 1} - {Math.min(page * PAGE_SIZE, totalCount)} di {totalCount} utenti
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Link href={buildPageUrl(page - 1)} aria-disabled={page <= 1}>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={page <= 1}
+                                className="border-border"
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                                Precedente
+                            </Button>
+                        </Link>
+                        <div className="flex items-center gap-1">
+                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                let pageNum: number
+                                if (totalPages <= 5) {
+                                    pageNum = i + 1
+                                } else if (page <= 3) {
+                                    pageNum = i + 1
+                                } else if (page >= totalPages - 2) {
+                                    pageNum = totalPages - 4 + i
+                                } else {
+                                    pageNum = page - 2 + i
+                                }
+                                return (
+                                    <Link key={pageNum} href={buildPageUrl(pageNum)}>
+                                        <Button
+                                            variant={page === pageNum ? "default" : "outline"}
+                                            size="sm"
+                                            className={page === pageNum ? "bg-primary" : "border-border"}
+                                        >
+                                            {pageNum}
+                                        </Button>
+                                    </Link>
+                                )
+                            })}
+                        </div>
+                        <Link href={buildPageUrl(page + 1)} aria-disabled={page >= totalPages}>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={page >= totalPages}
+                                className="border-border"
+                            >
+                                Successivo
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

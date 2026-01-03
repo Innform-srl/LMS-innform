@@ -18,7 +18,14 @@ export default async function Home() {
 
   const enrollments = await db.enrollment.findMany({
     where: { userId: session.user.id },
-    include: {
+    select: {
+      id: true,
+      progress: true,
+      completed: true,
+      completedAt: true,
+      dueDate: true,
+      timeSpent: true,
+      createdAt: true,
       course: {
         select: {
           id: true,
@@ -26,11 +33,7 @@ export default async function Home() {
           description: true,
           imageUrl: true,
           isRequired: true,
-          dueInDays: true,
           minimumDuration: true,
-          published: true,
-          createdAt: true,
-          updatedAt: true,
           modules: {
             where: { published: true },
             select: {
@@ -40,7 +43,11 @@ export default async function Home() {
           }
         }
       },
-      certificate: true
+      certificate: {
+        select: {
+          id: true
+        }
+      }
     },
     orderBy: { createdAt: "desc" }
   })
