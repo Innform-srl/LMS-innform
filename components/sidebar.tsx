@@ -1,6 +1,7 @@
 "use client"
 
-import { Link, usePathname } from "@/i18n/navigation"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -20,8 +21,6 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { LanguageSwitcher } from "@/components/language-switcher"
-import { useTranslations } from "next-intl"
 import { NotificationCenter } from "@/components/notifications"
 
 interface SidebarProps {
@@ -35,29 +34,28 @@ interface SidebarProps {
 export function Sidebar({ user }: SidebarProps) {
     const pathname = usePathname()
     const [isOpen, setIsOpen] = useState(false)
-    const t = useTranslations("Common")
 
     const routes = [
         {
-            label: t("dashboard"),
+            label: "Dashboard",
             icon: LayoutDashboard,
             href: "/",
             color: "text-primary",
         },
         {
-            label: t("courses"),
+            label: "Corsi",
             icon: BookOpen,
             href: "/courses",
             color: "text-primary",
         },
         {
-            label: t("gamification"),
+            label: "Gamification",
             icon: Gamepad2,
             href: "/gamification",
             color: "text-primary",
         },
         {
-            label: t("certificates"),
+            label: "I miei Certificati",
             icon: Award,
             href: "/certificates",
             color: "text-primary",
@@ -66,49 +64,49 @@ export function Sidebar({ user }: SidebarProps) {
 
     const adminRoutes = [
         {
-            label: t("adminDashboard"),
+            label: "Admin Dashboard",
             icon: LayoutDashboard,
             href: "/admin",
             color: "text-primary",
         },
         {
-            label: t("manageCourses"),
+            label: "Gestione Corsi",
             icon: BookOpen,
             href: "/admin/courses",
             color: "text-primary",
         },
         {
-            label: t("manageUsers"),
+            label: "Gestione Utenti",
             icon: Users,
             href: "/admin/users",
             color: "text-primary",
         },
         {
-            label: t("manageCertificates"),
+            label: "Gestione Certificati",
             icon: Award,
             href: "/admin/certificates",
             color: "text-primary",
         },
         {
-            label: t("learningPaths"),
+            label: "Percorsi",
             icon: GraduationCap,
             href: "/admin/learning-paths",
             color: "text-primary",
         },
         {
-            label: t("companies"),
+            label: "Aziende",
             icon: Building2,
             href: "/admin/users/companies",
             color: "text-primary",
         },
         {
-            label: t("virtualClassroom"),
+            label: "Aula Virtuale",
             icon: Video,
             href: "/admin/live-sessions",
             color: "text-primary",
         },
         {
-            label: t("analytics"),
+            label: "Analytics",
             icon: BarChart2,
             href: "/admin/analytics",
             color: "text-primary",
@@ -146,7 +144,7 @@ export function Sidebar({ user }: SidebarProps) {
                     <div className="flex-1 px-4 space-y-2 overflow-y-auto">
                         <div className="mb-4">
                             <h3 className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                                {t("dashboard")}
+                                Dashboard
                             </h3>
                             {routes.map((route) => (
                                 <Link
@@ -213,13 +211,13 @@ export function Sidebar({ user }: SidebarProps) {
                             <Link href="/settings">
                                 <Button variant="outline" size="sm" className="w-full border-border hover:bg-accent hover:text-accent-foreground text-xs">
                                     <Settings className="h-3 w-3 mr-2" />
-                                    {t("settings")}
+                                    Impostazioni
                                 </Button>
                             </Link>
-                            <a href="/lms/api/auth/signout?callbackUrl=/lms/it/login" className="w-full">
+                            <a href="/lms/api/auth/signout?callbackUrl=/lms/login" className="w-full">
                                 <Button variant="outline" size="sm" className="w-full border-border hover:bg-accent hover:text-destructive hover:border-destructive/20 text-xs">
                                     <LogOut className="h-3 w-3 mr-2" />
-                                    {t("logout")}
+                                    Esci
                                 </Button>
                             </a>
                         </div>

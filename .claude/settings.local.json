@@ -32,7 +32,11 @@
       "Bash(npm run start:*)",
       "Bash(git push)",
       "Bash(dir:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nFix NextAuth v5 basePath - add baseUrl to SessionProvider\n\nNextAuth v5 requires both baseUrl and basePath for subdirectory deployments.\nWithout baseUrl, the client-side auth requests go to /api/auth/error instead\nof /lms/api/auth/error.\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nFix NextAuth v5 basePath - add baseUrl to SessionProvider\n\nNextAuth v5 requires both baseUrl and basePath for subdirectory deployments.\nWithout baseUrl, the client-side auth requests go to /api/auth/error instead\nof /lms/api/auth/error.\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(xcopy:*)"
     ]
   }
 }

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { signIn } from "next-auth/react"
-import { useRouter, usePathname } from "@/i18n/navigation"
+import { useRouter } from "next/navigation"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
@@ -20,34 +20,30 @@ import { Input } from "@/components/ui/input"
 import { registerUser } from "@/app/actions/register"
 import { useToast } from "@/components/ui/use-toast"
 import { motion, AnimatePresence } from "framer-motion"
-import { useTranslations } from "next-intl"
-import { LanguageSwitcher } from "@/components/language-switcher"
 
 export default function AuthPage() {
     const router = useRouter()
-    const pathname = usePathname()
     const searchParams = useSearchParams()
     const { toast } = useToast()
-    const t = useTranslations("Auth")
     const [activeTab, setActiveTab] = useState<"login" | "register">(
         searchParams.get("tab") === "register" ? "register" : "login"
     )
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    // Schemas with translations
+    // Schemas
     const loginSchema = z.object({
-        email: z.string().email({ message: t("emailLabel") + " non valida" }), // Simplified for now
-        password: z.string().min(1, { message: t("passwordLabel") + " richiesta" }),
+        email: z.string().email({ message: "Email non valida" }),
+        password: z.string().min(1, { message: "Password richiesta" }),
     })
 
     const registerSchema = z.object({
-        name: z.string().min(2, t("nameLabel") + " min 2 chars"),
-        email: z.string().email(t("emailLabel") + " invalid"),
-        password: z.string().min(6, t("passwordLabel") + " min 6 chars"),
+        name: z.string().min(2, "Nome minimo 2 caratteri"),
+        email: z.string().email("Email non valida"),
+        password: z.string().min(6, "Password minimo 6 caratteri"),
         confirmPassword: z.string()
     }).refine((data) => data.password === data.confirmPassword, {
-        message: "Passwords do not match",
+        message: "Le password non corrispondono",
         path: ["confirmPassword"],
     })
 
@@ -121,9 +117,6 @@ export default function AuthPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-6 bg-background transition-colors duration-300">
-            <div className="absolute top-4 right-4">
-                <LanguageSwitcher />
-            </div>
             <div className="w-full max-w-md">
                 <div className="bg-card/50 backdrop-blur-xl rounded-3xl p-8 border border-border shadow-2xl overflow-hidden relative">
 
@@ -132,9 +125,9 @@ export default function AuthPage() {
                         <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
                             <span className="text-3xl font-bold text-primary-foreground">L</span>
                         </div>
-                        <h1 className="text-3xl font-bold text-foreground mb-2">{activeTab === "login" ? t("loginTitle") : t("registerTitle")}</h1>
+                        <h1 className="text-3xl font-bold text-foreground mb-2">{activeTab === "login" ? "Bentornato" : "Crea un account"}</h1>
                         <p className="text-muted-foreground">
-                            {activeTab === "login" ? t("loginSubtitle") : t("registerSubtitle")}
+                            {activeTab === "login" ? "Accedi al tuo account per continuare" : "Inserisci i tuoi dati per registrarti"}
                         </p>
                     </div>
 
@@ -147,7 +140,7 @@ export default function AuthPage() {
                                 : "text-muted-foreground hover:text-foreground"
                                 }`}
                         >
-                            {t("loginButton")}
+                            Accedi
                         </button>
                         <button
                             onClick={() => setActiveTab("register")}
@@ -156,7 +149,7 @@ export default function AuthPage() {
                                 : "text-muted-foreground hover:text-foreground"
                                 }`}
                         >
-                            {t("registerButton")}
+                            Registrati
                         </button>
                     </div>
 
@@ -177,7 +170,7 @@ export default function AuthPage() {
                                             name="email"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>{t("emailLabel")}</FormLabel>
+                                                    <FormLabel>Email</FormLabel>
                                                     <div className="relative group">
                                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                                             <Mail className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -195,7 +188,7 @@ export default function AuthPage() {
                                             name="password"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>{t("passwordLabel")}</FormLabel>
+                                                    <FormLabel>Password</FormLabel>
                                                     <div className="relative group">
                                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                                             <Lock className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -226,7 +219,7 @@ export default function AuthPage() {
                                         )}
 
                                         <Button type="submit" disabled={isLoading} className="w-full h-12 text-lg">
-                                            {isLoading ? "Accesso..." : t("loginButton")}
+                                            {isLoading ? "Accesso..." : "Accedi"}
                                         </Button>
                                     </form>
                                 </Form>
@@ -246,7 +239,7 @@ export default function AuthPage() {
                                             name="name"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>{t("nameLabel")}</FormLabel>
+                                                    <FormLabel>Nome Completo</FormLabel>
                                                     <div className="relative group">
                                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                                             <User className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -264,7 +257,7 @@ export default function AuthPage() {
                                             name="email"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>{t("emailLabel")}</FormLabel>
+                                                    <FormLabel>Email</FormLabel>
                                                     <div className="relative group">
                                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                                             <Mail className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -282,7 +275,7 @@ export default function AuthPage() {
                                             name="password"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>{t("passwordLabel")}</FormLabel>
+                                                    <FormLabel>Password</FormLabel>
                                                     <div className="relative group">
                                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                                             <Lock className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -315,7 +308,7 @@ export default function AuthPage() {
                                         />
 
                                         <Button type="submit" disabled={isLoading} className="w-full h-12 text-lg mt-2">
-                                            {isLoading ? "Registrazione..." : t("registerButton")}
+                                            {isLoading ? "Registrazione..." : "Registrati"}
                                         </Button>
                                     </form>
                                 </Form>

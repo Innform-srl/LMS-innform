@@ -3,7 +3,6 @@
 import { GlobalSearch } from "./global-search"
 import { NotificationCenter } from "./notifications"
 import { ThemeToggle } from "./theme-toggle"
-import { LanguageSwitcher } from "./language-switcher"
 
 export function Header() {
     return (
@@ -13,7 +12,6 @@ export function Header() {
             </div>
             <div className="flex items-center gap-4">
                 <ThemeToggle />
-                <LanguageSwitcher />
                 <NotificationCenter />
             </div>
         </header>

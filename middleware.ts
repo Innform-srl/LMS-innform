@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server'
 import { NextRequest } from 'next/server'
 import { checkRateLimit } from './lib/security'
-import createMiddleware from 'next-intl/middleware'
-import { routing } from './i18n/navigation'
-
-const intlMiddleware = createMiddleware(routing)
 
 export function middleware(request: NextRequest) {
     // Rate limiting for API routes
@@ -60,29 +56,12 @@ export function middleware(request: NextRequest) {
         return response
     }
 
-    // Redirect root path to default locale
-    // With basePath: '/lms', the pathname here is relative to basePath
-    // So '/' means '/lms' was requested
-    const pathname = request.nextUrl.pathname
-    if (pathname === '/') {
-        const url = request.nextUrl.clone()
-        url.pathname = '/it'
-        return NextResponse.redirect(url)
-    }
-
-    // Handle i18n for non-API routes
-    return intlMiddleware(request)
+    return NextResponse.next()
 }
 
 // Configure which routes use this middleware
 export const config = {
     matcher: [
-        // Match root path explicitly
-        '/',
-        // Match all pathnames except for
-        // - … if they start with `/api`, `/_next` or `/_vercel`
-        // - … the ones containing a dot (e.g. `favicon.ico`)
-        '/((?!api|_next|_vercel|.*\\..*).*)',
         // Match API routes for rate limiting
         '/api/:path*'
     ]

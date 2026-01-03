@@ -5,11 +5,9 @@ import Link from "next/link"
 import { db } from "@/lib/db"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { UpcomingDeadlinesCard } from "@/components/deadline-badge"
-import { getTranslations } from "next-intl/server"
 import { Webhook, BarChart3 } from "lucide-react"
 
 export default async function AdminPage() {
-    const t = await getTranslations("AdminDashboard")
     const session = await auth()
 
     if (!session?.user) {
@@ -107,9 +105,9 @@ export default async function AdminPage() {
                     <div className="flex justify-between items-center mb-6">
                         <div>
                             <h1 className="text-4xl font-bold mb-2">
-                                {t.rich("title", { primary: (chunks) => <span className="text-primary">{chunks}</span> })}
+                                <span className="text-primary">Dashboard Admin</span>
                             </h1>
-                            <p className="text-muted-foreground">{t("subtitle")}</p>
+                            <p className="text-muted-foreground">Gestisci corsi, utenti e monitora i progressi</p>
                         </div>
                         <div className="flex gap-3">
                             <Link href="/admin/enrollments">
@@ -125,7 +123,7 @@ export default async function AdminPage() {
                                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                     </svg>
-                                    {t("newCourse")}
+                                    Nuovo Corso
                                 </Button>
                             </Link>
                             <Link href="/admin/analytics">
@@ -133,7 +131,7 @@ export default async function AdminPage() {
                                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                     </svg>
-                                    {t("analytics")}
+                                    Analytics
                                 </Button>
                             </Link>
                             <Link href="/admin/reports/time-tracking">
@@ -141,7 +139,7 @@ export default async function AdminPage() {
                                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    {t("timeTracking")}
+                                    Time Tracking
                                 </Button>
                             </Link>
                             <Link href="/admin/reports/engagement">
@@ -158,7 +156,7 @@ export default async function AdminPage() {
                             </Link>
                             <Link href="/">
                                 <Button variant="outline" className="border-border hover:bg-accent hover:text-accent-foreground">
-                                    {t("userDashboard")}
+                                    Dashboard Utente
                                 </Button>
                             </Link>
                         </div>
@@ -170,9 +168,9 @@ export default async function AdminPage() {
                             <CardHeader>
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <CardDescription className="text-muted-foreground">{t("totalCourses")}</CardDescription>
+                                        <CardDescription className="text-muted-foreground">Totale Corsi</CardDescription>
                                         <CardTitle className="text-4xl font-bold text-primary">{totalCourses}</CardTitle>
-                                        <p className="text-sm text-muted-foreground mt-1">{publishedCourses} {t("published")}</p>
+                                        <p className="text-sm text-muted-foreground mt-1">{publishedCourses} pubblicati</p>
                                     </div>
                                     <div className="w-14 h-14 bg-secondary/20 rounded-2xl flex items-center justify-center shadow-lg shadow-secondary/10">
                                         <svg className="w-7 h-7 text-secondary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -187,7 +185,7 @@ export default async function AdminPage() {
                             <CardHeader>
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <CardDescription className="text-muted-foreground">{t("enrollments")}</CardDescription>
+                                        <CardDescription className="text-muted-foreground">Iscrizioni</CardDescription>
                                         <CardTitle className="text-4xl font-bold text-primary">{totalEnrollments}</CardTitle>
                                     </div>
                                     <div className="w-14 h-14 bg-secondary/20 rounded-2xl flex items-center justify-center shadow-lg shadow-secondary/10">
@@ -203,7 +201,7 @@ export default async function AdminPage() {
                             <CardHeader>
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <CardDescription className="text-muted-foreground">{t("users")}</CardDescription>
+                                        <CardDescription className="text-muted-foreground">Utenti</CardDescription>
                                         <CardTitle className="text-4xl font-bold text-primary">{totalUsers}</CardTitle>
                                     </div>
                                     <div className="w-14 h-14 bg-secondary/20 rounded-2xl flex items-center justify-center shadow-lg shadow-secondary/10">
@@ -219,7 +217,7 @@ export default async function AdminPage() {
                             <CardHeader>
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <CardDescription className="text-muted-foreground">{t("completionRate")}</CardDescription>
+                                        <CardDescription className="text-muted-foreground">Tasso Completamento</CardDescription>
                                         <CardTitle className="text-4xl font-bold text-primary">{Math.round(completionRate)}%</CardTitle>
                                     </div>
                                     <div className="w-14 h-14 bg-secondary/20 rounded-2xl flex items-center justify-center shadow-lg shadow-secondary/10">
@@ -245,12 +243,12 @@ export default async function AdminPage() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <span className="w-1 h-6 bg-secondary rounded-full" />
-                                {t("recentEnrollments")}
+                                Iscrizioni Recenti
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             {recentEnrollments.length === 0 ? (
-                                <p className="text-sm text-muted-foreground text-center py-8">{t("noRecentEnrollments")}</p>
+                                <p className="text-sm text-muted-foreground text-center py-8">Nessuna iscrizione recente</p>
                             ) : (
                                 <div className="space-y-3">
                                     {recentEnrollments.map((enrollment) => (

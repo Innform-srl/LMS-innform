@@ -15,14 +15,12 @@ import { Upload, Search, UserPlus, Edit } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { ResetPasswordDialog } from "./reset-password-dialog"
 import { ApproveUserButton } from "./approve-button"
-import { getTranslations } from "next-intl/server"
 
 export default async function UsersPage({
     searchParams,
 }: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-    const t = await getTranslations("UserManagement")
     const session = await auth()
     if (session?.user?.role !== "ADMIN") redirect("/")
 
@@ -68,19 +66,19 @@ export default async function UsersPage({
                     <Link href="/admin/users/create">
                         <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
                             <UserPlus className="w-4 h-4 mr-2" />
-                            {t("addUser")}
+                            Aggiungi Utente
                         </Button>
                     </Link>
                     <Link href="/admin/users/import">
                         <Button variant="outline" className="border-border hover:bg-accent hover:text-accent-foreground">
                             <Upload className="w-4 h-4 mr-2" />
-                            {t("importCSV")}
+                            Importa CSV
                         </Button>
                     </Link>
                     <a href="/lms/api/admin/export/users" download>
                         <Button className="bg-green-600 hover:bg-green-700 text-white">
                             <Upload className="w-4 h-4 mr-2 rotate-180" />
-                            {t("exportCSV")}
+                            Esporta CSV
                         </Button>
                     </a>
                 </div>
@@ -92,7 +90,7 @@ export default async function UsersPage({
                     <form className="flex gap-2">
                         <Input
                             name="search"
-                            placeholder={t("searchPlaceholder")}
+                            placeholder="Cerca per nome o email..."
                             defaultValue={search}
                             className="bg-background border-border"
                         />
@@ -111,12 +109,12 @@ export default async function UsersPage({
                             defaultValue={departmentId || ""}
                         // Simple onchange submit for now, ideally use a client component
                         >
-                            <option value="">{t("allDepartments")}</option>
+                            <option value="">Tutti i Dipartimenti</option>
                             {departments.map(d => (
                                 <option key={d.id} value={d.id}>{d.name}</option>
                             ))}
                         </select>
-                        <Button type="submit" variant="ghost" size="sm" className="ml-2">{t("filter")}</Button>
+                        <Button type="submit" variant="ghost" size="sm" className="ml-2">Filtra</Button>
                     </form>
                 </div>
             </div>
@@ -124,15 +122,15 @@ export default async function UsersPage({
             {/* Pending Users Section */}
             {pendingUsers.length > 0 && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-8">
-                    <h2 className="text-xl font-semibold text-yellow-800 mb-4">{t("pendingUsers")}</h2>
+                    <h2 className="text-xl font-semibold text-yellow-800 mb-4">Utenti in Attesa di Approvazione</h2>
                     <div className="bg-white rounded-lg border border-yellow-100 overflow-hidden">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>{t("table.name")}</TableHead>
-                                    <TableHead>{t("table.email")}</TableHead>
-                                    <TableHead>{t("table.registrationDate")}</TableHead>
-                                    <TableHead className="text-right">{t("table.actions")}</TableHead>
+                                    <TableHead>Nome</TableHead>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>Data Registrazione</TableHead>
+                                    <TableHead className="text-right">Azioni</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -156,21 +154,21 @@ export default async function UsersPage({
                 <Table>
                     <TableHeader className="bg-muted/50">
                         <TableRow className="border-border hover:bg-transparent">
-                            <TableHead>{t("table.name")}</TableHead>
-                            <TableHead>{t("table.email")}</TableHead>
-                            <TableHead>{t("table.role")}</TableHead>
-                            <TableHead>{t("table.department")}</TableHead>
-                            <TableHead>{t("table.company")}</TableHead>
-                            <TableHead>{t("table.totalTime")}</TableHead>
-                            <TableHead>{t("table.joinDate")}</TableHead>
-                            <TableHead className="text-right">{t("table.actions")}</TableHead>
+                            <TableHead>Nome</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Ruolo</TableHead>
+                            <TableHead>Dipartimento</TableHead>
+                            <TableHead>Azienda</TableHead>
+                            <TableHead>Tempo Totale</TableHead>
+                            <TableHead>Data Iscrizione</TableHead>
+                            <TableHead className="text-right">Azioni</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {users.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                                    {t("noUsersFound")}
+                                    Nessun utente trovato
                                 </TableCell>
                             </TableRow>
                         ) : (

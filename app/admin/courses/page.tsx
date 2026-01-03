@@ -4,11 +4,9 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { Card } from "@/components/ui/card"
-import { getTranslations } from "next-intl/server"
 import { CourseActions } from "./course-actions"
 
 export default async function CoursesPage() {
-    const t = await getTranslations("CourseManagement")
     const session = await auth()
     if (!session?.user) redirect("/login")
 
@@ -68,9 +66,9 @@ export default async function CoursesPage() {
                     <div className="flex justify-between items-center mb-6">
                         <div>
                             <h1 className="text-4xl font-bold mb-2 text-[#5a4633]">
-                                {t("title")}
+                                Gestione Corsi
                             </h1>
-                            <p className="text-muted-foreground">{t("subtitle")}</p>
+                            <p className="text-muted-foreground">Crea, modifica e gestisci i tuoi corsi</p>
                         </div>
                         <div className="flex gap-3">
                             <Link href="/admin/courses/create">
@@ -78,7 +76,7 @@ export default async function CoursesPage() {
                                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                     </svg>
-                                    {t("newCourse")}
+                                    Nuovo Corso
                                 </Button>
                             </Link>
                             <Link href="/admin">
@@ -86,7 +84,7 @@ export default async function CoursesPage() {
                                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                                     </svg>
-                                    {t("adminDashboard")}
+                                    Dashboard Admin
                                 </Button>
                             </Link>
                         </div>
@@ -102,7 +100,7 @@ export default async function CoursesPage() {
                                     </svg>
                                 </div>
                                 <div>
-                                    <div className="text-[#8c8c8c] text-sm font-medium mb-1">{t("total")}</div>
+                                    <div className="text-[#8c8c8c] text-sm font-medium mb-1">Totale</div>
                                     <div className="text-3xl font-bold text-[#595959]">{activeCourses.length}</div>
                                 </div>
                             </div>
@@ -116,7 +114,7 @@ export default async function CoursesPage() {
                                     </svg>
                                 </div>
                                 <div>
-                                    <div className="text-[#8c8c8c] text-sm font-medium mb-1">{t("published")}</div>
+                                    <div className="text-[#8c8c8c] text-sm font-medium mb-1">Pubblicati</div>
                                     <div className="text-3xl font-bold text-[#00c853]">
                                         {activeCourses.filter(c => c.published).length}
                                     </div>
@@ -132,7 +130,7 @@ export default async function CoursesPage() {
                                     </svg>
                                 </div>
                                 <div>
-                                    <div className="text-[#8c8c8c] text-sm font-medium mb-1">{t("drafts")}</div>
+                                    <div className="text-[#8c8c8c] text-sm font-medium mb-1">Bozze</div>
                                     <div className="text-3xl font-bold text-[#ff9800]">
                                         {activeCourses.filter(c => !c.published).length}
                                     </div>
@@ -148,7 +146,7 @@ export default async function CoursesPage() {
                                     </svg>
                                 </div>
                                 <div>
-                                    <div className="text-[#8c8c8c] text-sm font-medium mb-1">{t("enrollments")}</div>
+                                    <div className="text-[#8c8c8c] text-sm font-medium mb-1">Iscrizioni</div>
                                     <div className="text-3xl font-bold text-[#d500f9]">
                                         {activeCourses.reduce((acc, c) => acc + c._count.enrollments, 0)}
                                     </div>
@@ -167,11 +165,11 @@ export default async function CoursesPage() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                 </svg>
                             </div>
-                            <h3 className="text-xl font-bold mb-2 gradient-text">{t("noCourses")}</h3>
-                            <p className="text-muted-foreground mb-6">{t("createFirstCourseDesc")}</p>
+                            <h3 className="text-xl font-bold mb-2 gradient-text">Nessun corso</h3>
+                            <p className="text-muted-foreground mb-6">Crea il tuo primo corso per iniziare</p>
                             <Link href="/admin/courses/create">
                                 <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 btn-glow">
-                                    {t("createFirstCourse")}
+                                    Crea il tuo primo corso
                                 </Button>
                             </Link>
                         </div>
@@ -240,7 +238,7 @@ export default async function CoursesPage() {
                                                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                         </svg>
-                                                        {t("table.edit")}
+                                                        Modifica
                                                     </Button>
                                                 </Link>
                                             </div>
@@ -302,7 +300,7 @@ export default async function CoursesPage() {
                                                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                         </svg>
-                                                        {t("table.edit")}
+                                                        Modifica
                                                     </Button>
                                                 </Link>
                                             </div>

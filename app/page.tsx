@@ -6,13 +6,10 @@ import { db } from "@/lib/db"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { DeadlineBadge } from "@/components/deadline-badge"
 import { getTimeElapsed } from "@/lib/time-utils"
-import { NotificationsBell } from "@/components/notifications-bell"
 import { getUpcomingSessions } from "@/app/actions/live-sessions"
 import { JoinSessionButton } from "@/components/join-session-button"
-import { getTranslations } from "next-intl/server"
 
 export default async function Home() {
-  const t = await getTranslations("Dashboard")
   const session = await auth()
 
   if (!session?.user) {
@@ -73,9 +70,9 @@ export default async function Home() {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-4xl font-bold ">
-                <span className="text-primary">{t("welcome", { name: session.user.name || session.user.email?.split('@')[0] || "User" })}</span>
+                <span className="text-primary">Bentornato, {session.user.name || session.user.email?.split('@')[0] || "Utente"}!</span>
               </h1>
-              <p className="text-muted-foreground">{t("learningPath")}</p>
+              <p className="text-muted-foreground">Il tuo percorso di apprendimento</p>
             </div>
 
             <div className="flex gap-3 items-center">
@@ -92,32 +89,32 @@ export default async function Home() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
                   </span>
-                  {t("upcomingSessions")}
+                  Prossime Live Session
                 </CardTitle>
-                <CardDescription>{t("upcomingSessionsDesc")}</CardDescription>
+                <CardDescription>Non perdere le prossime lezioni in diretta</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {upcomingSessions.map(session => (
-                    <Card key={session.id} className="bg-background/50 border-border">
+                  {upcomingSessions.map(liveSession => (
+                    <Card key={liveSession.id} className="bg-background/50 border-border">
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-semibold line-clamp-1">{session.title}</h4>
+                          <h4 className="font-semibold line-clamp-1">{liveSession.title}</h4>
                           <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-1 rounded">
-                            {new Date(session.startTime).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}
+                            {new Date(liveSession.startTime).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}
                             {' '}
-                            {new Date(session.startTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(liveSession.startTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
-                        {session.course && (
+                        {liveSession.course && (
                           <p className="text-xs text-muted-foreground mb-3">
-                            📚 {session.course.title}
+                            {liveSession.course.title}
                           </p>
                         )}
                         <JoinSessionButton
-                          meetingUrl={session.meetingUrl}
-                          moduleId={session.module?.id}
-                          liveSessionId={session.id}
+                          meetingUrl={liveSession.meetingUrl}
+                          moduleId={liveSession.module?.id}
+                          liveSessionId={liveSession.id}
                         />
                       </CardContent>
                     </Card>
@@ -125,7 +122,7 @@ export default async function Home() {
                 </div>
                 <div className="mt-4 text-center">
                   <Link href="/live-sessions" className="text-sm text-muted-foreground hover:text-primary underline">
-                    {t("viewAllSessions")}
+                    Vedi tutte le sessioni
                   </Link>
                 </div>
               </CardContent>
@@ -139,7 +136,7 @@ export default async function Home() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <span className="w-1 h-6 bg-primary rounded-full" />
-                    {t("adminActions")}
+                    Azioni Admin
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -149,7 +146,7 @@ export default async function Home() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      {t("manageCourses")}
+                      Gestisci Corsi e Moduli
                     </Button>
                   </Link>
                   <Link href="/admin/analytics">
@@ -157,7 +154,7 @@ export default async function Home() {
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
-                      {t("analytics")}
+                      Analytics
                     </Button>
                   </Link>
                   <Link href="/admin/users">
@@ -165,7 +162,7 @@ export default async function Home() {
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                       </svg>
-                      {t("manageUsers")}
+                      Gestisci Utenti
                     </Button>
                   </Link>
                   <Link href="/admin/learning-paths">
@@ -173,7 +170,7 @@ export default async function Home() {
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                       </svg>
-                      {t("learningPaths")}
+                      Percorsi Formativi
                     </Button>
                   </Link>
                 </CardContent>
@@ -185,7 +182,7 @@ export default async function Home() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <span className="w-1 h-6 bg-primary rounded-full" />
-                  {t("quickActions")}
+                  Azioni Rapide
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -194,7 +191,7 @@ export default async function Home() {
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    {t("exploreAllCourses")}
+                    Esplora tutti i corsi
                   </Button>
                 </Link>
                 <Link href="/settings">
@@ -203,7 +200,7 @@ export default async function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    {t("accountSettings")}
+                    Impostazioni Account
                   </Button>
                 </Link>
               </CardContent>
@@ -216,7 +213,7 @@ export default async function Home() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardDescription className="text-muted-foreground">{t("studyTime")}</CardDescription>
+                    <CardDescription className="text-muted-foreground">Tempo di Studio</CardDescription>
                     <CardTitle className="text-2xl font-bold text-foreground">
                       {hours}h {minutes}m
                     </CardTitle>
@@ -234,7 +231,7 @@ export default async function Home() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardDescription className="text-muted-foreground">{t("enrolledCourses")}</CardDescription>
+                    <CardDescription className="text-muted-foreground">Corsi Iscritti</CardDescription>
                     <CardTitle className="text-4xl font-bold text-primary">{enrollments.length}</CardTitle>
                   </div>
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -250,7 +247,7 @@ export default async function Home() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardDescription className="text-muted-foreground">{t("inProgress")}</CardDescription>
+                    <CardDescription className="text-muted-foreground">In Corso</CardDescription>
                     <CardTitle className="text-4xl font-bold text-foreground">{inProgressCourses.length}</CardTitle>
                   </div>
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -266,7 +263,7 @@ export default async function Home() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardDescription className="text-muted-foreground">{t("completed")}</CardDescription>
+                    <CardDescription className="text-muted-foreground">Completati</CardDescription>
                     <CardTitle className="text-4xl font-bold text-foreground">{completedCourses.length}</CardTitle>
                   </div>
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -288,9 +285,9 @@ export default async function Home() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                ⚠️ {t("expiringCourses")}
+                Corsi in Scadenza
               </CardTitle>
-              <CardDescription>{t("expiringCoursesDesc")}</CardDescription>
+              <CardDescription>Completa questi corsi entro la scadenza</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -304,10 +301,10 @@ export default async function Home() {
                       <h4 className="font-semibold">{enrollment.course.title}</h4>
                       <div className="flex flex-col gap-2 mt-2 w-full">
                         <div className="flex justify-between items-center text-xs text-muted-foreground">
-                          <span>{t("moduleProgress")}: {Math.round(enrollment.progress)}%</span>
+                          <span>Progresso Moduli: {Math.round(enrollment.progress)}%</span>
                           {enrollment.course.minimumDuration > 0 && (
                             <span className={enrollment.timeSpent >= enrollment.course.minimumDuration * 60 ? "text-primary" : "text-muted-foreground"}>
-                              ⏱️ {Math.floor(enrollment.timeSpent / 60)}m / {enrollment.course.minimumDuration}m
+                              {Math.floor(enrollment.timeSpent / 60)}m / {enrollment.course.minimumDuration}m
                             </span>
                           )}
                         </div>
@@ -344,7 +341,7 @@ export default async function Home() {
           <div className="mb-12">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
               <span className="w-1 h-8 bg-blue-500 rounded-full" />
-              {t("inProgress")}
+              In Corso
               <span className="ml-2 px-3 py-1 bg-blue-500/10 text-blue-500 text-sm font-semibold rounded-full border border-blue-500/30">
                 {inProgressCourses.length} {inProgressCourses.length === 1 ? 'corso' : 'corsi'}
               </span>
@@ -377,10 +374,10 @@ export default async function Home() {
                     <div className="space-y-4">
                       <div>
                         <div className="flex justify-between text-sm mb-2">
-                          <span className="text-muted-foreground">{t("moduleProgress")}</span>
+                          <span className="text-muted-foreground">Progresso Moduli</span>
                           <div className="flex items-center gap-3">
                             <span className="text-xs text-muted-foreground">
-                              🕒 {getTimeElapsed(enrollment.createdAt)}
+                              {getTimeElapsed(enrollment.createdAt)}
                             </span>
                             <span className="font-semibold text-primary">{Math.round(enrollment.progress)}%</span>
                           </div>
@@ -398,19 +395,19 @@ export default async function Home() {
                           const remainingDuration = Math.round(totalDuration * (100 - enrollment.progress) / 100)
 
                           if (totalDuration > 0) {
-                            const hours = Math.floor(totalDuration / 3600)
-                            const minutes = Math.floor((totalDuration % 3600) / 60)
+                            const durationHours = Math.floor(totalDuration / 3600)
+                            const durationMinutes = Math.floor((totalDuration % 3600) / 60)
                             const remHours = Math.floor(remainingDuration / 3600)
                             const remMinutes = Math.floor((remainingDuration % 3600) / 60)
 
                             return (
                               <div className="flex justify-between text-xs text-muted-foreground mt-2 pt-2 border-t border-border/50">
                                 <span>
-                                  📺 {t("duration")}: {hours > 0 ? `${hours}h ` : ''}{minutes}m
+                                  Durata: {durationHours > 0 ? `${durationHours}h ` : ''}{durationMinutes}m
                                 </span>
                                 {enrollment.progress < 100 && remainingDuration > 0 && (
                                   <span className="text-muted-foreground">
-                                    ⏱️ {t("remaining")}: {remHours > 0 ? `${remHours}h ` : ''}{remMinutes}m
+                                    Restano: {remHours > 0 ? `${remHours}h ` : ''}{remMinutes}m
                                   </span>
                                 )}
                               </div>
@@ -423,7 +420,7 @@ export default async function Home() {
                         {enrollment.course.minimumDuration > 0 && (
                           <div className="mt-2 pt-2 border-t border-border/50">
                             <div className="flex justify-between text-xs mb-1">
-                              <span className="text-muted-foreground">{t("studyTime")}</span>
+                              <span className="text-muted-foreground">Tempo di Studio</span>
                               <span className={
                                 enrollment.timeSpent >= enrollment.course.minimumDuration
                                   ? 'text-primary font-semibold'
@@ -448,7 +445,7 @@ export default async function Home() {
                       </div>
                       <Link href={`/courses/${enrollment.course.id}`}>
                         <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                          {t("continueCourse")}
+                          Continua Corso
                         </Button>
                       </Link>
                     </div>
@@ -464,7 +461,7 @@ export default async function Home() {
           <div>
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
               <span className="w-1 h-8 bg-green-500 rounded-full" />
-              {t("completedCoursesTitle")}
+              Corsi Completati
               <span className="ml-2 px-3 py-1 bg-green-500/10 text-green-500 text-sm font-semibold rounded-full border border-green-500/30">
                 {completedCourses.length} {completedCourses.length === 1 ? 'completato' : 'completati'}
               </span>
@@ -497,7 +494,7 @@ export default async function Home() {
                   <CardContent>
                     <Link href={`/courses/${enrollment.course.id}`}>
                       <Button variant="outline" className="w-full border-border hover:bg-accent hover:text-accent-foreground mb-2">
-                        {t("reviewCourse")}
+                        Rivedi Corso
                       </Button>
                     </Link>
                     {enrollment.certificate && (
@@ -506,7 +503,7 @@ export default async function Home() {
                           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
-                          {t("downloadCertificate")}
+                          Scarica Certificato
                         </Button>
                       </Link>
                     )}
@@ -525,11 +522,11 @@ export default async function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
             </div>
-            <h3 className="text-2xl font-bold mb-2">{t("startPath")}</h3>
-            <p className="text-muted-foreground mb-6">{t("noCourses")}</p>
+            <h3 className="text-2xl font-bold mb-2">Inizia il tuo percorso</h3>
+            <p className="text-muted-foreground mb-6">Non sei ancora iscritto a nessun corso</p>
             <Link href="/courses">
               <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-                {t("exploreCatalog")}
+                Esplora Catalogo
               </Button>
             </Link>
           </div>
