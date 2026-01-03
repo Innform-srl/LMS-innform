@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -33,7 +33,18 @@ interface SidebarProps {
 
 export function Sidebar({ user }: SidebarProps) {
     const pathname = usePathname()
+    const router = useRouter()
     const [isOpen, setIsOpen] = useState(false)
+
+    const handleLogout = async () => {
+        try {
+            await fetch("/lms/api/logout", { method: "POST" })
+            router.push("/login")
+            router.refresh()
+        } catch (error) {
+            console.error("Logout error:", error)
+        }
+    }
 
     const routes = [
         {
@@ -214,12 +225,15 @@ export function Sidebar({ user }: SidebarProps) {
                                     Impostazioni
                                 </Button>
                             </Link>
-                            <a href="/lms/api/auth/signout?callbackUrl=/lms/login" className="w-full">
-                                <Button variant="outline" size="sm" className="w-full border-border hover:bg-accent hover:text-destructive hover:border-destructive/20 text-xs">
-                                    <LogOut className="h-3 w-3 mr-2" />
-                                    Esci
-                                </Button>
-                            </a>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full border-border hover:bg-accent hover:text-destructive hover:border-destructive/20 text-xs"
+                                onClick={handleLogout}
+                            >
+                                <LogOut className="h-3 w-3 mr-2" />
+                                Esci
+                            </Button>
                         </div>
                     </div>
                 </div>
