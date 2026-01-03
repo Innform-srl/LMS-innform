@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -73,14 +72,16 @@ function AuthPageContent() {
         setIsLoading(true)
         setError(null)
         try {
-            const result = await signIn("credentials", {
-                email: values.email,
-                password: values.password,
-                redirect: false,
+            const response = await fetch("/lms/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: values.email, password: values.password }),
             })
 
-            if (result?.error) {
-                setError("Credenziali non valide.")
+            const result = await response.json()
+
+            if (!response.ok) {
+                setError(result.error || "Credenziali non valide.")
             } else {
                 router.push("/")
                 router.refresh()
