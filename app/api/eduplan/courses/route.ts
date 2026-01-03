@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 // Validate API key from request
 function validateApiKey(request: NextRequest): boolean {
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "100");
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    const courses = await prisma.course.findMany({
+    const courses = await db.course.findMany({
       where: publishedOnly ? { published: true, archived: false } : { archived: false },
       include: {
         modules: includeModules ? {
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Get total count for pagination
-    const totalCount = await prisma.course.count({
+    const totalCount = await db.course.count({
       where: publishedOnly ? { published: true, archived: false } : { archived: false },
     });
 

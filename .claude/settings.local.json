@@ -36,7 +36,19 @@
       "Bash(find:*)",
       "Bash(ls:*)",
       "Bash(powershell -Command:*)",
-      "Bash(xcopy:*)"
+      "Bash(xcopy:*)",
+      "Bash(taskkill /F /PID 1602516)",
+      "Bash(netstat:*)",
+      "Bash(powershell -Command \"Stop-Process -Id 1602516 -Force\")",
+      "Bash(powershell -Command \"Stop-Process -Id 1136424 -Force\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nFix Auth.js basePath for Next.js basePath compatibility\n\n- Changed Auth.js basePath from \"/lms/api/auth\" to \"/api/auth\"\n- Added Suspense wrapper to login page for useSearchParams hydration\n- Fixed hydration mismatch by initializing activeTab state on client\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(npx next build:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nFix Auth.js v5 login with Next.js basePath on Vercel\n\n- Create custom /api/login endpoint that bypasses Auth.js client-side issues\n- Use next-auth/jwt encode to create compatible session tokens\n- Handle cookie names correctly for production \\(__Secure- prefix\\)\n- Login now uses direct API call instead of next-auth/react signIn\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(DATABASE_URL=\"postgres://postgres:cK%60Oe%7CR%23ENE*9%7C@db.vcehpsfhhdqoovwvsytp.supabase.co:5432/postgres\" npx prisma migrate deploy:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres.vcehpsfhhdqoovwvsytp:cK%60Oe%7CR%23ENE*9%7C@aws-1-eu-west-1.pooler.supabase.com:6543/postgres\" npx prisma migrate:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres.vcehpsfhhdqoovwvsytp:cK%60Oe%7CR%23ENE*9%7C@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true\" npx prisma db push:*)",
+      "Bash(npx next build)",
+      "Bash(openssl rand:*)"
     ]
   }
 }
