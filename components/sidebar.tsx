@@ -38,11 +38,16 @@ export function Sidebar({ user }: SidebarProps) {
 
     const handleLogout = async () => {
         try {
-            await fetch("/lms/api/logout", { method: "POST" })
-            router.push("/login")
-            router.refresh()
+            await fetch("/lms/api/logout", {
+                method: "POST",
+                credentials: "include"
+            })
+            // Forza il redirect con window.location per assicurarsi che la sessione sia pulita
+            window.location.href = "/lms/login"
         } catch (error) {
             console.error("Logout error:", error)
+            // Anche in caso di errore, prova il redirect
+            window.location.href = "/lms/login"
         }
     }
 
