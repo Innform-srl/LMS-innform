@@ -488,7 +488,9 @@ async function handleEnrollmentUpdated(
 async function handleEnrollmentCancelled(
   payload: TMSEnrollmentPayload
 ): Promise<WebhookHandlerResult> {
-  const { user, course } = payload
+  const { user, course, enrollment_id } = payload
+
+  console.log('[ENROLLMENT_CANCELLED] Processing v2:', { email: user.email, enrollment_id })
 
   try {
     const dbUser = await db.user.findUnique({
@@ -496,7 +498,7 @@ async function handleEnrollmentCancelled(
       include: {
         enrollments: {
           where: { tmsEnrollmentId: { not: null } },
-          select: { id: true, courseId: true }
+          select: { id: true, courseId: true, tmsEnrollmentId: true }
         }
       }
     })
@@ -509,33 +511,73 @@ async function handleEnrollmentCancelled(
       }
     }
 
-    const dbCourse = await db.course.findFirst({
+    // First try to find enrollment by tmsEnrollmentId (most reliable)
+    let enrollmentToDelete = await db.enrollment.findFirst({
       where: {
-        OR: [
-          { id: course?.lms_course_id },
-          { title: course?.title },
-        ],
+        userId: dbUser.id,
+        tmsEnrollmentId: enrollment_id,
       },
+      include: { course: { select: { title: true } } }
     })
 
-    if (!dbCourse) {
-      return {
-        success: true,
-        data: { message: 'Course not found, nothing to cancel' },
+    // If not found by enrollment_id, try by course info
+    if (!enrollmentToDelete && course) {
+      const dbCourse = await db.course.findFirst({
+        where: {
+          OR: [
+            { id: course.lms_course_id },
+            { title: course.title },
+          ],
+        },
+      })
+
+      if (dbCourse) {
+        enrollmentToDelete = await db.enrollment.findFirst({
+          where: {
+            userId: dbUser.id,
+            courseId: dbCourse.id,
+          },
+          include: { course: { select: { title: true } } }
+        })
       }
     }
 
-    // Delete enrollment (cascades to reminders, etc.)
-    await db.enrollment.deleteMany({
-      where: {
-        userId: dbUser.id,
-        courseId: dbCourse.id,
-      },
+    if (!enrollmentToDelete) {
+      // No enrollment found - check if we should delete user anyway
+      // (they might have been enrolled only via this enrollment that's already gone)
+      const remainingEnrollments = dbUser.enrollments.length
+
+      if (remainingEnrollments === 0) {
+        // User has no EduPlan enrollments, delete them
+        await db.user.delete({
+          where: { id: dbUser.id }
+        })
+        console.log(`[WEBHOOK] User ${dbUser.email} deleted - no EduPlan enrollments found`)
+        return {
+          success: true,
+          data: {
+            message: 'User deleted (no EduPlan enrollments found)',
+            user_deleted: true,
+          },
+        }
+      }
+
+      return {
+        success: true,
+        data: { message: 'Enrollment not found, nothing to cancel' },
+      }
+    }
+
+    const courseTitle = enrollmentToDelete.course?.title || 'Corso'
+
+    // Delete the enrollment
+    await db.enrollment.delete({
+      where: { id: enrollmentToDelete.id },
     })
 
-    // Check if user has any remaining EduPlan enrollments
+    // Check remaining EduPlan enrollments (excluding the one we just deleted)
     const remainingEduPlanEnrollments = dbUser.enrollments.filter(
-      e => e.courseId !== dbCourse.id
+      e => e.id !== enrollmentToDelete!.id
     ).length
 
     let userDeleted = false
@@ -554,7 +596,7 @@ async function handleEnrollmentCancelled(
         data: {
           userId: dbUser.id,
           title: 'Iscrizione cancellata',
-          message: `La tua iscrizione al corso "${dbCourse.title}" è stata cancellata`,
+          message: `La tua iscrizione al corso "${courseTitle}" è stata cancellata`,
           type: 'INFO',
         },
       })
