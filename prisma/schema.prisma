@@ -36,6 +36,7 @@ model User {
 
   // Live Sessions
   hostedSessions LiveSession[]
+  sessionAttendance SessionAttendance[]
 
   // Audit
   auditLogs AuditLog[]
@@ -484,16 +485,111 @@ model LiveSession {
   courseId     String?
   instructorId String
 
+  // Blended Learning Extensions
+  sessionType      SessionType      @default(ONLINE)
+  googleMeetCode   String?          // Meeting code for Google Meet
+  maxParticipants  Int?             // Maximum participants allowed
+  recordingUrl     String?          // URL to session recording
+  reminderSent24h  Boolean          @default(false)
+  reminderSent1h   Boolean          @default(false)
+  physicalRoomId   String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  course     Course? @relation(fields: [courseId], references: [id])
-  instructor User    @relation(fields: [instructorId], references: [id], onDelete: Cascade)
-  module     Module?
+  course       Course?             @relation(fields: [courseId], references: [id])
+  instructor   User                @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  module       Module?
+  physicalRoom PhysicalRoom?       @relation(fields: [physicalRoomId], references: [id])
+  attendance   SessionAttendance[]
 
   @@index([startTime])
   @@index([courseId])
   @@index([instructorId])
+  @@index([sessionType])
+}
+
+enum SessionType {
+  ONLINE
+  IN_PERSON
+  HYBRID
+}
+
+enum AttendanceStatus {
+  REGISTERED   // User registered but session not started
+  PRESENT      // User checked in
+  ATTENDED     // User completed the session (checked out)
+  ABSENT       // User did not attend
+  LATE         // User arrived late
+  EXCUSED      // Excused absence
+}
+
+model SessionAttendance {
+  id            String           @id @default(cuid())
+  sessionId     String
+  userId        String
+  status        AttendanceStatus @default(REGISTERED)
+  checkInTime   DateTime?
+  checkOutTime  DateTime?
+  durationMinutes Int?           // Calculated duration of attendance
+  notes         String?          // Admin notes
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  session LiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([status])
+}
+
+model PhysicalRoom {
+  id          String   @id @default(cuid())
+  name        String
+  location    String?  // Building/floor info
+  capacity    Int
+  equipment   String[] // Projector, Whiteboard, etc.
+  contactInfo String?
+  isActive    Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions LiveSession[]
+  bookings RoomBooking[]
+
+  @@index([isActive])
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+model RoomBooking {
+  id          String        @id @default(cuid())
+  roomId      String
+  title       String
+  startTime   DateTime
+  endTime     DateTime
+  status      BookingStatus @default(PENDING)
+  bookedById  String
+  isRecurring Boolean       @default(false)
+  recurrence  Json?         // { frequency: 'weekly', until: Date, daysOfWeek: [1,3,5] }
+  notes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  room PhysicalRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@index([startTime, endTime])
+  @@index([status])
 }
 
 enum Role {

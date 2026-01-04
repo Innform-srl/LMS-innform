@@ -36,6 +36,28 @@ export async function getLiveSessions() {
     return liveSessions
 }
 
+export async function getAllLiveSessions() {
+    const session = await auth()
+    if (session?.user?.role !== "ADMIN") return []
+
+    const liveSessions = await db.liveSession.findMany({
+        orderBy: { startTime: 'asc' },
+        include: {
+            course: {
+                select: { title: true }
+            },
+            instructor: {
+                select: { name: true, email: true }
+            },
+            module: {
+                select: { id: true }
+            }
+        }
+    })
+
+    return liveSessions
+}
+
 export async function getUpcomingSessions() {
     const session = await auth()
     if (!session?.user) return []

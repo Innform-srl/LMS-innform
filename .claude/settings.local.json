@@ -50,7 +50,10 @@
       "Bash(npx next build)",
       "Bash(openssl rand:*)",
       "Bash(npx supabase functions deploy:*)",
-      "Bash(npx vercel:*)"
+      "Bash(npx vercel:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma validate:*)",
+      "Bash(npx prisma db pull:*)"
     ]
   }
 }

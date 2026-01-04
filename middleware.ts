@@ -62,7 +62,7 @@ export function middleware(request: NextRequest) {
 // Configure which routes use this middleware
 export const config = {
     matcher: [
-        // Match API routes for rate limiting
-        '/api/:path*'
+        // Match API routes for rate limiting, excluding auth routes
+        '/api/((?!auth).*)'
     ]
 }

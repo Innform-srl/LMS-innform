@@ -3,14 +3,14 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { getLiveSessions, deleteLiveSession } from "@/app/actions/live-sessions"
+import { getAllLiveSessions, deleteLiveSession } from "@/app/actions/live-sessions"
 import { formatDate } from "@/lib/utils"
 
 export default async function AdminLiveSessionsPage() {
     const session = await auth()
     if (session?.user?.role !== "ADMIN") redirect("/")
 
-    const liveSessions = await getLiveSessions()
+    const liveSessions = await getAllLiveSessions()
 
     return (
         <div className="min-h-screen p-8 bg-background text-foreground">
@@ -47,6 +47,9 @@ export default async function AdminLiveSessionsPage() {
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
+                                        <Link href={`/admin/live-sessions/${session.id}/attendance`}>
+                                            <Button variant="outline" size="sm">Presenze</Button>
+                                        </Link>
                                         <Link href={session.meetingUrl} target="_blank">
                                             <Button variant="outline" size="sm">Link Meeting</Button>
                                         </Link>

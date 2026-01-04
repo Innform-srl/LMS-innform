@@ -1,0 +1,159 @@
+import { auth } from "@/lib/auth"
+import { redirect, notFound } from "next/navigation"
+import Link from "next/link"
+import { getSessionAttendance } from "@/app/actions/attendance"
+import { AttendanceTable } from "./attendance-table"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowLeft, Calendar, Clock, MapPin, Users, Video, Download } from "lucide-react"
+
+export default async function SessionAttendancePage({
+    params
+}: {
+    params: Promise<{ sessionId: string }>
+}) {
+    const { sessionId } = await params
+    const session = await auth()
+    if (session?.user?.role !== "ADMIN") redirect("/")
+
+    const data = await getSessionAttendance(sessionId)
+    if (!data) notFound()
+
+    const { session: liveSession, stats } = data
+
+    const sessionStart = new Date(liveSession.startTime)
+    const sessionEnd = new Date(liveSession.endTime)
+    const now = new Date()
+    const isOngoing = now >= sessionStart && now <= sessionEnd
+    const isEnded = now > sessionEnd
+
+    return (
+        <div className="min-h-screen p-8 bg-background text-foreground">
+            <div className="max-w-7xl mx-auto">
+                {/* Header */}
+                <div className="mb-8">
+                    <Link
+                        href="/admin/live-sessions"
+                        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
+                    >
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Torna alle sessioni
+                    </Link>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <h1 className="text-3xl font-bold text-foreground mb-2">
+                                {liveSession.title}
+                            </h1>
+                            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                    <Calendar className="w-4 h-4" />
+                                    {sessionStart.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                    <Clock className="w-4 h-4" />
+                                    {sessionStart.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - {sessionEnd.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                                {liveSession.physicalRoom && (
+                                    <span className="flex items-center gap-1">
+                                        <MapPin className="w-4 h-4" />
+                                        {liveSession.physicalRoom.name}
+                                    </span>
+                                )}
+                                <span className="flex items-center gap-1">
+                                    <Users className="w-4 h-4" />
+                                    {stats.total} partecipanti
+                                </span>
+                            </div>
+                            {liveSession.course && (
+                                <p className="text-sm text-muted-foreground mt-2">
+                                    Corso: {liveSession.course.title}
+                                </p>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {isOngoing && (
+                                <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-500/20 text-green-400 animate-pulse">
+                                    In corso
+                                </span>
+                            )}
+                            {isEnded && (
+                                <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-500/20 text-gray-400">
+                                    Terminata
+                                </span>
+                            )}
+                            <Link href={liveSession.meetingUrl} target="_blank">
+                                <Button variant="outline" size="sm">
+                                    <Video className="w-4 h-4 mr-2" />
+                                    Apri Meeting
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Stats Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
+                    <Card className="bg-card border-border">
+                        <CardContent className="p-4 text-center">
+                            <div className="text-2xl font-bold text-foreground">{stats.total}</div>
+                            <div className="text-xs text-muted-foreground">Totale</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-blue-500/10 border-blue-500/20">
+                        <CardContent className="p-4 text-center">
+                            <div className="text-2xl font-bold text-blue-400">{stats.registered}</div>
+                            <div className="text-xs text-blue-400/70">Registrati</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-green-500/10 border-green-500/20">
+                        <CardContent className="p-4 text-center">
+                            <div className="text-2xl font-bold text-green-400">{stats.present}</div>
+                            <div className="text-xs text-green-400/70">Presenti</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-emerald-500/10 border-emerald-500/20">
+                        <CardContent className="p-4 text-center">
+                            <div className="text-2xl font-bold text-emerald-400">{stats.attended}</div>
+                            <div className="text-xs text-emerald-400/70">Completato</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-red-500/10 border-red-500/20">
+                        <CardContent className="p-4 text-center">
+                            <div className="text-2xl font-bold text-red-400">{stats.absent}</div>
+                            <div className="text-xs text-red-400/70">Assenti</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-orange-500/10 border-orange-500/20">
+                        <CardContent className="p-4 text-center">
+                            <div className="text-2xl font-bold text-orange-400">{stats.late}</div>
+                            <div className="text-xs text-orange-400/70">In ritardo</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-gray-500/10 border-gray-500/20">
+                        <CardContent className="p-4 text-center">
+                            <div className="text-2xl font-bold text-gray-400">{stats.excused}</div>
+                            <div className="text-xs text-gray-400/70">Giustificati</div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Average Duration */}
+                {stats.averageDuration > 0 && (
+                    <Card className="bg-card border-border mb-8">
+                        <CardContent className="p-4 flex items-center justify-between">
+                            <span className="text-muted-foreground">Durata media partecipazione</span>
+                            <span className="text-xl font-bold text-foreground">{stats.averageDuration} minuti</span>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Attendance Table */}
+                <AttendanceTable
+                    sessionId={sessionId}
+                    attendance={liveSession.attendance}
+                    isEnded={isEnded}
+                />
+            </div>
+        </div>
+    )
+}
