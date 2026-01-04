@@ -493,6 +493,12 @@ async function handleEnrollmentCancelled(
   try {
     const dbUser = await db.user.findUnique({
       where: { email: user.email.toLowerCase() },
+      include: {
+        enrollments: {
+          where: { tmsEnrollmentId: { not: null } },
+          select: { id: true, courseId: true }
+        }
+      }
     })
 
     if (!dbUser) {
@@ -527,19 +533,42 @@ async function handleEnrollmentCancelled(
       },
     })
 
-    // Notify user
-    await db.notification.create({
-      data: {
-        userId: dbUser.id,
-        title: 'Iscrizione cancellata',
-        message: `La tua iscrizione al corso "${dbCourse.title}" è stata cancellata`,
-        type: 'INFO',
-      },
-    })
+    // Check if user has any remaining EduPlan enrollments
+    const remainingEduPlanEnrollments = dbUser.enrollments.filter(
+      e => e.courseId !== dbCourse.id
+    ).length
+
+    let userDeleted = false
+
+    // If no more EduPlan enrollments, delete the user entirely
+    if (remainingEduPlanEnrollments === 0) {
+      // Delete user and all related data (cascades handled by Prisma)
+      await db.user.delete({
+        where: { id: dbUser.id }
+      })
+      userDeleted = true
+      console.log(`[WEBHOOK] User ${dbUser.email} deleted - no more EduPlan enrollments`)
+    } else {
+      // Notify user about cancelled enrollment
+      await db.notification.create({
+        data: {
+          userId: dbUser.id,
+          title: 'Iscrizione cancellata',
+          message: `La tua iscrizione al corso "${dbCourse.title}" è stata cancellata`,
+          type: 'INFO',
+        },
+      })
+    }
 
     return {
       success: true,
-      data: { message: 'Enrollment cancelled successfully' },
+      data: {
+        message: userDeleted
+          ? 'Enrollment cancelled and user deleted (no more EduPlan enrollments)'
+          : 'Enrollment cancelled successfully',
+        user_deleted: userDeleted,
+        remaining_enrollments: remainingEduPlanEnrollments
+      },
     }
   } catch (error) {
     console.error('[ENROLLMENT_CANCELLED_ERROR]', error)
