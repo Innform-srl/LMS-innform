@@ -53,7 +53,8 @@
       "Bash(npx vercel:*)",
       "Bash(npx prisma generate:*)",
       "Bash(npx prisma validate:*)",
-      "Bash(npx prisma db pull:*)"
+      "Bash(npx prisma db pull:*)",
+      "Bash(node check-sessions.js:*)"
     ]
   }
 }
