@@ -26,16 +26,42 @@ export async function DELETE(
       )
     }
 
-    // Check if user exists
+    // Check if user exists and has EduPlan enrollments
     const user = await db.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, role: true }
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        enrollments: {
+          where: {
+            tmsEnrollmentId: { not: null }
+          },
+          select: {
+            id: true,
+            tmsEnrollmentId: true,
+            course: { select: { title: true } }
+          }
+        }
+      }
     })
 
     if (!user) {
       return NextResponse.json(
         { error: "Utente non trovato" },
         { status: 404 }
+      )
+    }
+
+    // Block deletion if user has active EduPlan enrollments
+    if (user.enrollments.length > 0) {
+      const courseNames = user.enrollments.map(e => e.course?.title || 'Corso sconosciuto').join(', ')
+      return NextResponse.json(
+        {
+          error: `Impossibile eliminare: l'utente ha ${user.enrollments.length} iscrizione/i attiva/e da EduPlan (${courseNames}). Elimina prima l'iscrizione da EduPlan.`,
+          eduplanEnrollments: user.enrollments.length
+        },
+        { status: 400 }
       )
     }
 
