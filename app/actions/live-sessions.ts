@@ -104,7 +104,7 @@ export async function createLiveSession(data: {
     courseId?: string
 }) {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
+    if (!session?.user?.id || session.user.role !== "ADMIN") {
         throw new Error("Unauthorized")
     }
 
