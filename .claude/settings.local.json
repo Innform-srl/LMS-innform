@@ -48,7 +48,9 @@
       "Bash(DATABASE_URL=\"postgresql://postgres.vcehpsfhhdqoovwvsytp:cK%60Oe%7CR%23ENE*9%7C@aws-1-eu-west-1.pooler.supabase.com:6543/postgres\" npx prisma migrate:*)",
       "Bash(DATABASE_URL=\"postgresql://postgres.vcehpsfhhdqoovwvsytp:cK%60Oe%7CR%23ENE*9%7C@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true\" npx prisma db push:*)",
       "Bash(npx next build)",
-      "Bash(openssl rand:*)"
+      "Bash(openssl rand:*)",
+      "Bash(npx supabase functions deploy:*)",
+      "Bash(npx vercel:*)"
     ]
   }
 }

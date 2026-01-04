@@ -1,15 +1,256 @@
 # Guida Integrazione LMS-INNFORM ↔ TMS (EduPlan)
 
-**Versione:** 3.2
-**Ultimo aggiornamento:** 27 Dicembre 2025, ore 13:00
+**Versione:** 4.1
+**Ultimo aggiornamento:** 4 Gennaio 2026
 
 ---
 
-# ISTRUZIONI PER AGENTE EDUPLAN
+## Stato Integrazione
 
-## Stato Integrazione: LMS PRONTO ✅ | TMS (EduPlan) PRONTO ✅
+| Direzione | Stato | Note |
+|-----------|-------|------|
+| LMS → EduPlan | ✅ PRONTO | Edge Function attiva, riceve webhook |
+| EduPlan → LMS | ✅ PRONTO | Endpoint `/api/webhooks/tms` attivo |
+| API Corsi | ✅ PRONTO | Endpoint `/api/eduplan/courses` per sync lista corsi |
 
-L'integrazione è **attiva**. Il LMS invia automaticamente webhook al TMS.
+---
+
+# INTEGRAZIONE COMPLETATA ✅
+
+## Endpoint Disponibili
+
+### 1. Webhook TMS → LMS (per ricevere iscrizioni da EduPlan)
+
+```
+POST https://lms.innform.eu/lms/api/webhooks/tms
+```
+
+### Headers che EduPlan invia
+
+```
+Content-Type: application/json
+X-TMS-Signature: sha256=<hmac_signature>
+X-TMS-Timestamp: <iso_timestamp>
+```
+
+### Codice per verificare la firma (Node.js)
+
+```javascript
+const crypto = require('crypto');
+
+const TMS_WEBHOOK_SECRET = 'innform-lms-tms-integration-2025-secret';
+
+function verifySignature(payload, signature, timestamp) {
+  // 1. Verifica timestamp (max 5 minuti)
+  const requestTime = new Date(timestamp).getTime();
+  const now = Date.now();
+  if (Math.abs(now - requestTime) > 5 * 60 * 1000) {
+    return false; // Richiesta scaduta
+  }
+
+  // 2. Calcola firma attesa
+  const expectedSignature = 'sha256=' + crypto
+    .createHmac('sha256', TMS_WEBHOOK_SECRET)
+    .update(payload)
+    .digest('hex');
+
+  // 3. Confronta firme
+  return signature === expectedSignature;
+}
+
+// Esempio Express.js
+app.post('/api/webhooks/tms', (req, res) => {
+  const signature = req.headers['x-tms-signature'];
+  const timestamp = req.headers['x-tms-timestamp'];
+  const payload = JSON.stringify(req.body);
+
+  if (!verifySignature(payload, signature, timestamp)) {
+    return res.status(401).json({ success: false, error: 'Invalid signature' });
+  }
+
+  // Processa evento
+  const { event, data } = req.body;
+
+  switch (event) {
+    case 'enrollment_created':
+      // Crea utente se non esiste e iscrivilo al corso
+      handleEnrollmentCreated(data);
+      break;
+    case 'enrollment_cancelled':
+      // Rimuovi iscrizione
+      handleEnrollmentCancelled(data);
+      break;
+    case 'enrollment_updated':
+      // Aggiorna iscrizione
+      handleEnrollmentUpdated(data);
+      break;
+  }
+
+  res.json({ success: true });
+});
+```
+
+---
+
+## 2. Eventi che EduPlan invia a LMS
+
+### enrollment_created - Nuova iscrizione
+
+```json
+{
+  "event": "enrollment_created",
+  "timestamp": "2026-01-03T10:30:00.000Z",
+  "data": {
+    "enrollment_id": "uuid-iscrizione-eduplan",
+    "user": {
+      "email": "mario.rossi@email.com",
+      "first_name": "Mario",
+      "last_name": "Rossi",
+      "company": "Azienda SRL",
+      "job_title": "Developer"
+    },
+    "course": {
+      "code": "AI-BASE",
+      "lms_course_id": "corso-ai-fundamentals",
+      "title": "Corso AI Fundamentals",
+      "start_date": "2026-02-01",
+      "end_date": "2026-02-28"
+    }
+  }
+}
+```
+
+**Azione LMS**:
+1. Cerca utente per email, crealo se non esiste
+2. Iscrivilo al corso `lms_course_id`
+3. Salva `enrollment_id` per riferimento futuro
+
+---
+
+### enrollment_cancelled - Iscrizione cancellata
+
+```json
+{
+  "event": "enrollment_cancelled",
+  "timestamp": "2026-01-03T11:00:00.000Z",
+  "data": {
+    "enrollment_id": "uuid-iscrizione-eduplan",
+    "user": {
+      "email": "mario.rossi@email.com"
+    },
+    "reason": "Richiesta dal partecipante"
+  }
+}
+```
+
+**Azione LMS**: Disiscrivere l'utente dal corso
+
+---
+
+### enrollment_updated - Iscrizione modificata
+
+```json
+{
+  "event": "enrollment_updated",
+  "timestamp": "2026-01-03T11:30:00.000Z",
+  "data": {
+    "enrollment_id": "uuid-iscrizione-eduplan",
+    "updates": {
+      "status": "confirmed"
+    }
+  }
+}
+```
+
+---
+
+## 3. Risposta che LMS deve restituire
+
+```json
+// Successo (HTTP 200)
+{
+  "success": true,
+  "message": "Enrollment created"
+}
+
+// Errore (HTTP 4xx)
+{
+  "success": false,
+  "error": {
+    "code": "USER_EXISTS",
+    "message": "User already enrolled in this course"
+  }
+}
+```
+
+---
+
+## 4. Configurazione LMS
+
+Aggiungi queste variabili ambiente:
+
+```env
+# URL base TMS (EduPlan)
+TMS_API_BASE_URL=https://ikjqbmjyjuhkwtdvxjai.supabase.co/functions/v1/lms-integration
+
+# Supabase Anon Key per autenticazione
+TMS_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Secret UNICO per firma HMAC (usato in entrambe le direzioni)
+TMS_WEBHOOK_SECRET=innform-lms-tms-integration-2025-secret
+
+# API Key per EduPlan (accesso endpoint /api/eduplan/courses)
+EDUPLAN_API_KEY=your-api-key
+```
+
+---
+
+## 5. Checklist per LMS
+
+- [ ] Creare endpoint `POST /api/webhooks/tms`
+- [ ] Implementare verifica firma HMAC-SHA256
+- [ ] Gestire evento `enrollment_created`
+- [ ] Gestire evento `enrollment_cancelled`
+- [ ] Gestire evento `enrollment_updated`
+- [ ] Testare con curl (vedi sezione Test)
+- [ ] Comunicare a EduPlan che endpoint e pronto
+
+**Quando LMS comunica che l'endpoint e pronto**, EduPlan attivera i webhook impostando `VITE_LMS_OUTBOUND_ENABLED=true`.
+
+---
+
+## 6. Test endpoint LMS
+
+```bash
+curl -X POST https://innform.eu/lms/api/webhooks/tms \
+  -H "Content-Type: application/json" \
+  -H "X-TMS-Signature: sha256=test" \
+  -H "X-TMS-Timestamp: 2026-01-03T10:00:00.000Z" \
+  -d '{
+    "event": "enrollment_created",
+    "timestamp": "2026-01-03T10:00:00.000Z",
+    "data": {
+      "enrollment_id": "test-123",
+      "user": {
+        "email": "test@example.com",
+        "first_name": "Test",
+        "last_name": "User"
+      },
+      "course": {
+        "lms_course_id": "corso-test",
+        "title": "Corso Test"
+      }
+    }
+  }'
+```
+
+---
+---
+---
+
+# DOCUMENTAZIONE ESISTENTE (LMS → EduPlan)
+
+La parte sotto documenta i webhook che LMS gia invia a EduPlan (funzionante).
 
 ---
 
@@ -44,15 +285,16 @@ X-LMS-Timestamp: <timestamp-iso8601>
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlranFibWp5anVoa3d0ZHZ4amFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwMzc4MDksImV4cCI6MjA3NjYxMzgwOX0.6MqvODmDE27UtnTXgI7ZiZF1th5q4QVVxwVu_2czBcs
 ```
 
-**Secret HMAC condiviso**: `innform-lms-tms-integration-2025-secret`
+**Secret HMAC condiviso (UNICO per entrambe le direzioni)**: `innform-lms-tms-integration-2025-secret`
 
 ### Come verificare la firma nel TMS (EduPlan)
 
 ```typescript
 import { createHmac } from 'crypto';
 
+// NOTA: Usare lo stesso TMS_WEBHOOK_SECRET per entrambe le direzioni
 function verifyLMSSignature(body: string, signature: string, timestamp: string): boolean {
-  const secret = 'innform-lms-tms-integration-2025-secret';
+  const secret = process.env.TMS_WEBHOOK_SECRET; // 'innform-lms-tms-integration-2025-secret'
 
   // 1. Verifica timestamp (max 5 minuti)
   const webhookTime = new Date(timestamp).getTime();
@@ -422,8 +664,11 @@ TMS_API_BASE_URL=https://ikjqbmjyjuhkwtdvxjai.supabase.co/functions/v1/lms-integ
 # Chiave Supabase per autenticazione (header Authorization: Bearer <key>)
 TMS_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlranFibWp5anVoa3d0ZHZ4amFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwMzc4MDksImV4cCI6MjA3NjYxMzgwOX0.6MqvODmDE27UtnTXgI7ZiZF1th5q4QVVxwVu_2czBcs
 
-# Secret per firma HMAC-SHA256
+# Secret UNICO per firma HMAC-SHA256 (entrambe le direzioni)
 TMS_WEBHOOK_SECRET=innform-lms-tms-integration-2025-secret
+
+# API Key per EduPlan (accesso endpoint /api/eduplan/courses)
+EDUPLAN_API_KEY=a84a5cc35fd769813a3192f367a77c28b15acc39eeea3178c448d92d5f43da5a
 ```
 
 ### Lato TMS (EduPlan) ✅ COMPLETATO

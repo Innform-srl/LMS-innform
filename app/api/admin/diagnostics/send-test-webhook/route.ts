@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
         }
 
         const payloadString = JSON.stringify(payload)
-        const secret = process.env.LMS_WEBHOOK_SECRET || 'test-secret'
+        const secret = process.env.TMS_WEBHOOK_SECRET || 'test-secret'
         const signature = crypto.createHmac('sha256', secret).update(payloadString).digest('hex')
 
         // Send webhook

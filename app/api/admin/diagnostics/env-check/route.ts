@@ -3,9 +3,8 @@ import { auth } from '@/lib/auth'
 
 const REQUIRED_ENV_VARS = [
     'TMS_API_BASE_URL',
-    'TMS_API_KEY',
     'TMS_WEBHOOK_SECRET',
-    'LMS_WEBHOOK_SECRET',
+    'TMS_SUPABASE_ANON_KEY',
 ]
 
 const OPTIONAL_ENV_VARS = [

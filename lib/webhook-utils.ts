@@ -6,8 +6,8 @@
 import crypto from 'crypto'
 
 // Environment variables
+// Using single shared secret for both directions (TMS ↔ LMS)
 const TMS_WEBHOOK_SECRET = process.env.TMS_WEBHOOK_SECRET || ''
-const LMS_WEBHOOK_SECRET = process.env.LMS_WEBHOOK_SECRET || ''
 const TMS_API_BASE_URL = process.env.TMS_API_BASE_URL || ''
 const TMS_SUPABASE_ANON_KEY = process.env.TMS_SUPABASE_ANON_KEY || ''
 
