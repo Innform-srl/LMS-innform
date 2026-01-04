@@ -12,7 +12,7 @@ export async function GET(
     { params }: { params: Promise<{ sessionId: string }> }
 ) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return NextResponse.json({ error: "Non autenticato" }, { status: 401 })
     }
 
@@ -80,7 +80,7 @@ export async function POST(
     { params }: { params: Promise<{ sessionId: string }> }
 ) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return NextResponse.json({ error: "Non autenticato" }, { status: 401 })
     }
 

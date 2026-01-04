@@ -54,7 +54,8 @@
       "Bash(npx prisma generate:*)",
       "Bash(npx prisma validate:*)",
       "Bash(npx prisma db pull:*)",
-      "Bash(node check-sessions.js:*)"
+      "Bash(node check-sessions.js:*)",
+      "Bash(npx tsc --noEmit)"
     ]
   }
 }
