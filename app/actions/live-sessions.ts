@@ -88,9 +88,14 @@ export async function createLiveSession(data: {
 
     await db.liveSession.create({
         data: {
-            ...data,
+            title: data.title,
+            description: data.description,
+            startTime: data.startTime,
+            endTime: data.endTime,
+            meetingUrl: data.meetingUrl,
+            courseId: data.courseId || null,
             instructorId: session.user.id
-        } as any
+        }
     })
 
     revalidatePath("/admin/live-sessions")
