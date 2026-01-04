@@ -15,6 +15,7 @@ import { Upload, Search, UserPlus, Edit, ChevronLeft, ChevronRight } from "lucid
 import { Input } from "@/components/ui/input"
 import { ResetPasswordDialog } from "./reset-password-dialog"
 import { ApproveUserButton } from "./approve-button"
+import { DeleteUserButton } from "./delete-user-button"
 
 const PAGE_SIZE = 20
 
@@ -226,6 +227,11 @@ export default async function UsersPage({
                                                         <Edit className="h-4 w-4" />
                                                     </Button>
                                                 </Link>
+                                                <DeleteUserButton
+                                                    userId={user.id}
+                                                    userName={user.name || "Utente"}
+                                                    userEmail={user.email}
+                                                />
                                             </div>
                                         </TableCell>
                                     </TableRow>
