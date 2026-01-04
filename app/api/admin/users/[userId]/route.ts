@@ -17,6 +17,8 @@ export async function DELETE(
     }
 
     const { userId } = await params
+    const { searchParams } = new URL(request.url)
+    const forceDelete = searchParams.get('force') === 'true'
 
     // Prevent admin from deleting themselves
     if (session.user.id === userId) {
@@ -53,13 +55,14 @@ export async function DELETE(
       )
     }
 
-    // Block deletion if user has active EduPlan enrollments
-    if (user.enrollments.length > 0) {
+    // Block deletion if user has active EduPlan enrollments (unless force=true)
+    if (user.enrollments.length > 0 && !forceDelete) {
       const courseNames = user.enrollments.map(e => e.course?.title || 'Corso sconosciuto').join(', ')
       return NextResponse.json(
         {
           error: `Impossibile eliminare: l'utente ha ${user.enrollments.length} iscrizione/i attiva/e da EduPlan (${courseNames}). Elimina prima l'iscrizione da EduPlan.`,
-          eduplanEnrollments: user.enrollments.length
+          eduplanEnrollments: user.enrollments.length,
+          canForceDelete: true
         },
         { status: 400 }
       )
@@ -70,11 +73,15 @@ export async function DELETE(
       where: { id: userId }
     })
 
-    console.log(`[ADMIN] User ${user.email} deleted by ${session.user.email}`)
+    const wasForced = user.enrollments.length > 0
+
+    console.log(`[ADMIN] User ${user.email} deleted by ${session.user.email}${wasForced ? ' (forced)' : ''}`)
 
     return NextResponse.json({
       success: true,
-      message: "Utente eliminato con successo"
+      message: wasForced
+        ? "Utente eliminato forzatamente (iscrizioni EduPlan orfane rimosse)"
+        : "Utente eliminato con successo"
     })
 
   } catch (error) {
