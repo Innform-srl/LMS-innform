@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
-import { EnrollButton } from "./enroll-button"
 import { Clock, Calendar, CheckCircle } from "lucide-react"
 
 export default async function EnrollPage({ params }: { params: Promise<{ courseId: string }> }) {
@@ -95,10 +94,15 @@ export default async function EnrollPage({ params }: { params: Promise<{ courseI
 
                             <div className="flex items-center justify-between bg-accent/50 p-6 rounded-xl border border-border">
                                 <div>
-                                    <p className="text-sm text-muted-foreground mb-1">Pronto a iniziare?</p>
-                                    <p className="text-foreground font-medium">Iscriviti ora per accedere ai contenuti</p>
+                                    <p className="text-sm text-muted-foreground mb-1">Interessato a questo corso?</p>
+                                    <p className="text-foreground font-medium">Contatta il tuo responsabile per richiedere l&apos;iscrizione</p>
                                 </div>
-                                <EnrollButton courseId={course.id} />
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                    <span className="text-sm">Iscrizione gestita da EduPlan</span>
+                                </div>
                             </div>
                         </div>
                     </div>
