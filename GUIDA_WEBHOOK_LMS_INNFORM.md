@@ -399,6 +399,210 @@ TMS_WEBHOOK_SECRET=innform-lms-tms-integration-2025-secret
 
 ---
 
+---
+
+## Endpoint EduPlan Dedicati
+
+Oltre all'endpoint generale `/api/webhooks/tms`, sono disponibili endpoint dedicati per EduPlan:
+
+### POST /api/eduplan/users - Creazione Utente
+
+Crea un nuovo utente nel LMS con credenziali specifiche.
+
+**URL:** `https://lms.innform.eu/lms/api/eduplan/users`
+
+**Headers:**
+```
+Content-Type: application/json
+X-TMS-Signature: sha256=<HMAC-SHA256 del body>
+X-TMS-Timestamp: <ISO timestamp>
+```
+
+**Payload:**
+```json
+{
+  "email": "mario.rossi@email.com",
+  "firstName": "Mario",
+  "lastName": "Rossi",
+  "password": "TempPass123!",
+  "role": "learner",
+  "sendWelcomeEmail": false,
+  "metadata": {
+    "eduplan_person_id": "uuid-della-persona",
+    "source": "eduplan"
+  }
+}
+```
+
+**Risposta Successo (200):**
+```json
+{
+  "success": true,
+  "id": "cmk39x3a20001yb2bmrcmmjdh"
+}
+```
+
+---
+
+### POST /api/eduplan/enrollments - Iscrizione a Corso
+
+Iscrive un utente esistente a un corso specifico.
+
+**URL:** `https://lms.innform.eu/lms/api/eduplan/enrollments`
+
+**Headers:**
+```
+Content-Type: application/json
+X-TMS-Signature: sha256=<HMAC-SHA256 del body>
+X-TMS-Timestamp: <ISO timestamp>
+```
+
+**Payload:**
+```json
+{
+  "user_email": "mario.rossi@email.com",
+  "course_id": "course001",
+  "eduplan_enrollment_id": "ep-enroll-uuid-123",
+  "due_date": "2026-03-01T00:00:00Z"
+}
+```
+
+| Campo | Tipo | Obbligatorio | Descrizione |
+|-------|------|--------------|-------------|
+| `user_email` | string | ✅ | Email utente (case-insensitive) |
+| `course_id` | string | ✅ | ID del corso LMS |
+| `eduplan_enrollment_id` | string | ✅ | ID iscrizione su EduPlan (per sync) |
+| `due_date` | string | ❌ | Data scadenza (ISO 8601) |
+
+**Risposta Successo - Nuova iscrizione (201):**
+```json
+{
+  "success": true,
+  "enrollment_id": "cuid123",
+  "message": "User enrolled successfully"
+}
+```
+
+**Risposta Successo - Già iscritto (200):**
+```json
+{
+  "success": true,
+  "enrollment_id": "existing-id",
+  "existing": true,
+  "message": "User already enrolled in this course"
+}
+```
+
+**Errori:**
+- `400` - Campi obbligatori mancanti
+- `401` - Firma HMAC non valida
+- `404` - Utente o corso non trovato (`USER_NOT_FOUND` / `COURSE_NOT_FOUND`)
+- `429` - Rate limit superato
+
+---
+
+### DELETE /api/eduplan/enrollments - Cancellazione Iscrizione
+
+Rimuove l'iscrizione di un utente da un corso.
+
+**URL:** `https://lms.innform.eu/lms/api/eduplan/enrollments`
+
+**Headers:**
+```
+Content-Type: application/json
+X-TMS-Signature: sha256=<HMAC-SHA256 del body>
+X-TMS-Timestamp: <ISO timestamp>
+```
+
+**Payload (opzione 1 - per ID EduPlan):**
+```json
+{
+  "eduplan_enrollment_id": "ep-enroll-uuid-123"
+}
+```
+
+**Payload (opzione 2 - per email + corso):**
+```json
+{
+  "user_email": "mario.rossi@email.com",
+  "course_id": "course001"
+}
+```
+
+**Risposta Successo (200):**
+```json
+{
+  "success": true,
+  "message": "Enrollment deleted successfully"
+}
+```
+
+---
+
+### GET /api/eduplan/courses - Lista Corsi Disponibili
+
+Recupera la lista dei corsi LMS disponibili per l'integrazione.
+
+**URL:** `https://lms.innform.eu/lms/api/eduplan/courses`
+
+**Headers:**
+```
+x-api-key: <EDUPLAN_API_KEY>
+```
+
+**Query Parameters:**
+- `include_modules=true` - Include dettagli moduli
+- `published_only=true` - Solo corsi pubblicati (default: true)
+- `limit=100` - Limite risultati
+- `offset=0` - Offset paginazione
+
+**Risposta:**
+```json
+{
+  "success": true,
+  "courses": [
+    {
+      "id": "course001",
+      "title": "Corso AI",
+      "description": "...",
+      "modules_count": 5,
+      "enrollments_count": 42,
+      "image_url": "..."
+    }
+  ],
+  "pagination": {
+    "total": 10,
+    "limit": 100,
+    "offset": 0,
+    "hasMore": false
+  }
+}
+```
+
+---
+
+## Flusso Completo EduPlan → LMS
+
+```
+1. EduPlan crea utente:
+   POST /api/eduplan/users
+   → LMS crea User con password hashata
+
+2. EduPlan iscrive utente al corso:
+   POST /api/eduplan/enrollments
+   → LMS crea Enrollment con tmsEnrollmentId
+
+3. Utente fa login su LMS
+   → Vede catalogo corsi
+   → Corso EduPlan già assegnato con progresso 0%
+
+4. EduPlan cancella iscrizione (opzionale):
+   DELETE /api/eduplan/enrollments
+   → LMS elimina Enrollment
+```
+
+---
+
 ## Contatti
 
 Per problemi di integrazione, contattare il team EduPlan.
