@@ -19,7 +19,8 @@ export async function POST(request: Request) {
         }
 
         console.log("[LOGIN] Looking up user in database...")
-        const user = await db.user.findUnique({ where: { email } })
+        const normalizedEmail = email.toLowerCase()
+        const user = await db.user.findUnique({ where: { email: normalizedEmail } })
         console.log("[LOGIN] User found:", user ? "yes" : "no")
 
         if (!user || !user.password) {
