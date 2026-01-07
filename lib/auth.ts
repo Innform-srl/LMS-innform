@@ -17,7 +17,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 const parsedCredentials = loginSchema.safeParse(credentials)
 
                 if (parsedCredentials.success) {
-                    const { email, password } = parsedCredentials.data
+                    const { email: rawEmail, password } = parsedCredentials.data
+                    const email = rawEmail.toLowerCase() // Normalize email to lowercase
                     console.log("Attempting login for:", email)
                     try {
                         fs.appendFileSync("auth-debug.txt", `Attempting login for: ${email}\n`)
