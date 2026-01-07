@@ -52,15 +52,6 @@ export default async function CoursePlayerPage({ params }: { params: Promise<{ c
 
     const completedModuleIds = new Set(moduleProgress.map(mp => mp.moduleId))
 
-    console.log("DEBUG SERVER page.tsx:", {
-        userId: session.user.id,
-        userEmail: session.user.email,
-        courseId,
-        modulesCount: course.modules.length,
-        foundProgressCount: moduleProgress.length,
-        foundModuleIds: moduleProgress.map(mp => mp.moduleId)
-    })
-
     const userRating = await db.courseRating.findUnique({
         where: {
             userId_courseId: {

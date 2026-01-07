@@ -10,9 +10,6 @@ export default async function CoursesPage() {
     const session = await auth()
     if (!session?.user) redirect("/login")
 
-    console.log("DEBUG ADMIN COURSES DB URL:", process.env.DATABASE_URL)
-    console.log("DEBUG ADMIN COURSES USER:", session.user)
-
     const courses = await db.course.findMany({
         orderBy: { createdAt: "desc" },
         include: {

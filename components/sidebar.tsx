@@ -166,6 +166,7 @@ export function Sidebar({ user }: SidebarProps) {
                                 <Link
                                     key={route.href}
                                     href={route.href}
+                                    prefetch={false}
                                     onClick={() => setIsOpen(false)}
                                     className={cn(
                                         "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
@@ -192,6 +193,7 @@ export function Sidebar({ user }: SidebarProps) {
                                     <Link
                                         key={route.href}
                                         href={route.href}
+                                        prefetch={false}
                                         onClick={() => setIsOpen(false)}
                                         className={cn(
                                             "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
@@ -224,7 +226,7 @@ export function Sidebar({ user }: SidebarProps) {
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                            <Link href="/settings">
+                            <Link href="/settings" prefetch={false}>
                                 <Button variant="outline" size="sm" className="w-full border-border hover:bg-accent hover:text-accent-foreground text-xs">
                                     <Settings className="h-3 w-3 mr-2" />
                                     Impostazioni

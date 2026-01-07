@@ -106,17 +106,14 @@ export function CoursePlayer({
     const [moduleTimeSpent, setModuleTimeSpent] = useState(0)
     const [isTrackingModule, setIsTrackingModule] = useState(false)
 
+    // Refs to prevent duplicate certificate generation and optimize re-renders
+    const certificateGeneratedRef = useRef(false)
+    const timeThresholdMetRef = useRef(false)
+
     const currentModule = modules[currentModuleIndex]
     const progress = modules.length > 0 ? (completedModules.size / modules.length) * 100 : 0
     const isCompleted = progress === 100
 
-    console.log("DEBUG CoursePlayer:", {
-        modulesLength: modules.length,
-        completedSize: completedModules.size,
-        progress,
-        isCompleted,
-        completedIds: Array.from(completedModules)
-    })
 
     useEffect(() => {
         if (progress !== enrollment.progress) {
@@ -185,50 +182,58 @@ export function CoursePlayer({
     }
 
     // Check for course completion and certificate generation
+    // Using ref to prevent multiple API calls when localTimeSpent updates every 5 seconds
     useEffect(() => {
+        // Skip if certificate already generated or in progress
+        if (certificateGeneratedRef.current || enrollment.certificate) return
+
+        const meetsRequirements = isCompleted &&
+            course.minimumDuration > 0 &&
+            localTimeSpent >= course.minimumDuration
+
+        if (!meetsRequirements) return
+
         const checkCertificate = async () => {
-            if (
-                isCompleted &&
-                course.minimumDuration > 0 &&
-                localTimeSpent >= course.minimumDuration &&
-                !enrollment.certificate
-            ) {
-                try {
-                    const res = await fetch(`/api/certificates/generate`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ enrollmentId: enrollment.id })
+            certificateGeneratedRef.current = true // Prevent duplicate calls
+
+            try {
+                const res = await fetch(`/api/certificates/generate`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ enrollmentId: enrollment.id })
+                })
+
+                if (res.ok) {
+                    const data = await res.json()
+
+                    confetti({
+                        particleCount: 100,
+                        spread: 70,
+                        origin: { y: 0.6 }
                     })
 
-                    if (res.ok) {
-                        const data = await res.json()
+                    setShowCertificate(true)
+                    setUserName(data.userName || "Studente")
 
-                        confetti({
-                            particleCount: 100,
-                            spread: 70,
-                            origin: { y: 0.6 }
+                    fetch('/api/user/add-points', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            points: 100,
+                            reason: `COURSE_COMPLETED_${course.id}`,
+                            metadata: { courseId: course.id, courseTitle: course.title }
                         })
+                    }).catch(err => console.error('Gamification error:', err))
 
-                        setShowCertificate(true)
-                        setUserName(data.userName || "Studente")
-
-                        fetch('/api/user/add-points', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                points: 100,
-                                reason: `COURSE_COMPLETED_${course.id}`,
-                                metadata: { courseId: course.id, courseTitle: course.title }
-                            })
-                        }).catch(err => console.error('Gamification error:', err))
-
-                        setTimeout(() => {
-                            router.refresh()
-                        }, 1000)
-                    }
-                } catch (error) {
-                    console.error("Error generating certificate:", error)
+                    setTimeout(() => {
+                        router.refresh()
+                    }, 1000)
+                } else {
+                    certificateGeneratedRef.current = false // Allow retry on failure
                 }
+            } catch (error) {
+                console.error("Error generating certificate:", error)
+                certificateGeneratedRef.current = false // Allow retry on failure
             }
         }
 
@@ -236,21 +241,25 @@ export function CoursePlayer({
     }, [isCompleted, localTimeSpent, course.minimumDuration, enrollment.certificate, enrollment.id, router, course.id, course.title])
 
     // Check for time threshold popup
+    // Using ref to prevent running every 5 seconds after threshold is already met
     useEffect(() => {
-        if (
-            course.minimumDuration > 0 &&
+        // Skip if already shown or already met threshold
+        if (timeThresholdMetRef.current || hasShownTimePopup) return
+
+        const meetsThreshold = course.minimumDuration > 0 &&
             localTimeSpent >= course.minimumDuration * 60 &&
-            !hasShownTimePopup &&
             !enrollment.certificate
-        ) {
-            setShowTimePopup(true)
-            setHasShownTimePopup(true)
-            confetti({
-                particleCount: 100,
-                spread: 70,
-                origin: { y: 0.6 }
-            })
-        }
+
+        if (!meetsThreshold) return
+
+        timeThresholdMetRef.current = true
+        setShowTimePopup(true)
+        setHasShownTimePopup(true)
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+        })
     }, [localTimeSpent, course.minimumDuration, hasShownTimePopup, enrollment.certificate])
 
     const handleMarkComplete = async () => {

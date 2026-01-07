@@ -20,13 +20,6 @@ export default async function CourseCatalogPage({
     const params = await searchParams
     const query = params.query || ""
 
-    console.log("DEBUG COURSES PAGE:", {
-        userId: session.user.id,
-        email: session.user.email,
-        query,
-        dbUrl: process.env.DATABASE_URL
-    })
-
     const courses = await db.course.findMany({
         where: {
             published: true,
