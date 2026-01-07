@@ -147,7 +147,7 @@ export default async function Home() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Link href="/admin/courses">
+                  <Link href="/admin/courses" prefetch={false}>
                     <Button className="w-full justify-start bg-primary text-primary-foreground hover:bg-primary/90">
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -156,7 +156,7 @@ export default async function Home() {
                       Gestisci Corsi e Moduli
                     </Button>
                   </Link>
-                  <Link href="/admin/analytics">
+                  <Link href="/admin/analytics" prefetch={false}>
                     <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/5">
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -164,7 +164,7 @@ export default async function Home() {
                       Analytics
                     </Button>
                   </Link>
-                  <Link href="/admin/users">
+                  <Link href="/admin/users" prefetch={false}>
                     <Button variant="outline" className="w-full justify-start border-border hover:bg-accent hover:text-accent-foreground">
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -172,7 +172,7 @@ export default async function Home() {
                       Gestisci Utenti
                     </Button>
                   </Link>
-                  <Link href="/admin/learning-paths">
+                  <Link href="/admin/learning-paths" prefetch={false}>
                     <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/5">
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -193,7 +193,7 @@ export default async function Home() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Link href="/courses">
+                <Link href="/courses" prefetch={false}>
                   <Button className="w-full justify-start bg-primary text-primary-foreground hover:bg-primary/90">
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -201,7 +201,7 @@ export default async function Home() {
                     Esplora tutti i corsi
                   </Button>
                 </Link>
-                <Link href="/settings">
+                <Link href="/settings" prefetch={false}>
                   <Button variant="outline" className="w-full justify-start border-border hover:bg-accent hover:text-accent-foreground">
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -302,6 +302,7 @@ export default async function Home() {
                   <Link
                     key={enrollment.id}
                     href={`/courses/${enrollment.course.id}`}
+                    prefetch={false}
                     className="flex items-center justify-between p-4 glass border-border rounded-lg hover:bg-accent/50 transition-all"
                   >
                     <div className="flex-1">
@@ -450,7 +451,7 @@ export default async function Home() {
                           </div>
                         )}
                       </div>
-                      <Link href={`/courses/${enrollment.course.id}`}>
+                      <Link href={`/courses/${enrollment.course.id}`} prefetch={false}>
                         <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                           Continua Corso
                         </Button>
@@ -499,13 +500,13 @@ export default async function Home() {
                     <CardDescription className="text-muted-foreground">{enrollment.course.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Link href={`/courses/${enrollment.course.id}`}>
+                    <Link href={`/courses/${enrollment.course.id}`} prefetch={false}>
                       <Button variant="outline" className="w-full border-border hover:bg-accent hover:text-accent-foreground mb-2">
                         Rivedi Corso
                       </Button>
                     </Link>
                     {enrollment.certificate && (
-                      <Link href={`/api/certificates/${enrollment.certificate.id}/download`} target="_blank">
+                      <Link href={`/api/certificates/${enrollment.certificate.id}/download`} target="_blank" prefetch={false}>
                         <Button className="w-full bg-green-600 text-white hover:bg-green-700">
                           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
