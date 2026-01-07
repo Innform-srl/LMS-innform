@@ -55,7 +55,8 @@
       "Bash(npx prisma validate:*)",
       "Bash(npx prisma db pull:*)",
       "Bash(node check-sessions.js:*)",
-      "Bash(npx tsc --noEmit)"
+      "Bash(npx tsc --noEmit)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd EduPlan user sync endpoint and webhook documentation\n\n- Add /api/eduplan/users endpoint for user creation/deletion from EduPlan\n- POST: Creates user with password and metadata from EduPlan\n- DELETE: Removes user when deleted from EduPlan\n- HMAC signature verification for security\n- Rate limiting \\(30 req/min\\)\n- Add comprehensive webhook integration guide\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

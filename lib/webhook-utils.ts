@@ -192,6 +192,15 @@ export function verifyTMSWebhookSignature(
   body: string,
   timestamp: string | null
 ): boolean {
+  // Debug logging
+  const expectedSignature = TMS_WEBHOOK_SECRET
+    ? crypto.createHmac('sha256', TMS_WEBHOOK_SECRET).update(body).digest('hex')
+    : 'NO_SECRET_CONFIGURED'
+  console.log('[WEBHOOK DEBUG] Received signature:', signature)
+  console.log('[WEBHOOK DEBUG] Expected signature:', 'sha256=' + expectedSignature)
+  console.log('[WEBHOOK DEBUG] Secret configured:', !!TMS_WEBHOOK_SECRET)
+  console.log('[WEBHOOK DEBUG] Body length:', body.length)
+
   if (!signature || !TMS_WEBHOOK_SECRET) {
     console.error('[WEBHOOK] Missing signature or secret')
     return false
