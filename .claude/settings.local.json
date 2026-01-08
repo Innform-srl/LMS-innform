@@ -56,7 +56,14 @@
       "Bash(npx prisma db pull:*)",
       "Bash(node check-sessions.js:*)",
       "Bash(npx tsc --noEmit)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd EduPlan user sync endpoint and webhook documentation\n\n- Add /api/eduplan/users endpoint for user creation/deletion from EduPlan\n- POST: Creates user with password and metadata from EduPlan\n- DELETE: Removes user when deleted from EduPlan\n- HMAC signature verification for security\n- Rate limiting \\(30 req/min\\)\n- Add comprehensive webhook integration guide\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd EduPlan user sync endpoint and webhook documentation\n\n- Add /api/eduplan/users endpoint for user creation/deletion from EduPlan\n- POST: Creates user with password and metadata from EduPlan\n- DELETE: Removes user when deleted from EduPlan\n- HMAC signature verification for security\n- Rate limiting \\(30 req/min\\)\n- Add comprehensive webhook integration guide\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(npx tsx:*)",
+      "Bash(npm ls:*)",
+      "Bash(git fetch:*)",
+      "Bash(git diff:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nOptimize performance: remove DB query from JWT callback and cleanup\n\n- Remove database query from JWT callback \\(was running on EVERY request\\)\n- Store user role in JWT token at login instead of fetching each time\n- Remove all debug console.log statements\n- Remove file system debug logging from auth\n- Disable session refetch on window focus\n- Add prefetch={false} to sidebar links to reduce HTTP requests\n- Add refs to CoursePlayer to prevent duplicate API calls\n- Make audit log creation non-blocking\n- Add settings page with profile/password management\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nDisable link prefetch on homepage to reduce HTTP requests\n\n- Add prefetch={false} to all Link components on homepage\n- Reduces automatic prefetch requests that caused 404 errors\n- Should improve page load performance significantly\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nRestrict self-enrollment: require EduPlan for course access\n\n- Remove self-enrollment button from course detail page\n- Show \"Contatta il tuo responsabile\" message instead\n- Add \"Non iscritto\" indicator with lock icon on course cards\n- Users can view all courses but access only assigned ones via EduPlan\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
