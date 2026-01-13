@@ -354,3 +354,125 @@ export async function DELETE(req: Request) {
     )
   }
 }
+
+/**
+ * PATCH /api/eduplan/users
+ * Update user password from EduPlan
+ */
+export async function PATCH(req: Request) {
+  const requestId = crypto.randomUUID()
+
+  try {
+    // Get IP for rate limiting
+    const ip = req.headers.get('x-forwarded-for') || 'unknown'
+    const rateLimitKey = `eduplan:users:patch:${ip}`
+
+    // Check rate limit
+    const rateLimit = checkRateLimit(rateLimitKey, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS)
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Too many requests' },
+        { status: 429 }
+      )
+    }
+
+    // Parse body
+    const bodyText = await req.text()
+    let payload: { email: string; password: string }
+
+    try {
+      payload = JSON.parse(bodyText)
+    } catch {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON body' },
+        { status: 400 }
+      )
+    }
+
+    // Verify signature
+    const signature = req.headers.get('x-tms-signature')
+    const timestamp = req.headers.get('x-tms-timestamp')
+
+    if (!verifySignature(signature, bodyText, timestamp)) {
+      console.error('[EDUPLAN] Invalid signature for password update', { email: payload.email })
+      return NextResponse.json(
+        { success: false, error: 'Invalid webhook signature' },
+        { status: 401 }
+      )
+    }
+
+    // Validate required fields
+    if (!payload.email) {
+      return NextResponse.json(
+        { success: false, error: 'Missing required field: email' },
+        { status: 400 }
+      )
+    }
+
+    if (!payload.password) {
+      return NextResponse.json(
+        { success: false, error: 'Missing required field: password' },
+        { status: 400 }
+      )
+    }
+
+    // Find the user
+    const user = await db.user.findUnique({
+      where: { email: payload.email.toLowerCase() },
+    })
+
+    if (!user) {
+      console.log('[EDUPLAN] User not found for password update:', payload.email)
+      return NextResponse.json(
+        { success: false, error: 'User not found', code: 'USER_NOT_FOUND' },
+        { status: 404 }
+      )
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(payload.password, 10)
+
+    // Update the user's password
+    await db.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
+    })
+
+    // Log the webhook event
+    try {
+      await db.webhookEvent.create({
+        data: {
+          source: 'eduplan',
+          eventType: 'user_password_updated',
+          direction: 'incoming',
+          status: 'success',
+          requestPayload: {
+            email: payload.email,
+          },
+          responsePayload: { id: user.id, success: true },
+          processedAt: new Date(),
+        },
+      })
+    } catch (logError) {
+      console.error('[EDUPLAN] Failed to log webhook event:', logError)
+    }
+
+    console.log('[EDUPLAN] User password updated successfully:', payload.email)
+
+    return NextResponse.json({
+      success: true,
+      message: 'Password updated successfully',
+    })
+  } catch (error) {
+    console.error('[EDUPLAN] Error updating password:', error)
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Internal server error',
+        request_id: requestId,
+      },
+      { status: 500 }
+    )
+  }
+}
