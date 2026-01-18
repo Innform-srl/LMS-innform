@@ -1,6 +1,10 @@
 /**
  * EduPlan Enrollment Endpoint
- * Allows EduPlan to enroll users in specific LMS courses
+ * Allows EduPlan to enroll users in specific LMS courses and retrieve student enrollments
+ *
+ * GET /api/eduplan/enrollments?email={student_email}
+ * Headers:
+ *   - X-API-Key: <API key>
  *
  * POST /api/eduplan/enrollments
  * Headers:
@@ -8,7 +12,7 @@
  *   - X-TMS-Timestamp: <ISO timestamp>
  */
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import crypto from 'crypto'
 import { checkRateLimit } from '@/lib/security'
@@ -20,11 +24,241 @@ const LMS_WEBHOOK_SECRET = process.env.LMS_WEBHOOK_SECRET || 'innform-lms-tms-in
 const RATE_LIMIT_REQUESTS = 30
 const RATE_LIMIT_WINDOW_MS = 60 * 1000
 
+// CORS headers for cross-origin requests from innform.eu
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, X-API-Key, Authorization, X-TMS-Signature, X-TMS-Timestamp',
+}
+
+/**
+ * OPTIONS /api/eduplan/enrollments
+ * Handle CORS preflight requests
+ */
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: corsHeaders })
+}
+
 interface EduPlanEnrollmentPayload {
   user_email: string
   course_id: string
   eduplan_enrollment_id: string
   due_date?: string
+}
+
+// Validate API key from request
+function validateApiKey(request: NextRequest): boolean {
+  const apiKey = request.headers.get('x-api-key') || request.headers.get('authorization')?.replace('Bearer ', '')
+  const expectedKey = process.env.EDUPLAN_API_KEY
+
+  if (!expectedKey) {
+    console.error('[EDUPLAN ENROLLMENTS] EDUPLAN_API_KEY not configured')
+    return false
+  }
+
+  return apiKey === expectedKey
+}
+
+/**
+ * GET /api/eduplan/enrollments
+ * Retrieve enrollments for a student by email
+ * Used by innform.eu to display student's courses in dashboard
+ */
+export async function GET(request: NextRequest) {
+  const requestId = crypto.randomUUID()
+
+  try {
+    // Validate API key
+    if (!validateApiKey(request)) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized', message: 'Invalid or missing API key' },
+        { status: 401, headers: corsHeaders }
+      )
+    }
+
+    // Get IP for rate limiting
+    const ip = request.headers.get('x-forwarded-for') || 'unknown'
+    const rateLimitKey = `eduplan:enrollments:get:${ip}`
+
+    // Check rate limit
+    const rateLimit = checkRateLimit(rateLimitKey, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS)
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Too many requests' },
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'X-RateLimit-Limit': RATE_LIMIT_REQUESTS.toString(),
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            'X-RateLimit-Reset': rateLimit.resetAt.toString(),
+          },
+        }
+      )
+    }
+
+    // Get query parameters
+    const { searchParams } = new URL(request.url)
+    const email = searchParams.get('email')
+    const status = searchParams.get('status') // 'completed', 'in_progress', 'all' (default)
+    const includeCertificate = searchParams.get('include_certificate') !== 'false' // default true
+
+    // Validate email parameter
+    if (!email) {
+      return NextResponse.json(
+        { success: false, error: 'Missing required parameter: email' },
+        { status: 400, headers: corsHeaders }
+      )
+    }
+
+    const normalizedEmail = email.toLowerCase()
+
+    console.log('[EDUPLAN ENROLLMENTS] GET request:', {
+      requestId,
+      email: normalizedEmail,
+      status,
+      includeCertificate,
+    })
+
+    // Find user by email (case-insensitive)
+    const user = await db.user.findUnique({
+      where: { email: normalizedEmail },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    })
+
+    // If user not found, return empty enrollments (as per requirements)
+    if (!user) {
+      console.log('[EDUPLAN ENROLLMENTS] User not found, returning empty:', {
+        requestId,
+        email: normalizedEmail,
+      })
+      return NextResponse.json({
+        success: true,
+        data: {
+          student: null,
+          enrollments: [],
+        },
+        meta: {
+          requestId,
+          timestamp: new Date().toISOString(),
+        },
+      }, { headers: corsHeaders })
+    }
+
+    // Build where clause for enrollments
+    const whereClause: { userId: string; completed?: boolean } = { userId: user.id }
+
+    if (status === 'completed') {
+      whereClause.completed = true
+    } else if (status === 'in_progress') {
+      whereClause.completed = false
+    }
+    // 'all' or undefined = no filter
+
+    // Fetch enrollments with course and certificate data
+    const enrollments = await db.enrollment.findMany({
+      where: whereClause,
+      include: {
+        course: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            imageUrl: true,
+            isRequired: true,
+            minimumDuration: true,
+            dueInDays: true,
+          },
+        },
+        ...(includeCertificate && {
+          certificate: {
+            select: {
+              id: true,
+              certificateNumber: true,
+              verificationCode: true,
+              issuedAt: true,
+            },
+          },
+        }),
+      },
+      orderBy: [
+        { completed: 'asc' }, // In progress first
+        { dueDate: 'asc' }, // Then by due date
+        { createdAt: 'desc' }, // Then by most recent
+      ],
+    })
+
+    // Transform to response format
+    const formattedEnrollments = enrollments.map((enrollment) => ({
+      id: enrollment.id,
+      tmsEnrollmentId: enrollment.tmsEnrollmentId,
+      course: {
+        id: enrollment.course.id,
+        title: enrollment.course.title,
+        description: enrollment.course.description,
+        imageUrl: enrollment.course.imageUrl,
+        isRequired: enrollment.course.isRequired,
+        minimumDuration: enrollment.course.minimumDuration,
+      },
+      progress: enrollment.progress,
+      completed: enrollment.completed,
+      timeSpent: enrollment.timeSpent,
+      createdAt: enrollment.createdAt.toISOString(),
+      dueDate: enrollment.dueDate?.toISOString() || null,
+      completedAt: enrollment.completedAt?.toISOString() || null,
+      lastActivityAt: enrollment.lastActivityAt.toISOString(),
+      certificate: includeCertificate && enrollment.certificate
+        ? {
+            id: enrollment.certificate.id,
+            certificateNumber: enrollment.certificate.certificateNumber,
+            verificationCode: enrollment.certificate.verificationCode,
+            issuedAt: enrollment.certificate.issuedAt.toISOString(),
+            downloadUrl: `/api/certificates/${enrollment.certificate.id}/download`,
+          }
+        : null,
+    }))
+
+    console.log('[EDUPLAN ENROLLMENTS] Returning enrollments:', {
+      requestId,
+      userId: user.id,
+      email: user.email,
+      totalEnrollments: formattedEnrollments.length,
+      completedCount: formattedEnrollments.filter((e) => e.completed).length,
+      inProgressCount: formattedEnrollments.filter((e) => !e.completed).length,
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        student: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        },
+        enrollments: formattedEnrollments,
+      },
+      meta: {
+        requestId,
+        timestamp: new Date().toISOString(),
+        totalCount: formattedEnrollments.length,
+      },
+    }, { headers: corsHeaders })
+  } catch (error) {
+    console.error('[EDUPLAN ENROLLMENTS] GET Error:', error)
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Internal server error',
+        requestId,
+      },
+      { status: 500, headers: corsHeaders }
+    )
+  }
 }
 
 /**
@@ -149,17 +383,35 @@ export async function POST(req: Request) {
 
     // Find user by email (case-insensitive)
     const normalizedEmail = payload.user_email.toLowerCase()
+
+    console.log('[EDUPLAN ENROLLMENT] Processing request:', {
+      requestId,
+      user_email: normalizedEmail,
+      course_id: payload.course_id,
+      eduplan_enrollment_id: payload.eduplan_enrollment_id,
+    })
+
     const user = await db.user.findUnique({
       where: { email: normalizedEmail },
     })
 
     if (!user) {
-      console.error('[EDUPLAN ENROLLMENT] User not found:', normalizedEmail)
+      console.error('[EDUPLAN ENROLLMENT] User not found:', {
+        requestId,
+        email: normalizedEmail,
+      })
       return NextResponse.json(
         { success: false, error: 'User not found', code: 'USER_NOT_FOUND' },
         { status: 404 }
       )
     }
+
+    console.log('[EDUPLAN ENROLLMENT] User found:', {
+      requestId,
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+    })
 
     // Find course by ID
     const course = await db.course.findUnique({
@@ -167,12 +419,33 @@ export async function POST(req: Request) {
     })
 
     if (!course) {
-      console.error('[EDUPLAN ENROLLMENT] Course not found:', payload.course_id)
+      // Try to find course by title or other identifier for better error message
+      const allCourses = await db.course.findMany({
+        select: { id: true, title: true },
+        take: 20,
+      })
+      console.error('[EDUPLAN ENROLLMENT] Course not found:', {
+        requestId,
+        requested_course_id: payload.course_id,
+        available_courses: allCourses.map(c => ({ id: c.id, title: c.title })),
+      })
       return NextResponse.json(
-        { success: false, error: 'Course not found', code: 'COURSE_NOT_FOUND' },
+        {
+          success: false,
+          error: 'Course not found',
+          code: 'COURSE_NOT_FOUND',
+          requested_course_id: payload.course_id,
+          hint: 'Verify the course_id matches an existing course in the LMS',
+        },
         { status: 404 }
       )
     }
+
+    console.log('[EDUPLAN ENROLLMENT] Course found:', {
+      requestId,
+      courseId: course.id,
+      courseTitle: course.title,
+    })
 
     // Check if enrollment already exists
     const existingEnrollment = await db.enrollment.findUnique({
@@ -182,6 +455,27 @@ export async function POST(req: Request) {
           courseId: course.id,
         },
       },
+    })
+
+    // Also get all enrollments for this user for debugging
+    const userEnrollments = await db.enrollment.findMany({
+      where: { userId: user.id },
+      include: { course: { select: { id: true, title: true } } },
+    })
+
+    console.log('[EDUPLAN ENROLLMENT] Enrollment check:', {
+      requestId,
+      userId: user.id,
+      courseId: course.id,
+      existingEnrollmentFound: !!existingEnrollment,
+      existingEnrollmentId: existingEnrollment?.id || null,
+      userTotalEnrollments: userEnrollments.length,
+      userEnrolledCourses: userEnrollments.map(e => ({
+        enrollmentId: e.id,
+        courseId: e.course.id,
+        courseTitle: e.course.title,
+        tmsEnrollmentId: e.tmsEnrollmentId,
+      })),
     })
 
     if (existingEnrollment) {
@@ -194,14 +488,30 @@ export async function POST(req: Request) {
             tmsSyncedAt: new Date(),
           },
         })
+        console.log('[EDUPLAN ENROLLMENT] Updated existing enrollment with EduPlan ID:', {
+          requestId,
+          enrollmentId: existingEnrollment.id,
+          tmsEnrollmentId: payload.eduplan_enrollment_id,
+        })
       }
 
-      console.log('[EDUPLAN ENROLLMENT] User already enrolled:', normalizedEmail, '->', course.id)
+      console.log('[EDUPLAN ENROLLMENT] User already enrolled - returning existing:', {
+        requestId,
+        email: normalizedEmail,
+        courseId: course.id,
+        courseTitle: course.title,
+        existingEnrollmentId: existingEnrollment.id,
+      })
       return NextResponse.json({
         success: true,
         enrollment_id: existingEnrollment.id,
         existing: true,
         message: 'User already enrolled in this course',
+        debug: {
+          user_id: user.id,
+          course_id: course.id,
+          course_title: course.title,
+        },
       })
     }
 
@@ -246,13 +556,26 @@ export async function POST(req: Request) {
       console.error('[EDUPLAN ENROLLMENT] Failed to log webhook event:', logError)
     }
 
-    console.log('[EDUPLAN ENROLLMENT] Enrollment created:', normalizedEmail, '->', course.id, '| ID:', enrollment.id)
+    console.log('[EDUPLAN ENROLLMENT] Enrollment created successfully:', {
+      requestId,
+      email: normalizedEmail,
+      userId: user.id,
+      courseId: course.id,
+      courseTitle: course.title,
+      enrollmentId: enrollment.id,
+      tmsEnrollmentId: payload.eduplan_enrollment_id,
+    })
 
     return NextResponse.json(
       {
         success: true,
         enrollment_id: enrollment.id,
         message: 'User enrolled successfully',
+        debug: {
+          user_id: user.id,
+          course_id: course.id,
+          course_title: course.title,
+        },
       },
       { status: 201 }
     )
