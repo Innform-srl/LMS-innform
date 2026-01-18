@@ -102,6 +102,7 @@ export async function GET(request: NextRequest) {
     const email = searchParams.get('email')
     const status = searchParams.get('status') // 'completed', 'in_progress', 'all' (default)
     const includeCertificate = searchParams.get('include_certificate') !== 'false' // default true
+    const eduCourseIds = searchParams.get('eduCourseIds') // comma-separated list of EDU course IDs
 
     // Validate email parameter
     if (!email) {
@@ -113,11 +114,17 @@ export async function GET(request: NextRequest) {
 
     const normalizedEmail = email.toLowerCase()
 
+    // Parse eduCourseIds if provided
+    const eduCourseIdList = eduCourseIds
+      ? eduCourseIds.split(',').map((id) => id.trim()).filter(Boolean)
+      : null
+
     console.log('[EDUPLAN ENROLLMENTS] GET request:', {
       requestId,
       email: normalizedEmail,
       status,
       includeCertificate,
+      eduCourseIds: eduCourseIdList,
     })
 
     // Find user by email (case-insensitive)
@@ -149,8 +156,59 @@ export async function GET(request: NextRequest) {
       }, { headers: corsHeaders })
     }
 
+    // If eduCourseIds provided, get the mapped LMS course IDs
+    let allowedLmsCourseIds: string[] | null = null
+
+    if (eduCourseIdList && eduCourseIdList.length > 0) {
+      // Find all LMS courses that are mapped to the provided EDU course IDs
+      const mappings = await db.courseTMSMapping.findMany({
+        where: {
+          tmsCourseId: { in: eduCourseIdList },
+          syncEnabled: true,
+        },
+        select: {
+          courseId: true,
+          tmsCourseId: true,
+        },
+      })
+
+      allowedLmsCourseIds = mappings.map((m) => m.courseId)
+
+      console.log('[EDUPLAN ENROLLMENTS] Course mappings found:', {
+        requestId,
+        eduCourseIds: eduCourseIdList,
+        mappedLmsCourseIds: allowedLmsCourseIds,
+        mappingsCount: mappings.length,
+      })
+
+      // If no mappings found, return empty enrollments
+      if (allowedLmsCourseIds.length === 0) {
+        console.log('[EDUPLAN ENROLLMENTS] No course mappings found, returning empty:', {
+          requestId,
+          eduCourseIds: eduCourseIdList,
+        })
+        return NextResponse.json({
+          success: true,
+          data: {
+            student: {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+            },
+            enrollments: [],
+          },
+          meta: {
+            requestId,
+            timestamp: new Date().toISOString(),
+            totalCount: 0,
+            note: 'No LMS courses mapped to the provided EDU course IDs',
+          },
+        }, { headers: corsHeaders })
+      }
+    }
+
     // Build where clause for enrollments
-    const whereClause: { userId: string; completed?: boolean } = { userId: user.id }
+    const whereClause: { userId: string; completed?: boolean; courseId?: { in: string[] } } = { userId: user.id }
 
     if (status === 'completed') {
       whereClause.completed = true
@@ -158,6 +216,11 @@ export async function GET(request: NextRequest) {
       whereClause.completed = false
     }
     // 'all' or undefined = no filter
+
+    // Filter by mapped LMS courses if eduCourseIds was provided
+    if (allowedLmsCourseIds) {
+      whereClause.courseId = { in: allowedLmsCourseIds }
+    }
 
     // Fetch enrollments with course and certificate data
     const enrollments = await db.enrollment.findMany({
@@ -172,6 +235,13 @@ export async function GET(request: NextRequest) {
             isRequired: true,
             minimumDuration: true,
             dueInDays: true,
+            tmsMappings: {
+              where: { syncEnabled: true },
+              select: {
+                tmsCourseId: true,
+                tmsCourseCode: true,
+              },
+            },
           },
         },
         ...(includeCertificate && {
@@ -203,6 +273,11 @@ export async function GET(request: NextRequest) {
         imageUrl: enrollment.course.imageUrl,
         isRequired: enrollment.course.isRequired,
         minimumDuration: enrollment.course.minimumDuration,
+        // Include EDU course mappings for reference
+        eduCourseMappings: enrollment.course.tmsMappings.map((m) => ({
+          eduCourseId: m.tmsCourseId,
+          eduCourseCode: m.tmsCourseCode,
+        })),
       },
       progress: enrollment.progress,
       completed: enrollment.completed,
