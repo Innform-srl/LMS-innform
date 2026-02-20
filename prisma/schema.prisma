@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -40,6 +41,10 @@ model User {
 
   // Audit
   auditLogs AuditLog[]
+
+  // Registro d'Aula
+  registerParticipants  RegisterParticipant[]
+  registerInstructors   RegisterInstructor[]
 
   // Performance indexes
   @@index([role])
@@ -108,6 +113,9 @@ model Course {
 
   // TMS Integration
   tmsMappings CourseTMSMapping[]
+
+  // Registro d'Aula
+  classRegisters ClassRegister[]
 
   // Performance indexes
   @@index([published])
@@ -494,6 +502,10 @@ model LiveSession {
   reminderSent1h   Boolean          @default(false)
   physicalRoomId   String?
 
+  // TMS Integration
+  tmsLessonId    String?   @unique  // UUID lezione nel TMS
+  tmsSyncedAt    DateTime?          // Ultimo sync con TMS
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -502,6 +514,7 @@ model LiveSession {
   module       Module?
   physicalRoom PhysicalRoom?       @relation(fields: [physicalRoomId], references: [id])
   attendance   SessionAttendance[]
+  registerEntries RegisterEntry[]
 
   @@index([startTime])
   @@index([courseId])
@@ -631,4 +644,162 @@ model CourseTMSMapping {
 
   @@unique([courseId, tmsCourseId])
   @@index([tmsCourseCode])
+}
+
+// ============ REGISTRO D'AULA ============
+
+enum RegisterType {
+  FUNDED
+  INTERNAL
+}
+
+enum RegisterStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
+enum DeliveryMode {
+  IN_PERSON
+  ONLINE
+  ELEARNING
+}
+
+enum InstructorRole {
+  DOCENTE
+  TUTOR
+  CODOCENTE
+  ESPERTO
+}
+
+model ClassRegister {
+  id                  String         @id @default(cuid())
+  courseId             String
+  title               String
+  registerType        RegisterType
+  status              RegisterStatus @default(DRAFT)
+  plannedHours        Float
+  complianceThreshold Float          @default(70)
+  fundingBody         String?
+  projectCode         String?
+  editionCode         String?
+  trainingLocation    String?
+  notes               String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  course       Course                @relation(fields: [courseId], references: [id])
+  entries      RegisterEntry[]
+  participants RegisterParticipant[]
+  instructors  RegisterInstructor[]
+
+  @@index([courseId])
+  @@index([status])
+  @@index([registerType])
+}
+
+model RegisterEntry {
+  id              String       @id @default(cuid())
+  registerId      String
+  date            DateTime
+  startTime       DateTime
+  endTime         DateTime
+  pauseMinutes    Int          @default(0)
+  effectiveHours  Float
+  topics          String
+  deliveryMode    DeliveryMode
+  liveSessionId   String?
+  notes           String?
+  createdAt       DateTime     @default(now())
+
+  register          ClassRegister      @relation(fields: [registerId], references: [id], onDelete: Cascade)
+  liveSession       LiveSession?       @relation(fields: [liveSessionId], references: [id])
+  attendances       EntryAttendance[]
+  instructorEntries InstructorEntry[]
+
+  @@index([registerId])
+  @@index([date])
+  @@index([liveSessionId])
+}
+
+model RegisterParticipant {
+  id              String  @id @default(cuid())
+  registerId      String
+  userId          String
+  fiscalCode      String?
+  companyName     String?
+  jobTitle        String?
+  totalHours      Float   @default(0)
+  elearningHours  Float   @default(0)
+  isCompliant     Boolean @default(false)
+  notes           String?
+
+  register    ClassRegister     @relation(fields: [registerId], references: [id], onDelete: Cascade)
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attendances EntryAttendance[]
+
+  @@unique([registerId, userId])
+  @@index([registerId])
+  @@index([userId])
+}
+
+model EntryAttendance {
+  id              String           @id @default(cuid())
+  entryId         String
+  participantId   String
+  status          AttendanceStatus
+  hoursAttended   Float?
+  signedAt        DateTime?
+  signatureHash   String?
+  notes           String?
+
+  entry       RegisterEntry       @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  participant RegisterParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, participantId])
+  @@index([entryId])
+  @@index([participantId])
+}
+
+model RegisterInstructor {
+  id              String         @id @default(cuid())
+  registerId      String
+  name            String
+  email           String?
+  role            InstructorRole
+  specialization  String?
+  totalHours      Float          @default(0)
+  userId          String?
+
+  register ClassRegister    @relation(fields: [registerId], references: [id], onDelete: Cascade)
+  user     User?            @relation(fields: [userId], references: [id])
+  entries  InstructorEntry[]
+
+  @@index([registerId])
+  @@index([userId])
+}
+
+model InstructorEntry {
+  id              String @id @default(cuid())
+  entryId         String
+  instructorId    String
+  hoursDelivered  Float
+  topics          String?
+
+  entry      RegisterEntry      @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  instructor RegisterInstructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, instructorId])
+  @@index([entryId])
+  @@index([instructorId])
+}
+
+// Impostazioni di sistema (usato per salvare token OAuth Google Meet, ecc.)
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
