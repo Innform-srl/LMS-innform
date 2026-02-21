@@ -502,6 +502,9 @@ model LiveSession {
   reminderSent1h   Boolean          @default(false)
   physicalRoomId   String?
 
+  // Visibility
+  hiddenFromStudents Boolean @default(false) // Admin can hide session from participants
+
   // TMS Integration
   tmsLessonId    String?   @unique  // UUID lezione nel TMS
   tmsSyncedAt    DateTime?          // Ultimo sync con TMS

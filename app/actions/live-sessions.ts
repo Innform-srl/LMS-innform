@@ -10,6 +10,7 @@ export async function getLiveSessions() {
 
     const liveSessions = await db.liveSession.findMany({
         where: {
+            hiddenFromStudents: false,
             course: {
                 enrollments: {
                     some: {
@@ -65,6 +66,7 @@ export async function getUpcomingSessions() {
 
     const liveSessions = await db.liveSession.findMany({
         where: {
+            hiddenFromStudents: false,
             endTime: {
                 gte: now
             },
@@ -171,6 +173,29 @@ export async function updateLiveSession(id: string, data: {
             googleMeetCode,
             courseId: data.courseId || null,
         }
+    })
+
+    revalidatePath("/admin/live-sessions")
+    revalidatePath("/dashboard")
+    revalidatePath("/live-sessions")
+}
+
+export async function toggleSessionVisibility(id: string) {
+    const session = await auth()
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
+        throw new Error("Unauthorized")
+    }
+
+    const liveSession = await db.liveSession.findUnique({
+        where: { id },
+        select: { hiddenFromStudents: true }
+    })
+
+    if (!liveSession) throw new Error("Session not found")
+
+    await db.liveSession.update({
+        where: { id },
+        data: { hiddenFromStudents: !liveSession.hiddenFromStudents }
     })
 
     revalidatePath("/admin/live-sessions")

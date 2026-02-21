@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { getAllLiveSessions, deleteLiveSession } from "@/app/actions/live-sessions"
+import { getAllLiveSessions, deleteLiveSession, toggleSessionVisibility } from "@/app/actions/live-sessions"
 import { formatDate } from "@/lib/utils"
 
 export default async function AdminLiveSessionsPage() {
@@ -36,10 +36,17 @@ export default async function AdminLiveSessionsPage() {
                         </Card>
                     ) : (
                         liveSessions.map((session) => (
-                            <Card key={session.id} className="bg-card border-border">
+                            <Card key={session.id} className={`bg-card border-border ${session.hiddenFromStudents ? "opacity-60" : ""}`}>
                                 <CardContent className="p-6 flex items-center justify-between">
                                     <div>
-                                        <h3 className="text-xl font-semibold mb-1 text-foreground">{session.title}</h3>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h3 className="text-xl font-semibold text-foreground">{session.title}</h3>
+                                            {session.hiddenFromStudents && (
+                                                <span className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 px-2 py-0.5 rounded-full font-medium">
+                                                    Nascosta
+                                                </span>
+                                            )}
+                                        </div>
                                         <div className="text-sm text-muted-foreground space-y-1">
                                             <p>📅 {session.startTime ? formatDate(session.startTime) : "Data non definita"}{session.endTime ? ` - ${session.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ""}</p>
                                             {session.course && <p>📚 Corso: {session.course.title}</p>}
@@ -47,6 +54,14 @@ export default async function AdminLiveSessionsPage() {
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
+                                        <form action={async () => {
+                                            "use server"
+                                            await toggleSessionVisibility(session.id)
+                                        }}>
+                                            <Button variant="outline" size="sm" type="submit" title={session.hiddenFromStudents ? "Rendi visibile ai partecipanti" : "Nascondi ai partecipanti"}>
+                                                {session.hiddenFromStudents ? "👁️ Mostra" : "🙈 Nascondi"}
+                                            </Button>
+                                        </form>
                                         <Link href={`/admin/live-sessions/${session.id}/attendance`}>
                                             <Button variant="outline" size="sm">Presenze</Button>
                                         </Link>
