@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { NextRequest } from 'next/server'
 import { checkRateLimit } from './lib/security'
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
     // Rate limiting for API routes
     if (request.nextUrl.pathname.startsWith('/api/')) {
         const forwardedFor = request.headers.get('x-forwarded-for')
@@ -26,7 +26,7 @@ export function middleware(request: NextRequest) {
         }
 
         const rateLimitKey = `${ip}:${request.nextUrl.pathname}`
-        const { allowed, remaining, resetAt } = checkRateLimit(rateLimitKey, maxRequests, windowMs)
+        const { allowed, remaining, resetAt } = await checkRateLimit(rateLimitKey, maxRequests, windowMs)
 
         if (!allowed) {
             return new NextResponse(

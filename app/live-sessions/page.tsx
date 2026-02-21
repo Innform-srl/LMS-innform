@@ -14,8 +14,8 @@ export default async function LiveSessionsPage() {
     const allSessions = await getLiveSessions()
     const now = new Date()
 
-    const upcomingSessions = allSessions.filter(s => new Date(s.endTime) >= now)
-    const pastSessions = allSessions.filter(s => new Date(s.endTime) < now)
+    const upcomingSessions = allSessions.filter(s => !s.endTime || new Date(s.endTime) >= now)
+    const pastSessions = allSessions.filter(s => s.endTime && new Date(s.endTime) < now)
 
     return (
         <div className="min-h-screen p-8 bg-background text-foreground">
@@ -50,11 +50,13 @@ export default async function LiveSessionsPage() {
                                         <CardContent className="p-6 flex flex-col h-full">
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
-                                                    {formatDate(session.startTime)}
+                                                    {session.startTime ? formatDate(session.startTime) : "Da definire"}
                                                 </div>
-                                                <div className="text-sm font-mono text-muted-foreground">
-                                                    {session.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </div>
+                                                {session.startTime && (
+                                                    <div className="text-sm font-mono text-muted-foreground">
+                                                        {session.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
+                                                )}
                                             </div>
 
                                             <h3 className="text-xl font-bold mb-2 line-clamp-2">{session.title}</h3>
@@ -71,7 +73,7 @@ export default async function LiveSessionsPage() {
                                                 )}
 
                                                 <JoinSessionButton
-                                                    meetingUrl={session.meetingUrl}
+                                                    meetingUrl={session.meetingUrl || ""}
                                                     liveSessionId={session.id}
                                                 />
                                             </div>
@@ -96,7 +98,7 @@ export default async function LiveSessionsPage() {
                                             <div className="flex justify-between items-start mb-2">
                                                 <h4 className="font-semibold text-muted-foreground line-clamp-1">{session.title}</h4>
                                                 <span className="text-xs text-muted-foreground shrink-0 ml-2">
-                                                    {formatDate(session.startTime)}
+                                                    {session.startTime ? formatDate(session.startTime) : ""}
                                                 </span>
                                             </div>
                                             <p className="text-sm text-muted-foreground mt-2">

@@ -97,20 +97,14 @@ export async function updateCourseSettings(
             }
         })
 
-        // Handle deadline logic (copied from deadlines.ts)
+        // Handle deadline logic - batch update instead of loop
         if (settings.isRequired && settings.dueInDays) {
-            const enrollments = await db.enrollment.findMany({
-                where: { courseId, completed: false }
+            const dueDate = new Date()
+            dueDate.setDate(dueDate.getDate() + settings.dueInDays)
+            await db.enrollment.updateMany({
+                where: { courseId, completed: false },
+                data: { dueDate }
             })
-
-            for (const enrollment of enrollments) {
-                const dueDate = new Date()
-                dueDate.setDate(dueDate.getDate() + settings.dueInDays)
-                await db.enrollment.update({
-                    where: { id: enrollment.id },
-                    data: { dueDate }
-                })
-            }
         } else if (!settings.isRequired) {
             await db.enrollment.updateMany({
                 where: { courseId },
@@ -216,23 +210,46 @@ export async function deleteCourse(courseId: string) {
             }
         }
 
-        // Delete related data first
+        // Delete related data first - batch operations instead of loops
         await db.comment.deleteMany({ where: { courseId } })
         await db.courseRating.deleteMany({ where: { courseId } })
         await db.learningPathCourse.deleteMany({ where: { courseId } })
 
-        // Delete modules and their related data
-        const modules = await db.module.findMany({ where: { courseId } })
-        for (const mod of modules) {
-            await db.moduleProgress.deleteMany({ where: { moduleId: mod.id } })
-            // Delete quiz attempts and questions
-            const quizzes = await db.quiz.findMany({ where: { moduleId: mod.id } })
-            for (const quiz of quizzes) {
-                await db.quizAttempt.deleteMany({ where: { quizId: quiz.id } })
-                await db.question.deleteMany({ where: { quizId: quiz.id } })
+        // Get all module IDs for this course
+        const moduleIds = (await db.module.findMany({
+            where: { courseId },
+            select: { id: true }
+        })).map(m => m.id)
+
+        if (moduleIds.length > 0) {
+            // Delete module progress in batch
+            await db.moduleProgress.deleteMany({
+                where: { moduleId: { in: moduleIds } }
+            })
+
+            // Get all quiz IDs for these modules
+            const quizIds = (await db.quiz.findMany({
+                where: { moduleId: { in: moduleIds } },
+                select: { id: true }
+            })).map(q => q.id)
+
+            if (quizIds.length > 0) {
+                // Delete quiz attempts and questions in batch
+                await db.quizAttempt.deleteMany({
+                    where: { quizId: { in: quizIds } }
+                })
+                await db.question.deleteMany({
+                    where: { quizId: { in: quizIds } }
+                })
             }
-            await db.quiz.deleteMany({ where: { moduleId: mod.id } })
+
+            // Delete quizzes in batch
+            await db.quiz.deleteMany({
+                where: { moduleId: { in: moduleIds } }
+            })
         }
+
+        // Delete all modules
         await db.module.deleteMany({ where: { courseId } })
 
         // Delete TMS mappings if they exist

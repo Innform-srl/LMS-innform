@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     const rateLimitKey = `webhook:tms:${ip}`
 
     // Check rate limit
-    const rateLimit = checkRateLimit(rateLimitKey, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS)
+    const rateLimit = await checkRateLimit(rateLimitKey, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS)
     if (!rateLimit.allowed) {
       return NextResponse.json(
         createWebhookErrorResponse(

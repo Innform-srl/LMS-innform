@@ -6,7 +6,7 @@ import { CreateSessionForm } from "./create-session-form"
 
 export default async function CreateLiveSessionPage() {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") redirect("/")
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") redirect("/")
 
     const courses = await db.course.findMany({
         where: { published: true },

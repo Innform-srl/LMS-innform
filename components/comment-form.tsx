@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
+import { apiUrl } from "@/lib/api"
 
 interface CommentFormProps {
     courseId?: string
@@ -22,7 +23,7 @@ export function CommentForm({ courseId, moduleId }: CommentFormProps) {
 
         setIsSubmitting(true)
         try {
-            const response = await fetch("/api/comments", {
+            const response = await fetch(apiUrl("/api/comments"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

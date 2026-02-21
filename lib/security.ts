@@ -136,12 +136,36 @@ export function sanitizeTextInput(input: string, options?: {
 }
 
 /**
- * Rate limit check helper (in-memory, simple implementation)
- * For production, use Redis or a proper rate limiting service
+ * Rate limit check helper
+ * Uses Upstash Redis in production (UPSTASH_REDIS_REST_URL set),
+ * falls back to in-memory for local development.
  */
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
+
+const useUpstash = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+
+// Upstash rate limiters (created lazily per config)
+const upstashLimiters = new Map<string, Ratelimit>()
+
+function getUpstashLimiter(maxRequests: number, windowMs: number): Ratelimit {
+    const key = `${maxRequests}:${windowMs}`
+    let limiter = upstashLimiters.get(key)
+    if (!limiter) {
+        limiter = new Ratelimit({
+            redis: Redis.fromEnv(),
+            limiter: Ratelimit.slidingWindow(maxRequests, `${windowMs} ms`),
+            analytics: true,
+        })
+        upstashLimiters.set(key, limiter)
+    }
+    return limiter
+}
+
+// In-memory fallback for local development
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 
-export function checkRateLimit(
+function checkRateLimitInMemory(
     identifier: string,
     maxRequests: number,
     windowMs: number
@@ -149,8 +173,7 @@ export function checkRateLimit(
     const now = Date.now()
     const record = rateLimitMap.get(identifier)
 
-    // Clean up old entries periodically
-    if (Math.random() < 0.01) { // 1% chance
+    if (Math.random() < 0.01) {
         for (const [key, value] of rateLimitMap.entries()) {
             if (value.resetAt < now) {
                 rateLimitMap.delete(key)
@@ -159,7 +182,6 @@ export function checkRateLimit(
     }
 
     if (!record || record.resetAt < now) {
-        // New window
         const resetAt = now + windowMs
         rateLimitMap.set(identifier, { count: 1, resetAt })
         return { allowed: true, remaining: maxRequests - 1, resetAt }
@@ -171,6 +193,29 @@ export function checkRateLimit(
 
     record.count++
     return { allowed: true, remaining: maxRequests - record.count, resetAt: record.resetAt }
+}
+
+export async function checkRateLimit(
+    identifier: string,
+    maxRequests: number,
+    windowMs: number
+): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
+    if (useUpstash) {
+        try {
+            const limiter = getUpstashLimiter(maxRequests, windowMs)
+            const result = await limiter.limit(identifier)
+            return {
+                allowed: result.success,
+                remaining: result.remaining,
+                resetAt: result.reset,
+            }
+        } catch (error) {
+            console.error('Upstash rate limit error, falling back to in-memory:', error)
+            return checkRateLimitInMemory(identifier, maxRequests, windowMs)
+        }
+    }
+
+    return checkRateLimitInMemory(identifier, maxRequests, windowMs)
 }
 
 /**

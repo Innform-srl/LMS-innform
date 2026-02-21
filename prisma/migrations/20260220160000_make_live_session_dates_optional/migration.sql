@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "LiveSession" ALTER COLUMN "startTime" DROP NOT NULL;
+ALTER TABLE "LiveSession" ALTER COLUMN "endTime" DROP NOT NULL;
+ALTER TABLE "LiveSession" ALTER COLUMN "meetingUrl" DROP NOT NULL;

@@ -49,35 +49,24 @@ export async function GET() {
         })
         const avgTimeSpent = avgTimeData._avg.timeSpent || 0
 
-        // Enrollment Trend (last 6 months)
-        const sixMonthsAgo = subMonths(new Date(), 6)
-        const enrollmentsByMonth = await db.enrollment.groupBy({
-            by: ['createdAt'],
-            _count: true,
-            where: {
-                createdAt: { gte: sixMonthsAgo }
-            }
+        // Enrollment Trend (last 6 months) - optimized with parallel queries
+        const monthQueries = Array.from({ length: 6 }, (_, i) => {
+            const idx = 5 - i
+            const monthStart = startOfMonth(subMonths(new Date(), idx))
+            const monthEnd = startOfMonth(subMonths(new Date(), idx - 1))
+            const monthKey = format(monthStart, 'MMM yyyy')
+
+            return db.enrollment.count({
+                where: {
+                    createdAt: {
+                        gte: monthStart,
+                        lt: monthEnd
+                    }
+                }
+            }).then(count => ({ month: monthKey, enrollments: count }))
         })
 
-        // Group by month for chart
-        const monthlyData = new Map()
-        for (let i = 5; i >= 0; i--) {
-            const date = subMonths(new Date(), i)
-            const monthKey = format(date, 'MMM yyyy')
-            monthlyData.set(monthKey, 0)
-        }
-
-        enrollmentsByMonth.forEach(item => {
-            const monthKey = format(new Date(item.createdAt), 'MMM yyyy')
-            if (monthlyData.has(monthKey)) {
-                monthlyData.set(monthKey, monthlyData.get(monthKey)! + item._count)
-            }
-        })
-
-        const enrollmentTrend = Array.from(monthlyData.entries()).map(([month, count]) => ({
-            month,
-            enrollments: count
-        }))
+        const enrollmentTrend = await Promise.all(monthQueries)
 
         // Top Courses by Enrollment
         const topCourses = await db.course.findMany({

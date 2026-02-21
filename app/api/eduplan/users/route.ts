@@ -26,7 +26,7 @@ interface EduPlanUserPayload {
   firstName: string
   lastName: string
   password: string
-  role: 'learner' | 'admin'
+  role: 'learner' | 'admin' | 'teacher'
   sendWelcomeEmail: boolean
   metadata?: {
     eduplan_person_id?: string
@@ -92,7 +92,7 @@ export async function POST(req: Request) {
     const rateLimitKey = `eduplan:users:${ip}`
 
     // Check rate limit
-    const rateLimit = checkRateLimit(rateLimitKey, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS)
+    const rateLimit = await checkRateLimit(rateLimitKey, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS)
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { success: false, error: 'Too many requests' },
@@ -173,7 +173,7 @@ export async function POST(req: Request) {
         email: payload.email.toLowerCase(),
         name,
         password: hashedPassword,
-        role: payload.role === 'admin' ? 'ADMIN' : 'EMPLOYEE',
+        role: payload.role === 'admin' ? 'ADMIN' : payload.role === 'teacher' ? 'TEACHER' : 'EMPLOYEE',
         isApproved: true, // Auto-approve users from EduPlan
         approvedAt: new Date(),
       },
@@ -256,7 +256,7 @@ export async function DELETE(req: Request) {
     const rateLimitKey = `eduplan:users:delete:${ip}`
 
     // Check rate limit
-    const rateLimit = checkRateLimit(rateLimitKey, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS)
+    const rateLimit = await checkRateLimit(rateLimitKey, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS)
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { success: false, error: 'Too many requests' },
@@ -368,7 +368,7 @@ export async function PATCH(req: Request) {
     const rateLimitKey = `eduplan:users:patch:${ip}`
 
     // Check rate limit
-    const rateLimit = checkRateLimit(rateLimitKey, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS)
+    const rateLimit = await checkRateLimit(rateLimitKey, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS)
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { success: false, error: 'Too many requests' },

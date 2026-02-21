@@ -213,7 +213,7 @@ export async function getMyAttendance(sessionId: string) {
  */
 export async function adminCheckIn(sessionId: string, userId: string) {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
         return { success: false, error: "Non autorizzato" }
     }
 
@@ -250,7 +250,7 @@ export async function adminCheckIn(sessionId: string, userId: string) {
  */
 export async function adminCheckOut(sessionId: string, userId: string) {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
         return { success: false, error: "Non autorizzato" }
     }
 
@@ -297,7 +297,7 @@ export async function bulkUpdateAttendance(
     status: AttendanceStatus
 ) {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
         return { success: false, error: "Non autorizzato" }
     }
 
@@ -324,7 +324,7 @@ export async function bulkUpdateAttendance(
  */
 export async function markAbsentUsers(sessionId: string) {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
         return { success: false, error: "Non autorizzato" }
     }
 
@@ -370,7 +370,7 @@ export async function updateAttendanceStatus(
     notes?: string
 ) {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
         return { success: false, error: "Non autorizzato" }
     }
 
@@ -394,7 +394,7 @@ export async function updateAttendanceStatus(
  */
 export async function getSessionAttendance(sessionId: string) {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
         return null
     }
 
@@ -408,13 +408,14 @@ export async function getSessionAttendance(sessionId: string) {
                             id: true,
                             name: true,
                             email: true,
+                            role: true,
                             department: { select: { name: true } }
                         }
                     }
                 },
                 orderBy: { createdAt: "asc" }
             },
-            instructor: { select: { name: true, email: true } },
+            instructor: { select: { id: true, name: true, email: true } },
             course: { select: { title: true } },
             physicalRoom: true
         }
@@ -422,19 +423,24 @@ export async function getSessionAttendance(sessionId: string) {
 
     if (!liveSession) return null
 
-    // Calculate stats
+    // Separate student attendance from instructor attendance for stats
+    const studentAttendance = liveSession.attendance.filter(
+        a => a.user.id !== liveSession.instructorId
+    )
+
+    // Calculate stats (only students, not instructors)
     const stats = {
-        total: liveSession.attendance.length,
-        registered: liveSession.attendance.filter(a => a.status === "REGISTERED").length,
-        present: liveSession.attendance.filter(a => a.status === "PRESENT").length,
-        attended: liveSession.attendance.filter(a => a.status === "ATTENDED").length,
-        absent: liveSession.attendance.filter(a => a.status === "ABSENT").length,
-        late: liveSession.attendance.filter(a => a.status === "LATE").length,
-        excused: liveSession.attendance.filter(a => a.status === "EXCUSED").length,
+        total: studentAttendance.length,
+        registered: studentAttendance.filter(a => a.status === "REGISTERED").length,
+        present: studentAttendance.filter(a => a.status === "PRESENT").length,
+        attended: studentAttendance.filter(a => a.status === "ATTENDED").length,
+        absent: studentAttendance.filter(a => a.status === "ABSENT").length,
+        late: studentAttendance.filter(a => a.status === "LATE").length,
+        excused: studentAttendance.filter(a => a.status === "EXCUSED").length,
         averageDuration: 0
     }
 
-    const durationsWithValues = liveSession.attendance
+    const durationsWithValues = studentAttendance
         .filter(a => a.durationMinutes !== null)
         .map(a => a.durationMinutes!)
 
@@ -452,7 +458,7 @@ export async function getSessionAttendance(sessionId: string) {
  */
 export async function exportAttendanceCSV(sessionId: string) {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
         return { success: false, error: "Non autorizzato" }
     }
 
@@ -504,7 +510,7 @@ export async function syncGoogleMeetAttendance(
     participantEmails: string[]
 ) {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
         return { success: false, error: "Non autorizzato" }
     }
 

@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog"
 
 import { Calendar, Video } from "lucide-react"
+import { apiUrl } from "@/lib/api"
 
 // Dynamic import to avoid SSR issues with PDF.js
 const PDFViewer = dynamic(() => import("@/components/pdf-viewer").then(mod => ({ default: mod.PDFViewer })), {
@@ -110,6 +111,10 @@ export function CoursePlayer({
     const certificateGeneratedRef = useRef(false)
     const timeThresholdMetRef = useRef(false)
 
+    // Refs for internal time tracking to avoid re-renders every 5 seconds
+    const moduleTimeRef = useRef(0)
+    const localTimeRef = useRef(enrollment.timeSpent)
+
     const currentModule = modules[currentModuleIndex]
     const progress = modules.length > 0 ? (completedModules.size / modules.length) * 100 : 0
     const isCompleted = progress === 100
@@ -131,11 +136,10 @@ export function CoursePlayer({
         const loadModuleProgress = async () => {
             setIsTrackingModule(false)
             const progress = await getVideoProgress(currentModule.id)
-            if (progress) {
-                setModuleTimeSpent((progress as any).timeSpent || 0)
-            } else {
-                setModuleTimeSpent(0)
-            }
+            const timeSpent = progress ? ((progress as any).timeSpent || 0) : 0
+            setModuleTimeSpent(timeSpent)
+            moduleTimeRef.current = timeSpent
+            uiUpdateCounterRef.current = 0
             setIsTrackingModule(true)
         }
         loadModuleProgress()
@@ -143,6 +147,7 @@ export function CoursePlayer({
 
     // Track time for ALL modules
     const unsavedSecondsRef = useRef(0)
+    const uiUpdateCounterRef = useRef(0)
 
     useEffect(() => {
         if (!isTrackingModule) return
@@ -151,17 +156,22 @@ export function CoursePlayer({
             if (document.hidden) return
 
             unsavedSecondsRef.current += 5
+            moduleTimeRef.current += 5
+            localTimeRef.current += 5
+            uiUpdateCounterRef.current += 1
 
-            // Save every 30 seconds
+            // Save to DB every 30 seconds
             if (unsavedSecondsRef.current >= 30) {
                 trackModuleTime(currentModule.id, unsavedSecondsRef.current)
                 unsavedSecondsRef.current = 0
             }
 
-            setModuleTimeSpent(prev => prev + 5)
-
-            // Update course total time locally
-            setLocalTimeSpent(prev => prev + 5)
+            // Update UI only every 30 seconds (6 intervals of 5s) to reduce re-renders
+            if (uiUpdateCounterRef.current >= 6) {
+                setModuleTimeSpent(moduleTimeRef.current)
+                setLocalTimeSpent(localTimeRef.current)
+                uiUpdateCounterRef.current = 0
+            }
         }, 5000)
 
         return () => {
@@ -197,7 +207,7 @@ export function CoursePlayer({
             certificateGeneratedRef.current = true // Prevent duplicate calls
 
             try {
-                const res = await fetch(`/api/certificates/generate`, {
+                const res = await fetch(apiUrl(`/api/certificates/generate`), {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ enrollmentId: enrollment.id })
@@ -215,7 +225,7 @@ export function CoursePlayer({
                     setShowCertificate(true)
                     setUserName(data.userName || "Studente")
 
-                    fetch('/api/user/add-points', {
+                    fetch(apiUrl('/api/user/add-points'), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({

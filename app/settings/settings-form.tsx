@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
 import { User, Mail, Calendar, Shield } from "lucide-react"
+import { apiUrl } from "@/lib/api"
 
 interface SettingsFormProps {
     user: {
@@ -31,7 +32,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
         setIsLoading(true)
 
         try {
-            const res = await fetch("/api/user/profile", {
+            const res = await fetch(apiUrl("/api/user/profile"), {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name })
@@ -80,7 +81,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
         setIsLoading(true)
 
         try {
-            const res = await fetch("/api/user/password", {
+            const res = await fetch(apiUrl("/api/user/password"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ currentPassword, newPassword })
@@ -148,7 +149,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
                                 <div className="flex items-center gap-2">
                                     <Shield className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-sm text-muted-foreground capitalize">
-                                        {user.role === "ADMIN" ? "Amministratore" : "Utente"}
+                                        {user.role === "ADMIN" ? "Amministratore" : user.role === "TEACHER" ? "Docente" : "Utente"}
                                     </span>
                                 </div>
                             </div>

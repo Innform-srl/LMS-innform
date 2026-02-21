@@ -47,12 +47,7 @@ const nextConfig = {
 
     // Configure image domains for Next/Image optimization
     images: {
-        remotePatterns: [
-            {
-                protocol: 'https',
-                hostname: '**',
-            },
-        ],
+        remotePatterns: [],
         // Enable image optimization
         unoptimized: false,
         // Optimize image formats
@@ -65,7 +60,18 @@ const nextConfig = {
     experimental: {
         // Optimize package imports
         optimizePackageImports: ['lucide-react', 'recharts', '@radix-ui/react-icons'],
-    }
+    },
+
+    // Fix: webpack file watcher on Windows triggers spurious Fast Refresh rebuilds
+    webpack: (config, { dev }) => {
+        if (dev) {
+            config.watchOptions = {
+                ignored: ['**/node_modules/**', '**/.next/**', '**/.git/**', '**/.claude/**', '**/public/**'],
+                aggregateTimeout: 3000, // Wait 3s after last change before rebuilding
+            }
+        }
+        return config
+    },
 }
 
 module.exports = nextConfig;

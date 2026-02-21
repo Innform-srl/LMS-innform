@@ -9,7 +9,7 @@ export default async function EditModulePage({
     params: Promise<{ courseId: string, moduleId: string }>
 }) {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") redirect("/")
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") redirect("/")
 
     const { courseId, moduleId } = await params
 
@@ -30,6 +30,29 @@ export default async function EditModulePage({
         redirect(`/admin/courses/${courseId}`)
     }
 
+    // Fetch available live sessions not already linked to other modules
+    let availableSessions: any[] = []
+    try {
+        availableSessions = await db.liveSession.findMany({
+            where: {
+                OR: [
+                    { module: { is: null } },
+                    { id: module.liveSessionId ?? undefined }
+                ]
+            },
+            orderBy: { createdAt: "desc" },
+            select: {
+                id: true,
+                title: true,
+                startTime: true,
+                endTime: true,
+                meetingUrl: true,
+            }
+        })
+    } catch (error) {
+        console.error("Error fetching available sessions:", error)
+    }
+
     return (
         <div className="min-h-screen bg-background text-foreground">
             <div className="max-w-4xl mx-auto px-6 py-8">
@@ -38,7 +61,7 @@ export default async function EditModulePage({
                     <p className="text-muted-foreground">Corso: {module.course.title}</p>
                 </div>
 
-                <EditModuleForm module={module} courseId={courseId} />
+                <EditModuleForm module={JSON.parse(JSON.stringify(module))} courseId={courseId} availableSessions={JSON.parse(JSON.stringify(availableSessions))} />
             </div>
         </div>
     )

@@ -3,14 +3,35 @@
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 
-export async function getTimeTrackingReport() {
+export async function getTimeTrackingReport(options?: {
+    page?: number
+    pageSize?: number
+    userId?: string
+    courseId?: string
+    status?: string
+}) {
     const session = await auth()
     if (session?.user?.role !== "ADMIN") {
         return { success: false, error: "Non autorizzato" }
     }
 
     try {
+        const page = options?.page || 1
+        const pageSize = options?.pageSize || 50
+        const skip = (page - 1) * pageSize
+
+        // Build where clause for filtering
+        const where: any = {}
+        if (options?.userId) where.userId = options.userId
+        if (options?.courseId) where.courseId = options.courseId
+        if (options?.status === "completed") where.completed = true
+        else if (options?.status === "in_progress") where.completed = false
+
+        // Get total count for pagination
+        const totalCount = await db.enrollment.count({ where })
+
         const enrollments = await db.enrollment.findMany({
+            where,
             include: {
                 user: {
                     select: {
@@ -28,7 +49,9 @@ export async function getTimeTrackingReport() {
                     }
                 }
             },
-            orderBy: { createdAt: "desc" }
+            orderBy: { createdAt: "desc" },
+            skip,
+            take: pageSize
         })
 
         const reportData = enrollments.map(enrollment => ({
@@ -54,7 +77,16 @@ export async function getTimeTrackingReport() {
                         : "In Corso"
         }))
 
-        return { success: true, data: reportData }
+        return {
+            success: true,
+            data: reportData,
+            pagination: {
+                page,
+                pageSize,
+                totalCount,
+                totalPages: Math.ceil(totalCount / pageSize)
+            }
+        }
     } catch (error) {
         console.error("Error fetching time tracking report:", error)
         return { success: false, error: "Errore durante il recupero dei dati" }
@@ -72,203 +104,165 @@ export async function getEngagementReport() {
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
-        // Get all enrollments with user and course data
-        const enrollments = await db.enrollment.findMany({
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        department: true,
-                        createdAt: true
-                    }
-                },
-                course: {
-                    select: {
-                        id: true,
-                        title: true,
-                        minimumDuration: true
-                    }
-                }
+        // Use aggregations instead of fetching all records
+        const [
+            totalUsersCount,
+            totalEnrollmentsCount,
+            completedEnrollmentsCount,
+            totalQuizAttemptsCount,
+            passedQuizAttemptsCount,
+            activeUsers7Days,
+            activeUsers30Days,
+            enrollmentStats,
+            quizAvgScore
+        ] = await Promise.all([
+            db.user.count({ where: { role: "EMPLOYEE" } }),
+            db.enrollment.count(),
+            db.enrollment.count({ where: { completed: true } }),
+            db.quizAttempt.count(),
+            db.quizAttempt.count({ where: { passed: true } }),
+            db.moduleProgress.groupBy({
+                by: ['userId'],
+                where: { updatedAt: { gte: sevenDaysAgo } }
+            }).then(r => r.length),
+            db.moduleProgress.groupBy({
+                by: ['userId'],
+                where: { updatedAt: { gte: thirtyDaysAgo } }
+            }).then(r => r.length),
+            db.enrollment.aggregate({
+                _sum: { timeSpent: true }
+            }),
+            db.quizAttempt.aggregate({
+                _avg: { score: true }
+            })
+        ])
+
+        const tmsSyncedEnrollments = await db.enrollment.count({ where: { tmsSyncedAt: { not: null } } })
+        const totalStudyTimeMinutes = enrollmentStats._sum.timeSpent || 0
+        const avgStudyTimePerUser = totalUsersCount > 0 ? totalStudyTimeMinutes / totalUsersCount : 0
+        const completionRate = totalEnrollmentsCount > 0 ? (completedEnrollmentsCount / totalEnrollmentsCount) * 100 : 0
+        const quizPassRate = totalQuizAttemptsCount > 0 ? (passedQuizAttemptsCount / totalQuizAttemptsCount) * 100 : 0
+
+        // Get top courses - limited query with aggregation
+        const topCoursesData = await db.enrollment.groupBy({
+            by: ['courseId'],
+            _count: { id: true },
+            _sum: { timeSpent: true },
+            orderBy: { _count: { id: 'desc' } },
+            take: 10
+        })
+
+        const courseIds = topCoursesData.map(c => c.courseId)
+        const courses = await db.course.findMany({
+            where: { id: { in: courseIds } },
+            select: { id: true, title: true }
+        })
+        const courseMap = new Map(courses.map(c => [c.id, c.title]))
+
+        const completedByCourse = await db.enrollment.groupBy({
+            by: ['courseId'],
+            where: { courseId: { in: courseIds }, completed: true },
+            _count: { id: true }
+        })
+        const completedMap = new Map(completedByCourse.map(c => [c.courseId, c._count.id]))
+
+        const topCourses = topCoursesData.map(c => ({
+            courseId: c.courseId,
+            courseTitle: courseMap.get(c.courseId) || 'Unknown',
+            enrollments: c._count.id,
+            completions: completedMap.get(c.courseId) || 0,
+            totalTime: c._sum.timeSpent || 0,
+            avgTime: c._count.id > 0 ? (c._sum.timeSpent || 0) / c._count.id : 0
+        }))
+
+        // Get top users by study time - limited query
+        const topUsersData = await db.enrollment.groupBy({
+            by: ['userId'],
+            _sum: { timeSpent: true },
+            orderBy: { _sum: { timeSpent: 'desc' } },
+            take: 10
+        })
+
+        const userIds = topUsersData.map(u => u.userId)
+        const users = await db.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, name: true, email: true, department: { select: { name: true } } }
+        })
+        const userMap = new Map(users.map(u => [u.id, u]))
+
+        // Get module completion counts for top users
+        const moduleCompletions = await db.moduleProgress.groupBy({
+            by: ['userId'],
+            where: { userId: { in: userIds }, completed: true },
+            _count: { id: true }
+        })
+        const moduleCompletionMap = new Map(moduleCompletions.map(m => [m.userId, m._count.id]))
+
+        // Get quiz pass counts for top users
+        const quizPasses = await db.quizAttempt.groupBy({
+            by: ['userId'],
+            where: { userId: { in: userIds }, passed: true },
+            _count: { id: true }
+        })
+        const quizPassMap = new Map(quizPasses.map(q => [q.userId, q._count.id]))
+
+        // Get last activity for top users
+        const lastActivities = await db.moduleProgress.findMany({
+            where: { userId: { in: userIds } },
+            orderBy: { updatedAt: 'desc' },
+            distinct: ['userId'],
+            select: { userId: true, updatedAt: true }
+        })
+        const lastActivityMap = new Map(lastActivities.map(la => [la.userId, la.updatedAt]))
+
+        const topUsers = topUsersData.map(u => {
+            const user = userMap.get(u.userId)
+            return {
+                userId: u.userId,
+                userName: user?.name || user?.email || 'N/A',
+                userEmail: user?.email || null,
+                department: user?.department?.name || null,
+                studyTime: u._sum.timeSpent || 0,
+                modulesCompleted: moduleCompletionMap.get(u.userId) || 0,
+                quizzesPassed: quizPassMap.get(u.userId) || 0,
+                lastActivity: lastActivityMap.get(u.userId) || null
             }
         })
 
-        // Get quiz attempts
-        const quizAttempts = await db.quizAttempt.findMany({
-            select: {
-                id: true,
-                userId: true,
-                score: true,
-                passed: true,
-                completedAt: true,
-                quiz: {
-                    select: {
-                        passingScore: true
-                    }
-                }
+        // Count inactive users
+        const inactiveUsersCount = await db.user.count({
+            where: {
+                role: "EMPLOYEE",
+                OR: [
+                    { moduleProgress: { none: { updatedAt: { gte: thirtyDaysAgo } } } },
+                    { moduleProgress: { none: {} } }
+                ]
             }
         })
-
-        // Get module progress
-        const moduleProgress = await db.moduleProgress.findMany({
-            select: {
-                userId: true,
-                moduleId: true,
-                // @ts-ignore
-                timeSpent: true,
-                completed: true,
-                completedAt: true,
-                updatedAt: true
-            }
-        })
-
-        // Calculate metrics
-        const totalUsers = new Set(enrollments.map(e => e.userId)).size
-        const activeUsersLast7Days = new Set(
-            moduleProgress
-                .filter(mp => mp.updatedAt && mp.updatedAt >= sevenDaysAgo)
-                .map(mp => mp.userId)
-        ).size
-        const activeUsersLast30Days = new Set(
-            moduleProgress
-                .filter(mp => mp.updatedAt && mp.updatedAt >= thirtyDaysAgo)
-                .map(mp => mp.userId)
-        ).size
-
-        // Total study time
-        const totalStudyTimeMinutes = enrollments.reduce((acc, e) => acc + (e.timeSpent || 0), 0)
-        const avgStudyTimePerUser = totalUsers > 0 ? totalStudyTimeMinutes / totalUsers : 0
-
-        // Completion rates
-        const totalEnrollments = enrollments.length
-        const completedEnrollments = enrollments.filter(e => e.completed).length
-        const completionRate = totalEnrollments > 0 ? (completedEnrollments / totalEnrollments) * 100 : 0
-
-        // Quiz stats
-        const totalQuizAttempts = quizAttempts.length
-        const passedQuizAttempts = quizAttempts.filter(q => q.passed).length
-        const quizPassRate = totalQuizAttempts > 0 ? (passedQuizAttempts / totalQuizAttempts) * 100 : 0
-        const avgQuizScore = totalQuizAttempts > 0
-            ? quizAttempts.reduce((acc, q) => acc + q.score, 0) / totalQuizAttempts
-            : 0
-
-        // Courses by engagement
-        const courseEngagement = new Map<string, {
-            courseId: string,
-            courseTitle: string,
-            enrollments: number,
-            completions: number,
-            totalTime: number,
-            avgTime: number
-        }>()
-
-        enrollments.forEach(e => {
-            const existing = courseEngagement.get(e.courseId)
-            if (existing) {
-                existing.enrollments++
-                if (e.completed) existing.completions++
-                existing.totalTime += e.timeSpent || 0
-                existing.avgTime = existing.totalTime / existing.enrollments
-            } else {
-                courseEngagement.set(e.courseId, {
-                    courseId: e.courseId,
-                    courseTitle: e.course.title,
-                    enrollments: 1,
-                    completions: e.completed ? 1 : 0,
-                    totalTime: e.timeSpent || 0,
-                    avgTime: e.timeSpent || 0
-                })
-            }
-        })
-
-        const topCourses = Array.from(courseEngagement.values())
-            .sort((a, b) => b.enrollments - a.enrollments)
-            .slice(0, 10)
-
-        // Users by activity (last 30 days)
-        const userActivity = new Map<string, {
-            userId: string,
-            userName: string,
-            userEmail: string | null,
-            department: string | null,
-            studyTime: number,
-            modulesCompleted: number,
-            quizzesPassed: number,
-            lastActivity: Date | null
-        }>()
-
-        enrollments.forEach(e => {
-            const existing = userActivity.get(e.userId)
-            if (existing) {
-                existing.studyTime += e.timeSpent || 0
-            } else {
-                userActivity.set(e.userId, {
-                    userId: e.userId,
-                    userName: e.user.name || e.user.email || "N/A",
-                    userEmail: e.user.email,
-                    // @ts-ignore
-                    department: e.user.department?.name || null,
-                    studyTime: e.timeSpent || 0,
-                    modulesCompleted: 0,
-                    quizzesPassed: 0,
-                    lastActivity: null
-                })
-            }
-        })
-
-        moduleProgress.forEach(mp => {
-            const user = userActivity.get(mp.userId)
-            if (user) {
-                if (mp.completed) user.modulesCompleted++
-                if (!user.lastActivity || (mp.updatedAt && mp.updatedAt > user.lastActivity)) {
-                    user.lastActivity = mp.updatedAt
-                }
-            }
-        })
-
-        quizAttempts.forEach(qa => {
-            const user = userActivity.get(qa.userId)
-            if (user && qa.passed) {
-                user.quizzesPassed++
-            }
-        })
-
-        const topUsers = Array.from(userActivity.values())
-            .sort((a, b) => b.studyTime - a.studyTime)
-            .slice(0, 10)
-
-        // Inactive users (no activity in 30 days)
-        const inactiveUsers = Array.from(userActivity.values())
-            .filter(u => !u.lastActivity || u.lastActivity < thirtyDaysAgo)
-
-        // TMS sync stats
-        // @ts-ignore
-        const tmsSyncedEnrollments = enrollments.filter(e => e.tmsEnrollmentId).length
 
         return {
             success: true,
             data: {
                 overview: {
-                    totalUsers,
-                    activeUsersLast7Days,
-                    activeUsersLast30Days,
-                    totalEnrollments,
-                    completedEnrollments,
+                    totalUsers: totalUsersCount,
+                    activeUsersLast7Days: activeUsers7Days,
+                    activeUsersLast30Days: activeUsers30Days,
+                    totalEnrollments: totalEnrollmentsCount,
+                    completedEnrollments: completedEnrollmentsCount,
                     completionRate,
                     totalStudyTimeMinutes,
                     avgStudyTimePerUser,
                     tmsSyncedEnrollments
                 },
                 quizStats: {
-                    totalAttempts: totalQuizAttempts,
-                    passedAttempts: passedQuizAttempts,
+                    totalAttempts: totalQuizAttemptsCount,
+                    passedAttempts: passedQuizAttemptsCount,
                     passRate: quizPassRate,
-                    avgScore: avgQuizScore
+                    avgScore: quizAvgScore._avg.score || 0
                 },
                 topCourses,
                 topUsers,
-                inactiveUsersCount: inactiveUsers.length
+                inactiveUsersCount
             }
         }
     } catch (error) {
@@ -389,4 +383,278 @@ export async function exportEngagementCSV() {
     })
 
     return { success: true, csv }
+}
+
+// ============================================
+// MODULE-LEVEL TIME TRACKING REPORTS
+// ============================================
+
+export async function getModuleTimeTrackingReport(filters?: {
+    userId?: string
+    courseId?: string
+}) {
+    const session = await auth()
+    if (session?.user?.role !== "ADMIN") {
+        return { success: false, error: "Non autorizzato" }
+    }
+
+    try {
+        // Build where clause for enrollments
+        const enrollmentWhere: any = {}
+        if (filters?.userId) enrollmentWhere.userId = filters.userId
+        if (filters?.courseId) enrollmentWhere.courseId = filters.courseId
+
+        // Get all module progress with related data
+        const moduleProgressData = await db.moduleProgress.findMany({
+            where: filters?.userId ? { userId: filters.userId } : undefined,
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        department: {
+                            select: { name: true }
+                        }
+                    }
+                },
+                module: {
+                    select: {
+                        id: true,
+                        title: true,
+                        position: true,
+                        minimumDuration: true,
+                        contentType: true,
+                        course: {
+                            select: {
+                                id: true,
+                                title: true
+                            }
+                        }
+                    }
+                }
+            },
+            orderBy: [
+                { module: { course: { title: "asc" } } },
+                { module: { position: "asc" } }
+            ]
+        })
+
+        // Filter by courseId if specified
+        let filteredData = moduleProgressData
+        if (filters?.courseId) {
+            filteredData = moduleProgressData.filter(
+                mp => mp.module.course.id === filters.courseId
+            )
+        }
+
+        const reportData = filteredData.map(mp => ({
+            moduleProgressId: mp.id,
+            userId: mp.user.id,
+            userName: mp.user.name || mp.user.email || "N/A",
+            userEmail: mp.user.email,
+            userDepartment: mp.user.department?.name || null,
+            courseId: mp.module.course.id,
+            courseTitle: mp.module.course.title,
+            moduleId: mp.module.id,
+            moduleTitle: mp.module.title,
+            modulePosition: mp.module.position,
+            contentType: mp.module.contentType || "VIDEO",
+            timeSpent: mp.timeSpent, // in seconds
+            watchedSeconds: mp.watchedSeconds,
+            minimumDuration: mp.module.minimumDuration || 0, // in minutes
+            completed: mp.completed,
+            completedAt: mp.completedAt,
+            lastActivity: mp.updatedAt,
+            status: mp.completed
+                ? "Completato"
+                : mp.module.minimumDuration && mp.module.minimumDuration > 0 && mp.timeSpent >= (mp.module.minimumDuration * 60)
+                    ? "Tempo OK - In Corso"
+                    : mp.module.minimumDuration && mp.module.minimumDuration > 0
+                        ? "Tempo Insufficiente"
+                        : "In Corso"
+        }))
+
+        return { success: true, data: reportData }
+    } catch (error) {
+        console.error("Error fetching module time tracking report:", error)
+        return { success: false, error: "Errore durante il recupero dei dati" }
+    }
+}
+
+export async function exportModuleTimeTrackingCSV(filters?: {
+    userId?: string
+    courseId?: string
+}) {
+    const session = await auth()
+    if (session?.user?.role !== "ADMIN") {
+        return { success: false, error: "Non autorizzato" }
+    }
+
+    const result = await getModuleTimeTrackingReport(filters)
+    if (!result.success || !result.data) {
+        return { success: false, error: result.error }
+    }
+
+    const headers = [
+        "Utente",
+        "Email",
+        "Dipartimento",
+        "Corso",
+        "Modulo",
+        "Posizione",
+        "Tipo Contenuto",
+        "Tempo Trascorso (sec)",
+        "Tempo Trascorso (min)",
+        "Tempo Richiesto (min)",
+        "Stato",
+        "Completato",
+        "Data Completamento",
+        "Ultima Attività"
+    ]
+
+    const rows = result.data.map(row => [
+        row.userName,
+        row.userEmail || "",
+        row.userDepartment || "",
+        row.courseTitle,
+        row.moduleTitle,
+        row.modulePosition.toString(),
+        row.contentType,
+        row.timeSpent.toString(),
+        Math.floor(row.timeSpent / 60).toString(),
+        row.minimumDuration.toString(),
+        row.status,
+        row.completed ? "Sì" : "No",
+        row.completedAt ? new Date(row.completedAt).toLocaleDateString("it-IT") : "",
+        new Date(row.lastActivity).toLocaleDateString("it-IT")
+    ])
+
+    const csv = [
+        headers.join(","),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+    ].join("\n")
+
+    return { success: true, csv }
+}
+
+// User's personal module time analytics
+export async function getUserModuleTimeAnalytics() {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { success: false, error: "Non autorizzato" }
+    }
+
+    try {
+        const userId = session.user.id
+
+        // Get user's enrollments with courses
+        const enrollments = await db.enrollment.findMany({
+            where: { userId },
+            include: {
+                course: {
+                    select: {
+                        id: true,
+                        title: true,
+                        minimumDuration: true,
+                        modules: {
+                            where: { published: true },
+                            select: {
+                                id: true,
+                                title: true,
+                                position: true,
+                                minimumDuration: true,
+                                contentType: true
+                            },
+                            orderBy: { position: "asc" }
+                        }
+                    }
+                }
+            },
+            orderBy: { createdAt: "desc" }
+        })
+
+        // Get all module progress for this user
+        const moduleProgress = await db.moduleProgress.findMany({
+            where: { userId },
+            select: {
+                moduleId: true,
+                timeSpent: true,
+                watchedSeconds: true,
+                completed: true,
+                completedAt: true,
+                updatedAt: true
+            }
+        })
+
+        // Create a map for quick lookup
+        const progressMap = new Map(
+            moduleProgress.map(mp => [mp.moduleId, mp])
+        )
+
+        // Build the analytics data
+        const courseAnalytics = enrollments.map(enrollment => {
+            const courseModules = enrollment.course.modules.map(module => {
+                const progress = progressMap.get(module.id)
+                const timeSpent = progress?.timeSpent || 0
+                const minimumDurationSec = (module.minimumDuration || 0) * 60
+
+                return {
+                    moduleId: module.id,
+                    moduleTitle: module.title,
+                    position: module.position,
+                    contentType: module.contentType || "VIDEO",
+                    timeSpent, // seconds
+                    watchedSeconds: progress?.watchedSeconds || 0,
+                    minimumDuration: module.minimumDuration || 0, // minutes
+                    completed: progress?.completed || false,
+                    completedAt: progress?.completedAt ?? null,
+                    lastActivity: progress?.updatedAt ?? null,
+                    timePercentage: minimumDurationSec > 0
+                        ? Math.min(Math.round((timeSpent / minimumDurationSec) * 100), 100)
+                        : 100
+                }
+            })
+
+            const totalTimeSpent = courseModules.reduce((sum, m) => sum + m.timeSpent, 0)
+            const completedModules = courseModules.filter(m => m.completed).length
+            const totalModules = courseModules.length
+
+            return {
+                courseId: enrollment.course.id,
+                courseTitle: enrollment.course.title,
+                courseMinimumDuration: enrollment.course.minimumDuration,
+                enrollmentTimeSpent: enrollment.timeSpent,
+                enrollmentProgress: enrollment.progress,
+                enrollmentCompleted: enrollment.completed,
+                totalTimeSpent,
+                completedModules,
+                totalModules,
+                modules: courseModules
+            }
+        })
+
+        // Calculate totals
+        const totalStudyTime = courseAnalytics.reduce((sum, c) => sum + c.totalTimeSpent, 0)
+        const totalCompletedModules = courseAnalytics.reduce((sum, c) => sum + c.completedModules, 0)
+        const totalModules = courseAnalytics.reduce((sum, c) => sum + c.totalModules, 0)
+        const completedCourses = courseAnalytics.filter(c => c.enrollmentCompleted).length
+
+        return {
+            success: true,
+            data: {
+                summary: {
+                    totalStudyTime, // seconds
+                    totalCompletedModules,
+                    totalModules,
+                    totalCourses: enrollments.length,
+                    completedCourses
+                },
+                courses: courseAnalytics
+            }
+        }
+    } catch (error) {
+        console.error("Error fetching user module time analytics:", error)
+        return { success: false, error: "Errore durante il recupero dei dati" }
+    }
 }

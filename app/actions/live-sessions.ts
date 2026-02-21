@@ -38,7 +38,7 @@ export async function getLiveSessions() {
 
 export async function getAllLiveSessions() {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") return []
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") return []
 
     const liveSessions = await db.liveSession.findMany({
         orderBy: { startTime: 'asc' },
@@ -95,26 +95,34 @@ export async function getUpcomingSessions() {
     return liveSessions
 }
 
+function extractGoogleMeetCode(url: string): string | null {
+    const match = url.match(/meet\.google\.com\/([a-z]{3}-[a-z]{4}-[a-z]{3})/i)
+    return match ? match[1] : null
+}
+
 export async function createLiveSession(data: {
     title: string
     description?: string
-    startTime: Date
-    endTime: Date
-    meetingUrl: string
+    startTime?: Date
+    endTime?: Date
+    meetingUrl?: string
     courseId?: string
 }) {
     const session = await auth()
-    if (!session?.user?.id || session.user.role !== "ADMIN") {
+    if (!session?.user?.id || (session.user.role !== "ADMIN" && session.user.role !== "TEACHER")) {
         throw new Error("Unauthorized")
     }
+
+    const googleMeetCode = data.meetingUrl ? extractGoogleMeetCode(data.meetingUrl) : null
 
     await db.liveSession.create({
         data: {
             title: data.title,
             description: data.description,
-            startTime: data.startTime,
-            endTime: data.endTime,
-            meetingUrl: data.meetingUrl,
+            startTime: data.startTime || null,
+            endTime: data.endTime || null,
+            meetingUrl: data.meetingUrl || null,
+            googleMeetCode,
             courseId: data.courseId || null,
             instructorId: session.user.id
         }
@@ -125,22 +133,45 @@ export async function createLiveSession(data: {
     revalidatePath("/live-sessions")
 }
 
+export async function getLiveSessionById(id: string) {
+    const session = await auth()
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") return null
+
+    return db.liveSession.findUnique({
+        where: { id },
+        include: {
+            course: { select: { id: true, title: true } },
+            instructor: { select: { name: true, email: true } },
+        },
+    })
+}
+
 export async function updateLiveSession(id: string, data: {
     title: string
     description?: string
-    startTime: Date
-    endTime: Date
-    meetingUrl: string
+    startTime?: Date
+    endTime?: Date
+    meetingUrl?: string
     courseId?: string
 }) {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
         throw new Error("Unauthorized")
     }
 
+    const googleMeetCode = data.meetingUrl ? extractGoogleMeetCode(data.meetingUrl) : null
+
     await db.liveSession.update({
         where: { id },
-        data
+        data: {
+            title: data.title,
+            description: data.description || null,
+            startTime: data.startTime || null,
+            endTime: data.endTime || null,
+            meetingUrl: data.meetingUrl || null,
+            googleMeetCode,
+            courseId: data.courseId || null,
+        }
     })
 
     revalidatePath("/admin/live-sessions")
@@ -150,7 +181,7 @@ export async function updateLiveSession(id: string, data: {
 
 export async function deleteLiveSession(id: string) {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
         throw new Error("Unauthorized")
     }
 

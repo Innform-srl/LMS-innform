@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     const rateLimitKey = `eduplan:enrollments:get:${ip}`
 
     // Check rate limit
-    const rateLimit = checkRateLimit(rateLimitKey, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS)
+    const rateLimit = await checkRateLimit(rateLimitKey, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS)
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { success: false, error: 'Too many requests' },
@@ -394,7 +394,7 @@ export async function POST(req: Request) {
     const rateLimitKey = `eduplan:enrollments:${ip}`
 
     // Check rate limit
-    const rateLimit = checkRateLimit(rateLimitKey, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS)
+    const rateLimit = await checkRateLimit(rateLimitKey, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS)
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { success: false, error: 'Too many requests' },
@@ -697,7 +697,7 @@ export async function DELETE(req: Request) {
     const rateLimitKey = `eduplan:enrollments:delete:${ip}`
 
     // Check rate limit
-    const rateLimit = checkRateLimit(rateLimitKey, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS)
+    const rateLimit = await checkRateLimit(rateLimitKey, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS)
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { success: false, error: 'Too many requests' },

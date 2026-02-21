@@ -4,13 +4,14 @@ import { usePathname } from "next/navigation"
 import { Sidebar } from "./sidebar"
 import { GlobalActivityTracker } from "@/components/global-activity-tracker"
 import { Header } from "./header"
+import { PWAInstallPrompt } from "./pwa-install-prompt"
 
 interface ClientLayoutProps {
     children: React.ReactNode
     user?: {
         name?: string | null
         email?: string | null
-        role: "ADMIN" | "EMPLOYEE"
+        role: "ADMIN" | "EMPLOYEE" | "TEACHER"
     } | null
 }
 
@@ -34,6 +35,7 @@ export function ClientLayout({ children, user }: ClientLayoutProps) {
                     {children}
                 </div>
             </main>
+            <PWAInstallPrompt />
         </div>
     )
 }

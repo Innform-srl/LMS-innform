@@ -126,6 +126,7 @@ export function CreateUserForm({ departments, companies }: CreateUserFormProps) 
                         required
                     >
                         <option value="EMPLOYEE">Dipendente</option>
+                        <option value="TEACHER">Docente</option>
                         <option value="ADMIN">Amministratore</option>
                     </select>
                 </div>

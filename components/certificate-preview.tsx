@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Download, X, CheckCircle, Award } from 'lucide-react'
+import { apiUrl } from "@/lib/api"
 
 interface CertificatePreviewProps {
     certificateId: string
@@ -23,7 +24,7 @@ export function CertificatePreview({
     const handleDownload = async () => {
         setIsDownloading(true)
         try {
-            const response = await fetch(`/api/certificates/${certificateId}/download`)
+            const response = await fetch(apiUrl(`/api/certificates/${certificateId}/download`))
             if (!response.ok) throw new Error('Download failed')
 
             const blob = await response.blob()

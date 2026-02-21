@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react"
 import dynamic from "next/dynamic"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Users, BookOpen, GraduationCap, Activity } from "lucide-react"
+import { apiUrl } from "@/lib/api"
 
 function ChartLoading() {
     return (
@@ -29,9 +30,9 @@ export function AnalyticsDashboard() {
         const fetchData = async () => {
             try {
                 const [overviewRes, timelineRes, deptRes] = await Promise.all([
-                    fetch('/api/analytics/overview'),
-                    fetch('/api/analytics/progress-timeline'),
-                    fetch('/api/analytics/department-comparison')
+                    fetch(apiUrl('/api/analytics/overview')),
+                    fetch(apiUrl('/api/analytics/progress-timeline')),
+                    fetch(apiUrl('/api/analytics/department-comparison'))
                 ])
 
                 if (overviewRes.ok) setOverview(await overviewRes.json())

@@ -39,6 +39,7 @@ export function DeleteUserButton({ userId, userName, userEmail }: DeleteUserButt
 
       const response = await fetch(url, {
         method: "DELETE",
+        credentials: "include",
       })
 
       const data = await response.json()
@@ -122,7 +123,7 @@ export function DeleteUserButton({ userId, userName, userEmail }: DeleteUserButt
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Annulla</AlertDialogCancel>
           {showForceOption ? (
-            <AlertDialogAction
+            <Button
               onClick={() => handleDelete(true)}
               disabled={isDeleting}
               className="bg-orange-600 hover:bg-orange-700 text-white"
@@ -138,9 +139,9 @@ export function DeleteUserButton({ userId, userName, userEmail }: DeleteUserButt
                   Forza Eliminazione
                 </>
               )}
-            </AlertDialogAction>
+            </Button>
           ) : (
-            <AlertDialogAction
+            <Button
               onClick={() => handleDelete(false)}
               disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700 text-white"
@@ -156,7 +157,7 @@ export function DeleteUserButton({ userId, userName, userEmail }: DeleteUserButt
                   Elimina Utente
                 </>
               )}
-            </AlertDialogAction>
+            </Button>
           )}
         </AlertDialogFooter>
       </AlertDialogContent>

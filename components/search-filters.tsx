@@ -13,6 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { apiUrl } from "@/lib/api"
 
 interface Department {
     id: string
@@ -34,7 +35,7 @@ export function SearchFilters() {
 
     useEffect(() => {
         // Fetch departments
-        fetch('/api/departments') // Assuming this endpoint exists or I need to create it
+        fetch(apiUrl('/api/departments')) // Assuming this endpoint exists or I need to create it
             .then(res => res.json())
             .then(data => setDepartments(data))
             .catch(err => console.error(err))

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { NotificationList } from "./notification-list"
 import { useRouter } from "next/navigation"
+import { apiUrl } from "@/lib/api"
 
 export function NotificationBell() {
     const [unreadCount, setUnreadCount] = useState(0)
@@ -26,7 +27,7 @@ export function NotificationBell() {
 
     const fetchUnreadCount = async () => {
         try {
-            const res = await fetch('/api/notifications/unread-count')
+            const res = await fetch(apiUrl('/api/notifications/unread-count'))
             if (res.ok) {
                 const data = await res.json()
                 setUnreadCount(data.count)
@@ -38,7 +39,7 @@ export function NotificationBell() {
 
     const handleMarkAllRead = async () => {
         try {
-            const res = await fetch('/api/notifications/mark-all-read', {
+            const res = await fetch(apiUrl('/api/notifications/mark-all-read'), {
                 method: 'POST'
             })
             if (res.ok) {

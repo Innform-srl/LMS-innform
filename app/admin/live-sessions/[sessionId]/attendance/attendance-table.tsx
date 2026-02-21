@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, Fragment, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,7 +24,7 @@ import {
     exportAttendanceCSV
 } from "@/app/actions/attendance"
 import { AttendanceStatus } from "@prisma/client"
-import { Search, Download, UserCheck, UserX, LogIn, LogOut, RefreshCw } from "lucide-react"
+import { Search, Download, UserCheck, UserX, LogIn, LogOut, RefreshCw, Monitor, Phone, User, UserPlus, Clock, AlertTriangle, Check, GraduationCap } from "lucide-react"
 
 interface AttendanceRecord {
     id: string
@@ -37,14 +37,55 @@ interface AttendanceRecord {
         id: string
         name: string | null
         email: string
+        role: string
         department: { name: string } | null
     }
+}
+
+interface UnmatchedMeetParticipant {
+    displayName: string
+    email?: string
+    checkInTime: string | null
+    checkOutTime: string | null
+    durationMinutes: number
+    sessionCount: number
+    sessions: Array<{ startTime: string; endTime: string | null; durationMinutes: number }>
+    participantType: "google" | "anonymous" | "phone"
 }
 
 interface AttendanceTableProps {
     sessionId: string
     attendance: AttendanceRecord[]
     isEnded: boolean
+    googleMeetCode?: string | null
+    unmatchedMeetParticipants?: UnmatchedMeetParticipant[] | null
+    instructorId?: string
+}
+
+interface MeetMetadata {
+    source: "google-meet"
+    durationMinutes: number
+    sessionCount: number
+    sessions: Array<{ startTime: string; endTime: string | null; durationMinutes: number }>
+    participantType: "google" | "anonymous" | "phone"
+    displayName: string
+}
+
+function parseMeetNotes(notes: string | null): MeetMetadata | null {
+    if (!notes) return null
+    try {
+        const data = JSON.parse(notes)
+        if (data.source === "google-meet") return data as MeetMetadata
+    } catch {
+        // Notes non è JSON (vecchio formato testo)
+    }
+    return null
+}
+
+const participantTypeConfig = {
+    google: { icon: Monitor, label: "Google", className: "text-blue-500 bg-blue-500/10" },
+    anonymous: { icon: User, label: "Anonimo", className: "text-amber-500 bg-amber-500/10" },
+    phone: { icon: Phone, label: "Telefono", className: "text-green-500 bg-green-500/10" },
 }
 
 const statusOptions: { value: AttendanceStatus; label: string }[] = [
@@ -56,12 +97,76 @@ const statusOptions: { value: AttendanceStatus; label: string }[] = [
     { value: "EXCUSED", label: "Giustificato" },
 ]
 
-export function AttendanceTable({ sessionId, attendance, isEnded }: AttendanceTableProps) {
+export function AttendanceTable({ sessionId, attendance, isEnded, googleMeetCode, unmatchedMeetParticipants, instructorId }: AttendanceTableProps) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
     const [search, setSearch] = useState("")
     const [statusFilter, setStatusFilter] = useState<string>("all")
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+    const [mounted, setMounted] = useState(false)
+    const [allUsers, setAllUsers] = useState<Array<{ id: string; name: string | null; email: string }>>([])
+    const [associations, setAssociations] = useState<Record<number, string>>({})
+    const [associating, setAssociating] = useState<number | null>(null)
+    const [associatedIndexes, setAssociatedIndexes] = useState<Set<number>>(new Set())
+
+    useEffect(() => { setMounted(true) }, [])
+
+    const loadUsers = async () => {
+        try {
+            const res = await fetch("/lms/api/integrations/google-meet?action=users")
+            if (res.ok) {
+                const data = await res.json()
+                setAllUsers(data.users || [])
+            }
+        } catch (err) {
+            console.error("Failed to load users:", err)
+        }
+    }
+
+    useEffect(() => {
+        if (unmatchedMeetParticipants && unmatchedMeetParticipants.length > 0) {
+            loadUsers()
+        }
+    }, [unmatchedMeetParticipants])
+
+    const handleAssociateUnmatched = async (index: number, participant: UnmatchedMeetParticipant) => {
+        const userId = associations[index]
+        if (!userId) return
+
+        setAssociating(index)
+        try {
+            const res = await fetch("/lms/api/integrations/google-meet", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    sessionId,
+                    userId,
+                    displayName: participant.displayName,
+                    checkInTime: participant.checkInTime,
+                    checkOutTime: participant.checkOutTime,
+                    durationMinutes: participant.durationMinutes,
+                    sessionCount: participant.sessionCount,
+                    sessions: participant.sessions,
+                    participantType: participant.participantType
+                })
+            })
+            const data = await res.json()
+            if (data.success) {
+                setAssociatedIndexes(prev => new Set([...prev, index]))
+                router.refresh()
+            }
+        } catch (err) {
+            console.error("Association failed:", err)
+        } finally {
+            setAssociating(null)
+        }
+    }
+
+    const formatTime = (date: Date | string | null) => {
+        if (!date || !mounted) return "—"
+        return new Date(date).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+    }
 
     const filteredAttendance = attendance.filter((a) => {
         const matchesSearch =
@@ -150,6 +255,7 @@ export function AttendanceTable({ sessionId, attendance, isEnded }: AttendanceTa
                     <div className="flex flex-wrap items-center gap-2">
                         <GoogleMeetSync
                             sessionId={sessionId}
+                            googleMeetCode={googleMeetCode}
                             onSync={() => router.refresh()}
                         />
                         <Button
@@ -290,14 +396,39 @@ export function AttendanceTable({ sessionId, attendance, isEnded }: AttendanceTa
                                             />
                                         </td>
                                         <td className="py-3 px-2">
-                                            <div>
-                                                <p className="font-medium text-foreground">
-                                                    {record.user.name || "—"}
-                                                </p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {record.user.email}
-                                                </p>
-                                            </div>
+                                            {(() => {
+                                                const meetData = parseMeetNotes(record.notes)
+                                                const typeConfig = meetData ? participantTypeConfig[meetData.participantType] : null
+                                                const TypeIcon = typeConfig?.icon
+                                                const isInstructor = record.user.id === instructorId
+                                                return (
+                                                    <div>
+                                                        <p className="font-medium text-foreground flex items-center gap-2">
+                                                            {record.user.name || "—"}
+                                                            {isInstructor && (
+                                                                <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full text-purple-500 bg-purple-500/10">
+                                                                    <GraduationCap className="w-3 h-3" />
+                                                                    Docente
+                                                                </span>
+                                                            )}
+                                                        </p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {record.user.email}
+                                                        </p>
+                                                        {TypeIcon && (
+                                                            <span className={`inline-flex items-center gap-1 mt-1 text-xs px-1.5 py-0.5 rounded-full ${typeConfig.className}`}>
+                                                                <TypeIcon className="w-3 h-3" />
+                                                                {typeConfig.label}
+                                                                {meetData && meetData.displayName && meetData.participantType !== "google" && (
+                                                                    <span className="text-muted-foreground ml-1">
+                                                                        &quot;{meetData.displayName}&quot;
+                                                                    </span>
+                                                                )}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )
+                                            })()}
                                         </td>
                                         <td className="py-3 px-2 text-sm text-muted-foreground">
                                             {record.user.department?.name || "—"}
@@ -308,7 +439,7 @@ export function AttendanceTable({ sessionId, attendance, isEnded }: AttendanceTa
                                                 onValueChange={(value) => handleStatusChange(record.id, value as AttendanceStatus)}
                                                 disabled={isPending}
                                             >
-                                                <SelectTrigger className="w-[140px] h-8">
+                                                <SelectTrigger className="w-[160px] h-9 border-none bg-transparent shadow-none px-1 focus:ring-0 focus:ring-offset-0">
                                                     <AttendanceBadge status={record.status} size="sm" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -321,17 +452,75 @@ export function AttendanceTable({ sessionId, attendance, isEnded }: AttendanceTa
                                             </Select>
                                         </td>
                                         <td className="py-3 px-2 text-sm text-muted-foreground">
-                                            {record.checkInTime
-                                                ? new Date(record.checkInTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
-                                                : "—"}
+                                            {formatTime(record.checkInTime)}
                                         </td>
                                         <td className="py-3 px-2 text-sm text-muted-foreground">
-                                            {record.checkOutTime
-                                                ? new Date(record.checkOutTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
-                                                : "—"}
+                                            {formatTime(record.checkOutTime)}
                                         </td>
                                         <td className="py-3 px-2 text-sm text-muted-foreground">
-                                            {record.durationMinutes !== null ? `${record.durationMinutes} min` : "—"}
+                                            {(() => {
+                                                const meetData = parseMeetNotes(record.notes)
+                                                if (record.durationMinutes === null) return "—"
+                                                if (!meetData) return `${record.durationMinutes} min`
+
+                                                const sortedSessions = [...meetData.sessions].sort(
+                                                    (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+                                                )
+                                                const lastSess = sortedSessions[sortedSessions.length - 1]
+                                                const isOnline = lastSess && !lastSess.endTime
+                                                let totalDisconnectMin = 0
+
+                                                return (
+                                                    <div>
+                                                        <p className="font-medium text-foreground flex items-center gap-1.5">
+                                                            {record.durationMinutes} min
+                                                            {meetData.sessionCount > 1 && (
+                                                                <span className="font-normal text-xs text-amber-500">
+                                                                    ({meetData.sessionCount} connessioni)
+                                                                </span>
+                                                            )}
+                                                        </p>
+                                                        <div className="mt-1.5 space-y-0">
+                                                            {sortedSessions.map((s, i) => {
+                                                                const start = formatTime(s.startTime)
+                                                                const end = s.endTime
+                                                                    ? formatTime(s.endTime)
+                                                                    : null
+                                                                let gapMin = 0
+                                                                if (i > 0 && sortedSessions[i - 1].endTime) {
+                                                                    gapMin = Math.round(
+                                                                        (new Date(s.startTime).getTime() - new Date(sortedSessions[i - 1].endTime!).getTime()) / (1000 * 60)
+                                                                    )
+                                                                    totalDisconnectMin += gapMin
+                                                                }
+                                                                return (
+                                                                    <Fragment key={i}>
+                                                                        {gapMin > 0 && (
+                                                                            <p className="text-xs text-red-400/70 pl-2 py-0.5 border-l-2 border-red-400/30">
+                                                                                disconnesso {gapMin} min
+                                                                            </p>
+                                                                        )}
+                                                                        <p className={`text-xs pl-2 py-0.5 border-l-2 ${end ? 'text-muted-foreground/70 border-muted-foreground/20' : 'text-green-500 border-green-400/30'}`}>
+                                                                            {start} – {end ?? "in corso"}
+                                                                            {end && <span className="text-muted-foreground/50"> ({s.durationMinutes} min)</span>}
+                                                                        </p>
+                                                                    </Fragment>
+                                                                )
+                                                            })}
+                                                            {!isOnline && lastSess?.endTime && (
+                                                                <p className="text-xs text-red-400/70 pl-2 py-0.5 border-l-2 border-red-400/30">
+                                                                    uscita alle {formatTime(lastSess.endTime)}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                        {totalDisconnectMin > 0 && (
+                                                            <p className="mt-1 text-xs text-red-400/60">
+                                                                Tot. disconnesso: {totalDisconnectMin} min
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )
+                                            })()}
                                         </td>
                                         <td className="py-3 px-2 text-right">
                                             <div className="flex justify-end gap-1">
@@ -365,6 +554,98 @@ export function AttendanceTable({ sessionId, attendance, isEnded }: AttendanceTa
                         </tbody>
                     </table>
                 </div>
+
+                {/* Partecipanti Google Meet non associati */}
+                {unmatchedMeetParticipants && unmatchedMeetParticipants.length > 0 && (
+                    <div className="mt-6 border border-orange-500/20 rounded-lg overflow-hidden">
+                        <div className="bg-orange-500/10 px-4 py-3 flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-orange-400" />
+                            <span className="text-sm font-medium text-orange-400">
+                                {unmatchedMeetParticipants.filter((_, i) => !associatedIndexes.has(i)).length} partecipant{unmatchedMeetParticipants.filter((_, i) => !associatedIndexes.has(i)).length === 1 ? "e" : "i"} Google Meet non associat{unmatchedMeetParticipants.filter((_, i) => !associatedIndexes.has(i)).length === 1 ? "o" : "i"}
+                            </span>
+                        </div>
+                        <div className="divide-y divide-border">
+                            {unmatchedMeetParticipants.map((p, idx) => {
+                                const typeConfig = participantTypeConfig[p.participantType]
+                                const TypeIcon = typeConfig?.icon
+                                return (
+                                    <div key={idx} className={`px-4 py-3 ${associatedIndexes.has(idx) ? "opacity-50" : ""}`}>
+                                        <div className="flex flex-col md:flex-row md:items-center gap-3">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-medium text-foreground">
+                                                        {p.displayName}
+                                                    </p>
+                                                    {TypeIcon && (
+                                                        <span className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full ${typeConfig.className}`}>
+                                                            <TypeIcon className="w-3 h-3" />
+                                                            {typeConfig.label}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {p.email && (
+                                                    <p className="text-xs text-muted-foreground">{p.email}</p>
+                                                )}
+                                                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                                    {p.checkInTime && (
+                                                        <span className="flex items-center gap-1">
+                                                            <Clock className="w-3 h-3" />
+                                                            {formatTime(p.checkInTime)}
+                                                            {p.checkOutTime && ` – ${formatTime(p.checkOutTime)}`}
+                                                        </span>
+                                                    )}
+                                                    <span>{p.durationMinutes} min</span>
+                                                    {p.sessionCount > 1 && (
+                                                        <span>({p.sessionCount} connessioni)</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                {associatedIndexes.has(idx) ? (
+                                                    <div className="flex items-center gap-1.5 text-green-500 text-sm">
+                                                        <Check className="w-4 h-4" />
+                                                        Associato
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <Select
+                                                            value={associations[idx] || ""}
+                                                            onValueChange={(val) => setAssociations(prev => ({ ...prev, [idx]: val }))}
+                                                        >
+                                                            <SelectTrigger className="h-8 text-xs w-[220px]">
+                                                                <SelectValue placeholder="Associa a un utente..." />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {allUsers.map(u => (
+                                                                    <SelectItem key={u.id} value={u.id} className="text-xs">
+                                                                        {u.name || u.email} {u.name ? `(${u.email})` : ""}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="h-8 px-2"
+                                                            disabled={!associations[idx] || associating === idx}
+                                                            onClick={() => handleAssociateUnmatched(idx, p)}
+                                                        >
+                                                            {associating === idx ? (
+                                                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                                            ) : (
+                                                                <UserPlus className="w-3.5 h-3.5" />
+                                                            )}
+                                                        </Button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {isPending && (
                     <div className="flex items-center justify-center py-4">

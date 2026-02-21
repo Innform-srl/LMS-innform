@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { resend } from "@/lib/email"
+import { NotificationType } from "@prisma/client"
 
 /**
  * Cron endpoint per reminder sessioni live e auto-mark assenti
@@ -12,11 +13,11 @@ import { resend } from "@/lib/email"
  */
 export async function GET(request: Request) {
     try {
-        // Verifica authorization header
+        // Verifica authorization header (fail-closed)
         const authHeader = request.headers.get('authorization')
         const cronSecret = process.env.CRON_SECRET
 
-        if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+        if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
             return NextResponse.json(
                 { error: 'Non autorizzato' },
                 { status: 401 }
@@ -55,6 +56,8 @@ export async function GET(request: Request) {
         })
 
         for (const session of sessions24h) {
+            const notificationsToCreate = []
+
             for (const attendance of session.attendance) {
                 try {
                     await resend.emails.send({
@@ -79,30 +82,37 @@ export async function GET(request: Request) {
                         `
                     })
 
-                    // Crea notifica in-app
-                    await db.notification.create({
-                        data: {
-                            userId: attendance.user.id,
-                            title: "Sessione domani",
-                            message: `La sessione "${session.title}" inizia domani alle ${session.startTime.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`,
-                            type: "INFO",
-                            icon: "calendar",
-                            link: `/live-sessions`
-                        }
+                    notificationsToCreate.push({
+                        userId: attendance.user.id,
+                        title: "Sessione domani",
+                        message: `La sessione "${session.title}" inizia domani alle ${session.startTime.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`,
+                        type: NotificationType.INFO,
+                        icon: "calendar",
+                        link: `/live-sessions`
                     })
 
                     results.reminders24h++
-                    results.notifications++
                 } catch (error: any) {
                     results.errors.push(`24h reminder error for ${attendance.user.email}: ${error.message}`)
                 }
             }
 
-            // Segna come inviato
-            await db.liveSession.update({
-                where: { id: session.id },
-                data: { reminderSent24h: true }
-            })
+            // Batch: crea tutte le notifiche e segna come inviato in una transazione
+            if (notificationsToCreate.length > 0) {
+                await db.$transaction([
+                    db.notification.createMany({ data: notificationsToCreate }),
+                    db.liveSession.update({
+                        where: { id: session.id },
+                        data: { reminderSent24h: true }
+                    })
+                ])
+                results.notifications += notificationsToCreate.length
+            } else {
+                await db.liveSession.update({
+                    where: { id: session.id },
+                    data: { reminderSent24h: true }
+                })
+            }
         }
 
         // 2. Reminder 1 ora prima
@@ -128,6 +138,8 @@ export async function GET(request: Request) {
         })
 
         for (const session of sessions1h) {
+            const notificationsToCreate = []
+
             for (const attendance of session.attendance) {
                 try {
                     await resend.emails.send({
@@ -147,28 +159,37 @@ export async function GET(request: Request) {
                         `
                     })
 
-                    await db.notification.create({
-                        data: {
-                            userId: attendance.user.id,
-                            title: "Sessione tra 1 ora",
-                            message: `La sessione "${session.title}" inizia tra 1 ora!`,
-                            type: "WARNING",
-                            icon: "clock",
-                            link: `/live-sessions`
-                        }
+                    notificationsToCreate.push({
+                        userId: attendance.user.id,
+                        title: "Sessione tra 1 ora",
+                        message: `La sessione "${session.title}" inizia tra 1 ora!`,
+                        type: NotificationType.WARNING,
+                        icon: "clock",
+                        link: `/live-sessions`
                     })
 
                     results.reminders1h++
-                    results.notifications++
                 } catch (error: any) {
                     results.errors.push(`1h reminder error for ${attendance.user.email}: ${error.message}`)
                 }
             }
 
-            await db.liveSession.update({
-                where: { id: session.id },
-                data: { reminderSent1h: true }
-            })
+            // Batch: crea tutte le notifiche e segna come inviato in una transazione
+            if (notificationsToCreate.length > 0) {
+                await db.$transaction([
+                    db.notification.createMany({ data: notificationsToCreate }),
+                    db.liveSession.update({
+                        where: { id: session.id },
+                        data: { reminderSent1h: true }
+                    })
+                ])
+                results.notifications += notificationsToCreate.length
+            } else {
+                await db.liveSession.update({
+                    where: { id: session.id },
+                    data: { reminderSent1h: true }
+                })
+            }
         }
 
         // 3. Auto-mark assenti dopo 30 minuti dalla fine

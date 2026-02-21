@@ -14,18 +14,18 @@ export default async function SessionAttendancePage({
 }) {
     const { sessionId } = await params
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") redirect("/")
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") redirect("/")
 
     const data = await getSessionAttendance(sessionId)
     if (!data) notFound()
 
     const { session: liveSession, stats } = data
 
-    const sessionStart = new Date(liveSession.startTime)
-    const sessionEnd = new Date(liveSession.endTime)
+    const sessionStart = liveSession.startTime ? new Date(liveSession.startTime) : null
+    const sessionEnd = liveSession.endTime ? new Date(liveSession.endTime) : null
     const now = new Date()
-    const isOngoing = now >= sessionStart && now <= sessionEnd
-    const isEnded = now > sessionEnd
+    const isOngoing = sessionStart && sessionEnd ? now >= sessionStart && now <= sessionEnd : false
+    const isEnded = sessionEnd ? now > sessionEnd : false
 
     return (
         <div className="min-h-screen p-8 bg-background text-foreground">
@@ -45,14 +45,18 @@ export default async function SessionAttendancePage({
                                 {liveSession.title}
                             </h1>
                             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                    <Calendar className="w-4 h-4" />
-                                    {sessionStart.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <Clock className="w-4 h-4" />
-                                    {sessionStart.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - {sessionEnd.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-                                </span>
+                                {sessionStart && (
+                                    <span className="flex items-center gap-1">
+                                        <Calendar className="w-4 h-4" />
+                                        {sessionStart.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                    </span>
+                                )}
+                                {sessionStart && sessionEnd && (
+                                    <span className="flex items-center gap-1">
+                                        <Clock className="w-4 h-4" />
+                                        {sessionStart.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - {sessionEnd.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                )}
                                 {liveSession.physicalRoom && (
                                     <span className="flex items-center gap-1">
                                         <MapPin className="w-4 h-4" />
@@ -81,12 +85,14 @@ export default async function SessionAttendancePage({
                                     Terminata
                                 </span>
                             )}
-                            <Link href={liveSession.meetingUrl} target="_blank">
-                                <Button variant="outline" size="sm">
-                                    <Video className="w-4 h-4 mr-2" />
-                                    Apri Meeting
-                                </Button>
-                            </Link>
+                            {liveSession.meetingUrl && (
+                                <Link href={liveSession.meetingUrl} target="_blank">
+                                    <Button variant="outline" size="sm">
+                                        <Video className="w-4 h-4 mr-2" />
+                                        Apri Meeting
+                                    </Button>
+                                </Link>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -152,6 +158,9 @@ export default async function SessionAttendancePage({
                     sessionId={sessionId}
                     attendance={liveSession.attendance}
                     isEnded={isEnded}
+                    googleMeetCode={liveSession.googleMeetCode}
+                    unmatchedMeetParticipants={liveSession.unmatchedMeetParticipants as any[] | null}
+                    instructorId={liveSession.instructorId}
                 />
             </div>
         </div>

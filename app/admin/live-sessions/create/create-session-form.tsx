@@ -35,9 +35,9 @@ export function CreateSessionForm({ courses }: CreateSessionFormProps) {
             await createLiveSession({
                 title,
                 description,
-                startTime: new Date(startTime),
-                endTime: new Date(endTime),
-                meetingUrl,
+                startTime: startTime ? new Date(startTime) : undefined,
+                endTime: endTime ? new Date(endTime) : undefined,
+                meetingUrl: meetingUrl || undefined,
                 courseId: courseId === "none" ? undefined : courseId
             })
 
@@ -59,7 +59,7 @@ export function CreateSessionForm({ courses }: CreateSessionFormProps) {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} noValidate className="space-y-6">
             <div className="space-y-2">
                 <Label htmlFor="title">Titolo Sessione</Label>
                 <Input id="title" name="title" required placeholder="es. Webinar Q&A" />
@@ -73,17 +73,17 @@ export function CreateSessionForm({ courses }: CreateSessionFormProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="startTime">Inizio</Label>
-                    <Input id="startTime" name="startTime" type="datetime-local" required />
+                    <Input id="startTime" name="startTime" type="datetime-local" />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="endTime">Fine</Label>
-                    <Input id="endTime" name="endTime" type="datetime-local" required />
+                    <Input id="endTime" name="endTime" type="datetime-local" />
                 </div>
             </div>
 
             <div className="space-y-2">
                 <Label htmlFor="meetingUrl">Link Meeting (Zoom, Meet, Teams)</Label>
-                <Input id="meetingUrl" name="meetingUrl" type="url" required placeholder="https://..." />
+                <Input id="meetingUrl" name="meetingUrl" type="url" placeholder="https://..." />
             </div>
 
             <div className="space-y-2">

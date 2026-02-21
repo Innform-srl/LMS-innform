@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { CommentForm } from "@/components/comment-form"
 import { CommentsList } from "@/components/comments-list"
 import { Skeleton } from "@/components/ui/skeleton"
+import { apiUrl } from "@/lib/api"
 
 interface CourseDiscussionProps {
     courseId: string
@@ -20,7 +21,7 @@ export function CourseDiscussion({ courseId, moduleId }: CourseDiscussionProps) 
                 const query = new URLSearchParams({ courseId })
                 if (moduleId) query.set("moduleId", moduleId)
 
-                const res = await fetch(`/api/comments?${query}`)
+                const res = await fetch(apiUrl(`/api/comments?${query}`))
                 if (res.ok) {
                     const data = await res.json()
                     setComments(data)

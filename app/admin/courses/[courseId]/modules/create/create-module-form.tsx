@@ -7,20 +7,45 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { FileText, Video, Upload, Calendar } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-import { RichTextEditor } from "@/components/rich-text-editor"
+import dynamic from "next/dynamic"
+import { apiUrl } from "@/lib/api"
+
+const RichTextEditor = dynamic(
+    () => import("@/components/rich-text-editor").then(mod => ({ default: mod.RichTextEditor })),
+    { ssr: false }
+)
+
+function toLocalDatetimeString(date: Date | string): string {
+    const d = new Date(date)
+    const pad = (n: number) => n.toString().padStart(2, "0")
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+type AvailableSession = {
+    id: string
+    title: string
+    startTime: string | null
+    endTime: string | null
+    meetingUrl: string | null
+}
 
 const initialState = {
     message: "",
 }
 
-export function CreateModuleForm({ courseId }: { courseId: string }) {
+export function CreateModuleForm({ courseId, availableSessions = [] }: { courseId: string, availableSessions?: AvailableSession[] }) {
     const createModuleWithCourseId = createModule.bind(null, courseId)
     const [state, formAction] = useActionState(createModuleWithCourseId, initialState)
     const [description, setDescription] = useState("")
     const [contentType, setContentType] = useState("VIDEO")
     const [isUploading, setIsUploading] = useState(false)
     const [pdfUrl, setPdfUrl] = useState("")
+    const [selectedSessionId, setSelectedSessionId] = useState("")
+    const [sessionStartTime, setSessionStartTime] = useState("")
+    const [sessionEndTime, setSessionEndTime] = useState("")
+    const [sessionMeetingUrl, setSessionMeetingUrl] = useState("")
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -31,7 +56,7 @@ export function CreateModuleForm({ courseId }: { courseId: string }) {
         formData.append('file', file)
 
         try {
-            const res = await fetch('/api/upload', {
+            const res = await fetch(apiUrl('/api/upload'), {
                 method: 'POST',
                 body: formData
             })
@@ -165,6 +190,44 @@ export function CreateModuleForm({ courseId }: { courseId: string }) {
 
                     {contentType === 'LIVE' && (
                         <div className="space-y-4 border border-purple-500/30 p-4 rounded-lg bg-purple-500/5">
+                            <input type="hidden" name="selectedSessionId" value={selectedSessionId} />
+                            {availableSessions.length > 0 && (
+                                <div className="space-y-2">
+                                    <Label>Collega Aula Virtuale Esistente</Label>
+                                    <Select
+                                        value={selectedSessionId || "new"}
+                                        onValueChange={(value) => {
+                                            if (value === "new") {
+                                                setSelectedSessionId("")
+                                                setSessionStartTime("")
+                                                setSessionEndTime("")
+                                                setSessionMeetingUrl("")
+                                            } else {
+                                                const session = availableSessions.find(s => s.id === value)
+                                                if (session) {
+                                                    setSelectedSessionId(session.id)
+                                                    setSessionStartTime(session.startTime ? toLocalDatetimeString(session.startTime) : "")
+                                                    setSessionEndTime(session.endTime ? toLocalDatetimeString(session.endTime) : "")
+                                                    setSessionMeetingUrl(session.meetingUrl || "")
+                                                }
+                                            }
+                                        }}
+                                    >
+                                        <SelectTrigger className="bg-white/5 border-white/10">
+                                            <SelectValue placeholder="Seleziona un'aula virtuale..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="new">Crea nuova sessione</SelectItem>
+                                            {availableSessions.map((s) => (
+                                                <SelectItem key={s.id} value={s.id}>
+                                                    {s.title}{s.startTime ? ` - ${new Date(s.startTime).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}` : ""}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-muted-foreground">Seleziona un'aula virtuale esistente o creane una nuova.</p>
+                                </div>
+                            )}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="startTime">Inizio Sessione</Label>
@@ -172,7 +235,9 @@ export function CreateModuleForm({ courseId }: { courseId: string }) {
                                         id="startTime"
                                         name="startTime"
                                         type="datetime-local"
-                                        required
+                                        value={sessionStartTime}
+                                        onChange={(e) => setSessionStartTime(e.target.value)}
+                                        disabled={!!selectedSessionId}
                                         className="bg-white/5 border-white/10"
                                     />
                                 </div>
@@ -182,7 +247,9 @@ export function CreateModuleForm({ courseId }: { courseId: string }) {
                                         id="endTime"
                                         name="endTime"
                                         type="datetime-local"
-                                        required
+                                        value={sessionEndTime}
+                                        onChange={(e) => setSessionEndTime(e.target.value)}
+                                        disabled={!!selectedSessionId}
                                         className="bg-white/5 border-white/10"
                                     />
                                 </div>
@@ -194,7 +261,8 @@ export function CreateModuleForm({ courseId }: { courseId: string }) {
                                     name="meetingUrl"
                                     type="url"
                                     placeholder="https://..."
-                                    required
+                                    value={sessionMeetingUrl}
+                                    onChange={(e) => setSessionMeetingUrl(e.target.value)}
                                     className="bg-white/5 border-white/10"
                                 />
                             </div>

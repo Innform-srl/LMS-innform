@@ -7,7 +7,8 @@ import { AchievementShowcaseComponent } from "@/components/achievement-showcase"
 import { LeaderboardComponent } from "@/components/leaderboard"
 import { Loader2, Trophy, Star, Flame, TrendingUp, Gamepad2, BarChart } from "lucide-react"
 import Link from "next/link"
-import { calculateLevel, pointsForNextLevel } from "@/lib/gamification"
+import { calculateLevel, pointsForNextLevel } from "@/lib/gamification-utils"
+import { apiUrl } from "@/lib/api"
 
 type UserStats = {
     totalPoints: number
@@ -29,9 +30,9 @@ export default function GamificationPage() {
 
     useEffect(() => {
         Promise.all([
-            fetch('/api/user/stats').then(r => r.json()),
-            fetch('/api/user/achievements').then(r => r.json()),
-            fetch('/api/leaderboard?limit=10').then(r => r.json())
+            fetch(apiUrl('/api/user/stats')).then(r => r.ok ? r.json() : null),
+            fetch(apiUrl('/api/user/achievements')).then(r => r.ok ? r.json() : null),
+            fetch(apiUrl('/api/leaderboard?limit=10')).then(r => r.ok ? r.json() : null)
         ]).then(([statsData, achievementsData, leaderboardData]) => {
             setStats(statsData)
             setAchievements(achievementsData)

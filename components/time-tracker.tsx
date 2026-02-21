@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { apiUrl } from "@/lib/api"
 
 interface TimeTrackerProps {
     courseId: string
@@ -46,7 +47,7 @@ export function TimeTracker({ courseId, isActive, onTimeUpdate }: TimeTrackerPro
         const sendHeartbeat = async () => {
             console.log("[TimeTracker] 💓 Heartbeat...")
             try {
-                const res = await fetch(`/api/courses/${courseId}/track-time`, {
+                const res = await fetch(apiUrl(`/api/courses/${courseId}/track-time`), {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ minutes: 1 })

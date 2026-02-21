@@ -7,6 +7,7 @@ import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, C
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useDebounce } from "@/hooks/use-debounce"
+import { apiUrl } from "@/lib/api"
 
 export function GlobalSearch() {
     const [open, setOpen] = React.useState(false)
@@ -33,22 +34,35 @@ export function GlobalSearch() {
             return
         }
 
+        // AbortController to cancel previous requests when query changes
+        const abortController = new AbortController()
+
         async function fetchResults() {
             setLoading(true)
             try {
-                const res = await fetch(`/api/search?q=${debouncedQuery}`)
+                const res = await fetch(apiUrl(`/api/search?q=${encodeURIComponent(debouncedQuery)}`), {
+                    signal: abortController.signal
+                })
                 if (res.ok) {
                     const json = await res.json()
                     setData(json)
                 }
             } catch (error) {
-                console.error(error)
+                // Ignore abort errors
+                if ((error as Error).name !== 'AbortError') {
+                    console.error(error)
+                }
             } finally {
-                setLoading(false)
+                if (!abortController.signal.aborted) {
+                    setLoading(false)
+                }
             }
         }
 
         fetchResults()
+
+        // Cleanup: abort request when query changes or component unmounts
+        return () => abortController.abort()
     }, [debouncedQuery])
 
     const handleSelect = (id: string) => {

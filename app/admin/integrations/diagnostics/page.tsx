@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { apiUrl } from "@/lib/api"
 import {
     CheckCircle,
     XCircle,
@@ -54,7 +55,7 @@ export default function WebhookDiagnosticsPage() {
         updateTest(0, { status: 'running', message: 'Verifica in corso...' })
         await new Promise(r => setTimeout(r, 500))
         try {
-            const res = await fetch('/api/admin/diagnostics/env-check')
+            const res = await fetch(apiUrl('/api/admin/diagnostics/env-check'))
             const data = await res.json()
             updateTest(0, {
                 status: data.allSet ? 'success' : 'warning',
@@ -69,7 +70,7 @@ export default function WebhookDiagnosticsPage() {
         updateTest(1, { status: 'running', message: 'Connessione in corso...' })
         const dbStart = Date.now()
         try {
-            const res = await fetch('/api/admin/diagnostics/db-check')
+            const res = await fetch(apiUrl('/api/admin/diagnostics/db-check'))
             const data = await res.json()
             updateTest(1, {
                 status: data.connected ? 'success' : 'error',
@@ -83,7 +84,7 @@ export default function WebhookDiagnosticsPage() {
         // Test 3: WebhookEvent Table
         updateTest(2, { status: 'running', message: 'Verifica tabella...' })
         try {
-            const res = await fetch('/api/admin/diagnostics/webhook-table-check')
+            const res = await fetch(apiUrl('/api/admin/diagnostics/webhook-table-check'))
             const data = await res.json()
             updateTest(2, {
                 status: data.exists ? 'success' : 'error',
@@ -98,7 +99,7 @@ export default function WebhookDiagnosticsPage() {
         updateTest(3, { status: 'running', message: 'Test endpoint...' })
         const webhookStart = Date.now()
         try {
-            const res = await fetch('/api/webhooks/tms', { method: 'OPTIONS' })
+            const res = await fetch(apiUrl('/api/webhooks/tms'), { method: 'OPTIONS' })
             updateTest(3, {
                 status: res.status !== 404 ? 'success' : 'error',
                 message: res.status !== 404 ? 'Endpoint disponibile' : 'Endpoint non trovato',
@@ -111,7 +112,7 @@ export default function WebhookDiagnosticsPage() {
         // Test 5: HMAC Validation
         updateTest(4, { status: 'running', message: 'Test firma...' })
         try {
-            const res = await fetch('/api/webhooks/tms', {
+            const res = await fetch(apiUrl('/api/webhooks/tms'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -133,7 +134,7 @@ export default function WebhookDiagnosticsPage() {
         // Test 6: Cron Job
         updateTest(5, { status: 'running', message: 'Verifica cron...' })
         try {
-            const res = await fetch('/api/admin/diagnostics/cron-check')
+            const res = await fetch(apiUrl('/api/admin/diagnostics/cron-check'))
             const data = await res.json()
             updateTest(5, {
                 status: data.configured ? 'success' : 'warning',
@@ -156,7 +157,7 @@ export default function WebhookDiagnosticsPage() {
         setManualTestResult('Invio in corso...')
 
         try {
-            const res = await fetch('/api/admin/diagnostics/send-test-webhook', {
+            const res = await fetch(apiUrl('/api/admin/diagnostics/send-test-webhook'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: testWebhookUrl })

@@ -70,35 +70,29 @@ export async function createUser(formData: FormData) {
             } as any
         })
 
+        // Batch enroll user in learning path courses - optimized query
         if (learningPathIds.length > 0) {
-            for (const pathId of learningPathIds) {
-                const path = await db.learningPath.findUnique({
-                    where: { id: pathId },
-                    include: { courses: true }
-                })
-                if (path) {
-                    for (const course of path.courses) {
-                        // Check if already enrolled
-                        const existingEnrollment = await db.enrollment.findUnique({
-                            where: {
-                                userId_courseId: {
-                                    userId: user.id,
-                                    courseId: course.courseId
-                                }
-                            }
-                        })
+            // Get all courses from selected learning paths in one query
+            const learningPaths = await db.learningPath.findMany({
+                where: { id: { in: learningPathIds } },
+                include: { courses: { select: { courseId: true } } }
+            })
 
-                        if (!existingEnrollment) {
-                            await db.enrollment.create({
-                                data: {
-                                    userId: user.id,
-                                    courseId: course.courseId,
-                                    progress: 0
-                                }
-                            })
-                        }
-                    }
-                }
+            // Collect unique course IDs
+            const courseIds = [...new Set(
+                learningPaths.flatMap(path => path.courses.map(c => c.courseId))
+            )]
+
+            if (courseIds.length > 0) {
+                // Create enrollments in batch, skip duplicates
+                await db.enrollment.createMany({
+                    data: courseIds.map(courseId => ({
+                        userId: user.id,
+                        courseId,
+                        progress: 0
+                    })),
+                    skipDuplicates: true
+                })
             }
         }
 

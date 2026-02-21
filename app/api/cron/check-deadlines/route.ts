@@ -18,11 +18,11 @@ import { deadlineReminder3Days, deadlineReminder1Day, deadlineOverdue } from "@/
  */
 export async function GET(request: Request) {
     try {
-        // Verifica authorization header per sicurezza
+        // Verifica authorization header per sicurezza (fail-closed)
         const authHeader = request.headers.get('authorization')
         const cronSecret = process.env.CRON_SECRET
 
-        if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+        if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
             return NextResponse.json(
                 { error: 'Non autorizzato' },
                 { status: 401 }

@@ -8,7 +8,7 @@ import { formatDate } from "@/lib/utils"
 
 export default async function AdminLiveSessionsPage() {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") redirect("/")
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") redirect("/")
 
     const liveSessions = await getAllLiveSessions()
 
@@ -41,7 +41,7 @@ export default async function AdminLiveSessionsPage() {
                                     <div>
                                         <h3 className="text-xl font-semibold mb-1 text-foreground">{session.title}</h3>
                                         <div className="text-sm text-muted-foreground space-y-1">
-                                            <p>📅 {formatDate(session.startTime)} - {session.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                            <p>📅 {session.startTime ? formatDate(session.startTime) : "Data non definita"}{session.endTime ? ` - ${session.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ""}</p>
                                             {session.course && <p>📚 Corso: {session.course.title}</p>}
                                             <p>👤 Istruttore: {session.instructor.name}</p>
                                         </div>
@@ -50,8 +50,13 @@ export default async function AdminLiveSessionsPage() {
                                         <Link href={`/admin/live-sessions/${session.id}/attendance`}>
                                             <Button variant="outline" size="sm">Presenze</Button>
                                         </Link>
-                                        <Link href={session.meetingUrl} target="_blank">
-                                            <Button variant="outline" size="sm">Link Meeting</Button>
+                                        {session.meetingUrl && (
+                                            <Link href={session.meetingUrl} target="_blank">
+                                                <Button variant="outline" size="sm">Link Meeting</Button>
+                                            </Link>
+                                        )}
+                                        <Link href={`/admin/live-sessions/${session.id}/edit`}>
+                                            <Button variant="outline" size="sm">Modifica</Button>
                                         </Link>
                                         <form action={async () => {
                                             "use server"

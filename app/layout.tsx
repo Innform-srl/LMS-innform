@@ -1,14 +1,31 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster"
 import { ClientLayout } from "@/components/client-layout"
 import { auth } from "@/lib/auth"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth-provider";
+import { PWARegister } from "@/components/pwa-register";
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+});
 
 export const metadata: Metadata = {
   title: "LMS Innform",
   description: "Corporate E-learning Platform",
+  manifest: "/lms/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "LMS Innform",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#6366f1",
 };
 
 export default async function RootLayout({
@@ -21,12 +38,15 @@ export default async function RootLayout({
   return (
     <html lang="it" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <script dangerouslySetInnerHTML={{ __html: `
+          // Remove browser extension attributes (e.g. Bitdefender bis_skin_checked) before React hydration
+          new MutationObserver(function(mutations, observer) {
+            document.querySelectorAll('[bis_skin_checked]').forEach(function(el) { el.removeAttribute('bis_skin_checked'); });
+          }).observe(document.documentElement, { attributes: true, childList: true, subtree: true, attributeFilter: ['bis_skin_checked'] });
+        `}} />
       </head>
       <body
-        className={`antialiased`}
+        className={`${inter.className} antialiased`}
         suppressHydrationWarning
       >
         <AuthProvider>
@@ -41,6 +61,7 @@ export default async function RootLayout({
             </ClientLayout>
             <Toaster />
           </ThemeProvider>
+          <PWARegister />
         </AuthProvider>
       </body>
     </html>

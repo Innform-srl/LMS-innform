@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
+import { apiUrl } from "@/lib/api"
 
 type Comment = {
     id: string
@@ -44,7 +45,7 @@ export function CommentsList({ comments, courseId, moduleId, currentUser }: Comm
 
         setIsSubmitting(true)
         try {
-            const response = await fetch("/api/comments", {
+            const response = await fetch(apiUrl("/api/comments"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

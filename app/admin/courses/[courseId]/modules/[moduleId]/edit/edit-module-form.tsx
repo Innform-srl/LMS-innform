@@ -4,10 +4,31 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { RichTextEditor } from "@/components/rich-text-editor"
 import { Label } from "@/components/ui/label"
 import { updateModule } from "@/app/actions/modules"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FileText, Video, Upload, Calendar } from "lucide-react"
+import { apiUrl } from "@/lib/api"
+import dynamic from "next/dynamic"
+
+const RichTextEditor = dynamic(
+    () => import("@/components/rich-text-editor").then(mod => ({ default: mod.RichTextEditor })),
+    { ssr: false }
+)
+
+function toLocalDatetimeString(date: Date | string): string {
+    const d = new Date(date)
+    const pad = (n: number) => n.toString().padStart(2, "0")
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+type AvailableSession = {
+    id: string
+    title: string
+    startTime: string | null
+    endTime: string | null
+    meetingUrl: string | null
+}
 
 type Module = {
     id: string
@@ -22,7 +43,7 @@ type Module = {
     liveSession?: any
 }
 
-export function EditModuleForm({ module, courseId }: { module: any, courseId: string }) {
+export function EditModuleForm({ module, courseId, availableSessions = [] }: { module: any, courseId: string, availableSessions?: AvailableSession[] }) {
     const router = useRouter()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
@@ -35,8 +56,9 @@ export function EditModuleForm({ module, courseId }: { module: any, courseId: st
         pdfUrl: module.pdfUrl || "",
         totalPages: module.totalPages || 0,
         minimumDuration: module.minimumDuration || 0,
-        startTime: module.liveSession?.startTime ? new Date(module.liveSession.startTime).toISOString().slice(0, 16) : "",
-        endTime: module.liveSession?.endTime ? new Date(module.liveSession.endTime).toISOString().slice(0, 16) : "",
+        selectedSessionId: module.liveSessionId || "",
+        startTime: module.liveSession?.startTime ? toLocalDatetimeString(module.liveSession.startTime) : "",
+        endTime: module.liveSession?.endTime ? toLocalDatetimeString(module.liveSession.endTime) : "",
         meetingUrl: module.liveSession?.meetingUrl || ""
     })
 
@@ -49,7 +71,7 @@ export function EditModuleForm({ module, courseId }: { module: any, courseId: st
         formData.append('file', file)
 
         try {
-            const res = await fetch('/api/upload', {
+            const res = await fetch(apiUrl('/api/upload'), {
                 method: 'POST',
                 body: formData
             })
@@ -79,6 +101,7 @@ export function EditModuleForm({ module, courseId }: { module: any, courseId: st
             pdfUrl: form.pdfUrl || null,
             totalPages: form.totalPages || null,
             minimumDuration: form.minimumDuration,
+            selectedSessionId: form.selectedSessionId || undefined,
             startTime: form.startTime,
             endTime: form.endTime,
             meetingUrl: form.meetingUrl
@@ -217,6 +240,43 @@ export function EditModuleForm({ module, courseId }: { module: any, courseId: st
 
                 {form.contentType === 'LIVE' && (
                     <div className="space-y-4 border border-purple-500/30 p-4 rounded-lg bg-purple-500/5">
+                        {availableSessions.length > 0 && (
+                            <div className="space-y-2">
+                                <Label>Collega Aula Virtuale Esistente</Label>
+                                <Select
+                                    value={form.selectedSessionId || "new"}
+                                    onValueChange={(value) => {
+                                        if (value === "new") {
+                                            setForm({ ...form, selectedSessionId: "", startTime: "", endTime: "", meetingUrl: "" })
+                                        } else {
+                                            const session = availableSessions.find(s => s.id === value)
+                                            if (session) {
+                                                setForm({
+                                                    ...form,
+                                                    selectedSessionId: session.id,
+                                                    startTime: session.startTime ? toLocalDatetimeString(session.startTime) : "",
+                                                    endTime: session.endTime ? toLocalDatetimeString(session.endTime) : "",
+                                                    meetingUrl: session.meetingUrl || ""
+                                                })
+                                            }
+                                        }
+                                    }}
+                                >
+                                    <SelectTrigger className="bg-white/5 border-white/10">
+                                        <SelectValue placeholder="Seleziona un'aula virtuale..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="new">Crea nuova sessione</SelectItem>
+                                        {availableSessions.map((s) => (
+                                            <SelectItem key={s.id} value={s.id}>
+                                                {s.title}{s.startTime ? ` - ${new Date(s.startTime).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}` : ""}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-xs text-muted-foreground">Seleziona un'aula virtuale esistente o creane una nuova.</p>
+                            </div>
+                        )}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="startTime">Inizio Sessione</Label>
@@ -225,7 +285,7 @@ export function EditModuleForm({ module, courseId }: { module: any, courseId: st
                                     type="datetime-local"
                                     value={form.startTime}
                                     onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-                                    required
+                                    disabled={!!form.selectedSessionId}
                                     className="bg-white/5 border-white/10"
                                 />
                             </div>
@@ -236,7 +296,7 @@ export function EditModuleForm({ module, courseId }: { module: any, courseId: st
                                     type="datetime-local"
                                     value={form.endTime}
                                     onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-                                    required
+                                    disabled={!!form.selectedSessionId}
                                     className="bg-white/5 border-white/10"
                                 />
                             </div>
@@ -249,7 +309,6 @@ export function EditModuleForm({ module, courseId }: { module: any, courseId: st
                                 value={form.meetingUrl}
                                 onChange={(e) => setForm({ ...form, meetingUrl: e.target.value })}
                                 placeholder="https://..."
-                                required
                                 className="bg-white/5 border-white/10"
                             />
                         </div>

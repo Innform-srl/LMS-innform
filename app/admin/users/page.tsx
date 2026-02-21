@@ -209,8 +209,8 @@ export default async function UsersPage({
                                         <TableCell className="font-medium">{user.name || "-"}</TableCell>
                                         <TableCell>{user.email}</TableCell>
                                         <TableCell>
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.role === 'ADMIN' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-blue-100 text-blue-700 border border-blue-200'}`}>
-                                                {user.role}
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.role === 'ADMIN' ? 'bg-purple-100 text-purple-700 border border-purple-200' : user.role === 'TEACHER' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-blue-100 text-blue-700 border border-blue-200'}`}>
+                                                {user.role === 'TEACHER' ? 'DOCENTE' : user.role}
                                             </span>
                                         </TableCell>
                                         <TableCell>{user.department?.name || "-"}</TableCell>

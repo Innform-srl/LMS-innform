@@ -68,7 +68,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ use
                     <div className="flex gap-2 text-muted-foreground">
                         <span>{user.email}</span>
                         <span>•</span>
-                        <span className="capitalize">{user.role.toLowerCase()}</span>
+                        <span className="capitalize">{user.role === 'TEACHER' ? 'Docente' : user.role === 'ADMIN' ? 'Amministratore' : 'Dipendente'}</span>
                         {user.department && (
                             <>
                                 <span>•</span>

@@ -10,6 +10,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { apiUrl } from "@/lib/api"
 
 type Notification = {
     id: string
@@ -33,7 +34,7 @@ export function NotificationsBell() {
 
     async function fetchNotifications() {
         try {
-            const res = await fetch('/api/notifications')
+            const res = await fetch(apiUrl('/api/notifications'))
             if (res.ok) {
                 const data = await res.json()
                 setNotifications(data)
@@ -46,7 +47,7 @@ export function NotificationsBell() {
 
     async function markAsRead(id: string) {
         try {
-            await fetch('/api/notifications', {
+            await fetch(apiUrl('/api/notifications'), {
                 method: 'PATCH',
                 body: JSON.stringify({ id })
             })

@@ -19,7 +19,7 @@ export async function GET(
     const { sessionId } = await params
 
     // Users can only see their own attendance
-    if (session.user.role !== "ADMIN") {
+    if (session.user.role !== "ADMIN" && session.user.role !== "TEACHER") {
         const attendance = await db.sessionAttendance.findUnique({
             where: {
                 sessionId_userId: {
@@ -89,7 +89,7 @@ export async function POST(
     const { action, userId } = body
 
     // Admin can check-in other users
-    if (action === "admin_checkin" && session.user.role === "ADMIN" && userId) {
+    if (action === "admin_checkin" && (session.user.role === "ADMIN" || session.user.role === "TEACHER") && userId) {
         const now = new Date()
         const attendance = await db.sessionAttendance.upsert({
             where: {
@@ -230,7 +230,7 @@ export async function PATCH(
     { params }: { params: Promise<{ sessionId: string }> }
 ) {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
         return NextResponse.json({ error: "Non autorizzato" }, { status: 403 })
     }
 

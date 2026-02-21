@@ -63,7 +63,30 @@
       "Bash(git diff:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nOptimize performance: remove DB query from JWT callback and cleanup\n\n- Remove database query from JWT callback \\(was running on EVERY request\\)\n- Store user role in JWT token at login instead of fetching each time\n- Remove all debug console.log statements\n- Remove file system debug logging from auth\n- Disable session refetch on window focus\n- Add prefetch={false} to sidebar links to reduce HTTP requests\n- Add refs to CoursePlayer to prevent duplicate API calls\n- Make audit log creation non-blocking\n- Add settings page with profile/password management\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nDisable link prefetch on homepage to reduce HTTP requests\n\n- Add prefetch={false} to all Link components on homepage\n- Reduces automatic prefetch requests that caused 404 errors\n- Should improve page load performance significantly\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nRestrict self-enrollment: require EduPlan for course access\n\n- Remove self-enrollment button from course detail page\n- Show \"Contatta il tuo responsabile\" message instead\n- Add \"Non iscritto\" indicator with lock icon on course cards\n- Users can view all courses but access only assigned ones via EduPlan\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nRestrict self-enrollment: require EduPlan for course access\n\n- Remove self-enrollment button from course detail page\n- Show \"Contatta il tuo responsabile\" message instead\n- Add \"Non iscritto\" indicator with lock icon on course cards\n- Users can view all courses but access only assigned ones via EduPlan\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git checkout:*)",
+      "Bash(npx next dev:*)",
+      "Bash(ping:*)",
+      "Bash(cmd /c \"taskkill /PID 69140 /F\")",
+      "Bash(cmd /c \"taskkill /PID 69140 /F 2>&1\")",
+      "Bash(cmd /c \"taskkill /F /PID 73380\")",
+      "Bash(npm run lint:*)",
+      "Bash(git stash:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres.vcehpsfhhdqoovwvsytp:cK%60Oe%7CR%23ENE*9%7C@aws-1-eu-west-1.pooler.supabase.com:5432/postgres\" npx prisma db push:*)",
+      "WebFetch(domain:errors.authjs.dev)",
+      "Bash(npx kill-port:*)",
+      "Bash(cmd //c \"taskkill /PID 308668 /F\")",
+      "Bash(grep:*)",
+      "Bash(1:*)",
+      "WebFetch(domain:developers.google.com)",
+      "Bash(npm view:*)",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__list_tables",
+      "Bash(node:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\frali\\LMS-INNFORM"
     ]
   }
 }

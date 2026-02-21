@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from "next/navigation"
+import { apiUrl } from "@/lib/api"
 
 type CertificateSettings = {
     id: string
@@ -32,7 +33,7 @@ export default function CertificateSettingsPage() {
 
     const fetchSettings = async () => {
         try {
-            const res = await fetch("/api/admin/certificate-settings")
+            const res = await fetch(apiUrl("/api/admin/certificate-settings"))
             if (res.ok) {
                 const data = await res.json()
                 setSettings(data)
@@ -49,7 +50,7 @@ export default function CertificateSettingsPage() {
 
         setSaving(true)
         try {
-            const res = await fetch("/api/admin/certificate-settings", {
+            const res = await fetch(apiUrl("/api/admin/certificate-settings"), {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(settings)

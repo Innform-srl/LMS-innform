@@ -487,9 +487,9 @@ model LiveSession {
   id           String   @id @default(cuid())
   title        String
   description  String?
-  startTime    DateTime
-  endTime      DateTime
-  meetingUrl   String
+  startTime    DateTime?
+  endTime      DateTime?
+  meetingUrl   String?
   courseId     String?
   instructorId String
 
@@ -505,6 +505,9 @@ model LiveSession {
   // TMS Integration
   tmsLessonId    String?   @unique  // UUID lezione nel TMS
   tmsSyncedAt    DateTime?          // Ultimo sync con TMS
+
+  // Google Meet unmatched participants (JSON)
+  unmatchedMeetParticipants Json?   // Partecipanti Meet non associati a utenti LMS
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -608,6 +611,7 @@ model RoomBooking {
 enum Role {
   ADMIN
   EMPLOYEE
+  TEACHER
 }
 
 // TMS Integration Models

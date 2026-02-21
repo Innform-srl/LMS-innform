@@ -82,10 +82,11 @@ export function NotificationItem({ notification, onMarkAsRead, onClose }: Notifi
     }
 
     return (
-        <div
+        <button
+            type="button"
             onClick={handleClick}
             className={cn(
-                "p-4 hover:bg-accent/50 cursor-pointer transition-colors",
+                "w-full text-left p-4 hover:bg-accent/50 cursor-pointer transition-colors",
                 !notification.isRead && "bg-primary/5"
             )}
         >
@@ -116,6 +117,6 @@ export function NotificationItem({ notification, onMarkAsRead, onClose }: Notifi
                     </span>
                 </div>
             </div>
-        </div>
+        </button>
     )
 }

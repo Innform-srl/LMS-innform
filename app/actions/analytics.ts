@@ -81,7 +81,7 @@ export async function getAnalyticsData() {
         }
     })
 
-    // Get top learners (most time spent)
+    // Get top learners (most time spent) - optimized with single query
     const topLearnersData = await db.moduleProgress.groupBy({
         by: ['userId'],
         _sum: {
@@ -95,15 +95,17 @@ export async function getAnalyticsData() {
         take: 5
     })
 
-    const topLearners = await Promise.all(topLearnersData.map(async (item) => {
-        const user = await db.user.findUnique({
-            where: { id: item.userId },
-            select: { name: true, email: true }
-        })
-        return {
-            user,
-            totalSeconds: item._sum.timeSpent || 0
-        }
+    // Fetch all users in a single query instead of N+1
+    const userIds = topLearnersData.map(item => item.userId)
+    const users = await db.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, name: true, email: true }
+    })
+    const userMap = new Map(users.map(u => [u.id, { name: u.name, email: u.email }]))
+
+    const topLearners = topLearnersData.map(item => ({
+        user: userMap.get(item.userId) || null,
+        totalSeconds: item._sum.timeSpent || 0
     }))
 
     const completedEnrollments = await db.enrollment.count({

@@ -10,9 +10,10 @@ const loginSchema = z.object({
 })
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+    basePath: "/api/auth",
     providers: [
         Credentials({
-            async authorize(credentials) {
+            async authorize(credentials, request) {
                 const parsedCredentials = loginSchema.safeParse(credentials)
 
                 if (parsedCredentials.success) {
@@ -31,6 +32,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             if (!(user as any).isApproved) {
                                 return null
                             }
+                            // Extract IP and User-Agent from request headers
+                            const ipAddress = request?.headers?.get?.('x-forwarded-for')
+                                || request?.headers?.get?.('x-real-ip')
+                                || 'unknown'
+                            const userAgent = request?.headers?.get?.('user-agent')
+                                || 'unknown'
+
                             // Create audit log without blocking
                             db.auditLog.create({
                                 data: {
@@ -38,10 +46,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                     action: "LOGIN",
                                     entityType: "User",
                                     entityId: user.id,
-                                    ipAddress: "127.0.0.1",
-                                    userAgent: "Browser"
+                                    ipAddress,
+                                    userAgent,
                                 }
-                            }).catch(() => {})
+                            }).catch((error) => {
+                                console.error("Failed to create login audit log:", error)
+                            })
                             return user
                         }
                         return null
@@ -67,7 +77,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 session.user.id = token.sub
             }
             if (token.role && session.user) {
-                session.user.role = token.role as "ADMIN" | "EMPLOYEE"
+                session.user.role = token.role as "ADMIN" | "EMPLOYEE" | "TEACHER"
             }
             return session
         },

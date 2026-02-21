@@ -17,7 +17,9 @@ import {
     GraduationCap,
     Building2,
     Award,
-    Video
+    Video,
+    Timer,
+    ClipboardList
 } from "lucide-react"
 import { useState } from "react"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -27,7 +29,7 @@ interface SidebarProps {
     user: {
         name?: string | null
         email?: string | null
-        role: "ADMIN" | "EMPLOYEE"
+        role: "ADMIN" | "EMPLOYEE" | "TEACHER"
     }
 }
 
@@ -76,6 +78,12 @@ export function Sidebar({ user }: SidebarProps) {
             href: "/certificates",
             color: "text-primary",
         },
+        {
+            label: "Le Mie Analytics",
+            icon: Timer,
+            href: "/my-analytics",
+            color: "text-primary",
+        },
     ]
 
     const adminRoutes = [
@@ -122,6 +130,12 @@ export function Sidebar({ user }: SidebarProps) {
             color: "text-primary",
         },
         {
+            label: "Registri d'Aula",
+            icon: ClipboardList,
+            href: "/admin/registers",
+            color: "text-primary",
+        },
+        {
             label: "Analytics",
             icon: BarChart2,
             href: "/admin/analytics",
@@ -133,10 +147,19 @@ export function Sidebar({ user }: SidebarProps) {
         <>
             {/* Mobile Trigger */}
             <div className="md:hidden fixed top-4 left-4 z-50">
-                <Button variant="ghost" size="icon" onClick={() => setIsOpen(!isOpen)} className="bg-background/50 backdrop-blur-md border border-border">
+                <Button variant="ghost" size="icon" onClick={() => setIsOpen(!isOpen)} className="bg-background/50 backdrop-blur-md border border-border" aria-label={isOpen ? "Chiudi menu" : "Apri menu"}>
                     {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                 </Button>
             </div>
+
+            {/* Mobile Backdrop */}
+            {isOpen && (
+                <div
+                    className="md:hidden fixed inset-0 z-30 bg-black/50 backdrop-blur-sm transition-opacity"
+                    onClick={() => setIsOpen(false)}
+                    aria-hidden="true"
+                />
+            )}
 
             {/* Sidebar Container */}
             <div className={cn(
@@ -166,7 +189,6 @@ export function Sidebar({ user }: SidebarProps) {
                                 <Link
                                     key={route.href}
                                     href={route.href}
-                                    prefetch={false}
                                     onClick={() => setIsOpen(false)}
                                     className={cn(
                                         "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
@@ -184,16 +206,15 @@ export function Sidebar({ user }: SidebarProps) {
                             ))}
                         </div>
 
-                        {user.role === "ADMIN" && (
+                        {(user.role === "ADMIN" || user.role === "TEACHER") && (
                             <div className="mb-4 pt-4 border-t border-white/10">
                                 <h3 className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                                     Amministrazione
                                 </h3>
-                                {adminRoutes.map((route) => (
+                                {(user.role === "ADMIN" ? adminRoutes : adminRoutes.filter(r => ["/admin/courses", "/admin/registers", "/admin/live-sessions"].includes(r.href))).map((route) => (
                                     <Link
                                         key={route.href}
                                         href={route.href}
-                                        prefetch={false}
                                         onClick={() => setIsOpen(false)}
                                         className={cn(
                                             "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
@@ -226,7 +247,7 @@ export function Sidebar({ user }: SidebarProps) {
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                            <Link href="/settings" prefetch={false}>
+                            <Link href="/settings">
                                 <Button variant="outline" size="sm" className="w-full border-border hover:bg-accent hover:text-accent-foreground text-xs">
                                     <Settings className="h-3 w-3 mr-2" />
                                     Impostazioni

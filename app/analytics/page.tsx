@@ -6,6 +6,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Loader2, BookOpen, Award, Clock, TrendingUp, AlertCircle, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { apiUrl } from "@/lib/api"
 
 type UserAnalyticsData = {
     overview: {
@@ -36,7 +37,7 @@ export default function UserAnalyticsPage() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        fetch('/api/user/analytics')
+        fetch(apiUrl('/api/user/analytics'))
             .then(res => res.json())
             .then(setData)
             .catch(console.error)

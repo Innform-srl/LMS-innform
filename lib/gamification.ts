@@ -1,17 +1,9 @@
 import { db } from "@/lib/db"
 import { notifyTMSBadgeEarned } from "@/lib/tms-webhook-service"
+import { calculateLevel, pointsForNextLevel } from "@/lib/gamification-utils"
 
-// Calculate level from points
-export function calculateLevel(points: number): number {
-    // Level formula: Level N requires 100 * N^2 points
-    // Solve for N: N = sqrt(points / 100)
-    return Math.floor(Math.sqrt(points / 100)) + 1
-}
-
-// Calculate points needed for next level
-export function pointsForNextLevel(currentLevel: number): number {
-    return 100 * (currentLevel ** 2)
-}
+// Re-export for backward compatibility
+export { calculateLevel, pointsForNextLevel }
 
 // Award points to user
 export async function awardPoints(

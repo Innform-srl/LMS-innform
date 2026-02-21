@@ -6,6 +6,11 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { z } from "zod"
 
+function extractGoogleMeetCode(url: string): string | null {
+    const match = url.match(/meet\.google\.com\/([a-z]{3}-[a-z]{4}-[a-z]{3})/i)
+    return match ? match[1] : null
+}
+
 const moduleSchema = z.object({
     title: z.string().min(1, { message: "Il titolo è obbligatorio" }),
     description: z.string().optional(),
@@ -13,9 +18,10 @@ const moduleSchema = z.object({
     contentType: z.string().optional(),
     pdfUrl: z.string().url({ message: "URL PDF non valido" }).optional().or(z.literal("")),
     totalPages: z.coerce.number().optional(),
-    startTime: z.string().optional(),
-    endTime: z.string().optional(),
-    meetingUrl: z.string().optional(),
+    minimumDuration: z.coerce.number().optional(),
+    startTime: z.string().optional().or(z.literal("")).nullable(),
+    endTime: z.string().optional().or(z.literal("")).nullable(),
+    meetingUrl: z.string().optional().or(z.literal("")).nullable(),
 })
 
 export async function createModule(courseId: string, prevState: any, formData: FormData) {
@@ -24,15 +30,16 @@ export async function createModule(courseId: string, prevState: any, formData: F
 
     const title = formData.get("title") as string
     const description = formData.get("description") as string
-    const videoUrl = formData.get("videoUrl") as string
-    const contentType = formData.get("contentType") as string || "VIDEO"
-    const pdfUrl = formData.get("pdfUrl") as string
+    const videoUrl = (formData.get("videoUrl") as string) || ""
+    const contentType = (formData.get("contentType") as string) || "VIDEO"
+    const pdfUrl = (formData.get("pdfUrl") as string) || ""
     const totalPages = formData.get("totalPages")
     const minimumDuration = formData.get("minimumDuration")
 
     const startTime = formData.get("startTime") as string
     const endTime = formData.get("endTime") as string
     const meetingUrl = formData.get("meetingUrl") as string
+    const selectedSessionId = formData.get("selectedSessionId") as string
 
     const validatedFields = moduleSchema.safeParse({
         title,
@@ -48,7 +55,8 @@ export async function createModule(courseId: string, prevState: any, formData: F
     })
 
     if (!validatedFields.success) {
-        return { message: "Campi non validi" }
+        console.error("Validation errors:", JSON.stringify(validatedFields.error.issues, null, 2))
+        return { message: "Campi non validi: " + validatedFields.error.issues.map(e => `${e.path.join('.')}: ${e.message}`).join(', ') }
     }
 
     try {
@@ -62,18 +70,38 @@ export async function createModule(courseId: string, prevState: any, formData: F
         let liveSessionId = null
 
         if (contentType === "LIVE") {
-            const liveSession = await db.liveSession.create({
-                data: {
-                    title,
-                    description: description || null,
-                    startTime: new Date(startTime),
-                    endTime: new Date(endTime),
-                    meetingUrl,
-                    courseId,
-                    instructorId: session.user.id
-                } as any
-            })
-            liveSessionId = liveSession.id
+            if (selectedSessionId) {
+                // Link to an existing live session and update meetingUrl if provided
+                liveSessionId = selectedSessionId
+                if (meetingUrl) {
+                    const googleMeetCode = extractGoogleMeetCode(meetingUrl)
+                    await db.liveSession.update({
+                        where: { id: selectedSessionId },
+                        data: {
+                            meetingUrl,
+                            googleMeetCode
+                        } as any
+                    })
+                }
+            } else {
+                if (!meetingUrl) {
+                    return { message: "Per le Live Session, il link meeting è obbligatorio" }
+                }
+                const googleMeetCode = extractGoogleMeetCode(meetingUrl)
+                const liveSession = await db.liveSession.create({
+                    data: {
+                        title,
+                        description: description || null,
+                        startTime: startTime ? new Date(startTime) : new Date(),
+                        endTime: endTime ? new Date(endTime) : new Date(),
+                        meetingUrl,
+                        googleMeetCode,
+                        courseId,
+                        instructorId: session.user.id
+                    } as any
+                })
+                liveSessionId = liveSession.id
+            }
         }
 
         await db.module.create({
@@ -166,6 +194,7 @@ export async function updateModule(
         pdfUrl?: string | null
         totalPages?: number | null
         minimumDuration?: number | null
+        selectedSessionId?: string
         startTime?: string
         endTime?: string
         meetingUrl?: string
@@ -190,33 +219,52 @@ export async function updateModule(
         let liveSessionId = module.liveSessionId
 
         if (data.contentType === "LIVE") {
-            if (liveSessionId) {
-                // Update existing live session
-                await db.liveSession.update({
-                    where: { id: liveSessionId },
-                    data: {
-                        title: data.title,
-                        description: data.description,
-                        startTime: data.startTime ? new Date(data.startTime) : undefined,
-                        endTime: data.endTime ? new Date(data.endTime) : undefined,
-                        meetingUrl: data.meetingUrl
-                    } as any
-                })
+            if (data.selectedSessionId) {
+                // Link to an existing live session and update meetingUrl if provided
+                liveSessionId = data.selectedSessionId
+                if (data.meetingUrl) {
+                    const googleMeetCode = data.meetingUrl ? extractGoogleMeetCode(data.meetingUrl) : null
+                    await db.liveSession.update({
+                        where: { id: data.selectedSessionId },
+                        data: {
+                            meetingUrl: data.meetingUrl,
+                            googleMeetCode
+                        } as any
+                    })
+                }
             } else {
-                // Create new live session
-                if (data.startTime && data.endTime && data.meetingUrl) {
-                    const liveSession = await db.liveSession.create({
+                const googleMeetCode = data.meetingUrl ? extractGoogleMeetCode(data.meetingUrl) : null
+
+                if (liveSessionId) {
+                    // Update existing live session
+                    await db.liveSession.update({
+                        where: { id: liveSessionId },
                         data: {
                             title: data.title,
                             description: data.description,
-                            startTime: new Date(data.startTime),
-                            endTime: new Date(data.endTime),
+                            startTime: data.startTime ? new Date(data.startTime) : undefined,
+                            endTime: data.endTime ? new Date(data.endTime) : undefined,
                             meetingUrl: data.meetingUrl,
-                            courseId: module.courseId,
-                            instructorId: session.user.id
+                            googleMeetCode
                         } as any
                     })
-                    liveSessionId = liveSession.id
+                } else {
+                    // Create new live session
+                    if (data.startTime && data.endTime && data.meetingUrl) {
+                        const liveSession = await db.liveSession.create({
+                            data: {
+                                title: data.title,
+                                description: data.description,
+                                startTime: new Date(data.startTime),
+                                endTime: new Date(data.endTime),
+                                meetingUrl: data.meetingUrl,
+                                googleMeetCode,
+                                courseId: module.courseId,
+                                instructorId: session.user.id
+                            } as any
+                        })
+                        liveSessionId = liveSession.id
+                    }
                 }
             }
         }

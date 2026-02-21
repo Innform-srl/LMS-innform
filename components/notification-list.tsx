@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { NotificationItem } from "./notification-item"
 import { Loader2 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { apiUrl } from "@/lib/api"
 
 interface Notification {
     id: string
@@ -26,7 +27,7 @@ export function NotificationList({ onClose }: { onClose: () => void }) {
 
     const fetchNotifications = async () => {
         try {
-            const res = await fetch('/api/notifications')
+            const res = await fetch(apiUrl('/api/notifications'))
             if (res.ok) {
                 const data = await res.json()
                 setNotifications(data)
@@ -40,7 +41,7 @@ export function NotificationList({ onClose }: { onClose: () => void }) {
 
     const handleMarkAsRead = async (id: string) => {
         try {
-            await fetch(`/api/notifications/${id}/read`, {
+            await fetch(apiUrl(`/api/notifications/${id}/read`), {
                 method: 'POST'
             })
             setNotifications(prev =>

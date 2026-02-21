@@ -24,19 +24,39 @@ export function NotificationCenter() {
 
     useEffect(() => {
         loadData()
-        // Poll for new notifications every minute
-        const interval = setInterval(loadData, 60000)
-        return () => clearInterval(interval)
+        // Poll for new notifications every 3 minutes (instead of 1) and only when tab is visible
+        const interval = setInterval(() => {
+            if (!document.hidden) {
+                loadData()
+            }
+        }, 180000)
+
+        // Also reload when tab becomes visible after being hidden
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                loadData()
+            }
+        }
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+
+        return () => {
+            clearInterval(interval)
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+        }
     }, [])
 
     const loadData = async () => {
-        const [notifs, count] = await Promise.all([
-            getNotifications(),
-            getUnreadNotificationCount()
-        ])
-        setNotifications(notifs)
+        // Only fetch count initially, fetch full list when popover opens
+        const count = await getUnreadNotificationCount()
         setUnreadCount(count)
     }
+
+    // Load full notifications only when popover opens
+    useEffect(() => {
+        if (isOpen) {
+            getNotifications().then(setNotifications)
+        }
+    }, [isOpen])
 
     const handleMarkAsRead = async (id: string) => {
         await markNotificationAsRead(id)
@@ -55,10 +75,10 @@ export function NotificationCenter() {
     return (
         <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="h-5 w-5" />
+                <Button variant="ghost" size="icon" className="relative" aria-label={`Notifiche${unreadCount > 0 ? `, ${unreadCount} non lette` : ''}`}>
+                    <Bell className="h-5 w-5" aria-hidden="true" />
                     {unreadCount > 0 && (
-                        <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-600 animate-pulse ring-2 ring-background" />
+                        <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-600 animate-pulse ring-2 ring-background" aria-hidden="true" />
                     )}
                 </Button>
             </PopoverTrigger>
