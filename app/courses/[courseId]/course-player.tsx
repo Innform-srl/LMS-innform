@@ -8,7 +8,6 @@ import { markModuleComplete, trackModuleTime, getVideoProgress } from "@/app/act
 import { VideoPlayer } from "@/components/video-player"
 import dynamic from "next/dynamic"
 import { CourseDiscussion } from "@/components/course-discussion"
-import { TimeTracker } from "@/components/time-tracker"
 import { CertificatePreview } from "@/components/certificate-preview"
 import { JoinSessionButton } from "@/components/join-session-button"
 import { useRouter } from "next/navigation"
@@ -23,7 +22,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 
-import { Calendar, Video } from "lucide-react"
+import { Calendar } from "lucide-react"
 import { apiUrl } from "@/lib/api"
 
 // Dynamic import to avoid SSR issues with PDF.js
@@ -50,9 +49,9 @@ type Module = {
         id: string
         title: string
         description: string | null
-        startTime: Date
-        endTime: Date
-        meetingUrl: string
+        startTime: Date | null
+        endTime: Date | null
+        meetingUrl: string | null
     } | null
 }
 
@@ -128,7 +127,11 @@ export function CoursePlayer({
 
     // Sync local time with prop updates
     useEffect(() => {
-        setLocalTimeSpent(enrollment.timeSpent)
+        localTimeRef.current = enrollment.timeSpent
+        // Use requestAnimationFrame to avoid synchronous setState in effect
+        requestAnimationFrame(() => {
+            setLocalTimeSpent(enrollment.timeSpent)
+        })
     }, [enrollment.timeSpent])
 
     // Load initial module progress
@@ -136,7 +139,7 @@ export function CoursePlayer({
         const loadModuleProgress = async () => {
             setIsTrackingModule(false)
             const progress = await getVideoProgress(currentModule.id)
-            const timeSpent = progress ? ((progress as any).timeSpent || 0) : 0
+            const timeSpent = progress ? ((progress as { timeSpent?: number }).timeSpent || 0) : 0
             setModuleTimeSpent(timeSpent)
             moduleTimeRef.current = timeSpent
             uiUpdateCounterRef.current = 0
@@ -263,8 +266,11 @@ export function CoursePlayer({
         if (!meetsThreshold) return
 
         timeThresholdMetRef.current = true
-        setShowTimePopup(true)
-        setHasShownTimePopup(true)
+        // Use requestAnimationFrame to avoid synchronous setState in effect
+        requestAnimationFrame(() => {
+            setShowTimePopup(true)
+            setHasShownTimePopup(true)
+        })
         confetti({
             particleCount: 100,
             spread: 70,
@@ -348,7 +354,7 @@ export function CoursePlayer({
     const requiredHours = Math.floor(course.minimumDuration / 60)
     const requiredMinutes = course.minimumDuration % 60
 
-    const getTimeColor = () => {
+    const _getTimeColor = () => {
         if (timeProgress >= 100) return 'text-green-400'
         if (timeProgress >= 80) return 'text-yellow-400'
         if (timeProgress >= 50) return 'text-orange-400'
@@ -478,24 +484,24 @@ export function CoursePlayer({
                                     <div className="bg-muted/50 p-4 rounded-xl border border-border">
                                         <div className="text-sm text-muted-foreground mb-1">Inizio</div>
                                         <div className="font-semibold text-lg">
-                                            {new Date(currentModule.liveSession.startTime).toLocaleDateString()}
+                                            {currentModule.liveSession.startTime ? new Date(currentModule.liveSession.startTime).toLocaleDateString() : 'N/D'}
                                         </div>
                                         <div className="text-primary font-bold">
-                                            {new Date(currentModule.liveSession.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            {currentModule.liveSession.startTime ? new Date(currentModule.liveSession.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                                         </div>
                                     </div>
                                     <div className="bg-muted/50 p-4 rounded-xl border border-border">
                                         <div className="text-sm text-muted-foreground mb-1">Fine</div>
                                         <div className="font-semibold text-lg">
-                                            {new Date(currentModule.liveSession.endTime).toLocaleDateString()}
+                                            {currentModule.liveSession.endTime ? new Date(currentModule.liveSession.endTime).toLocaleDateString() : 'N/D'}
                                         </div>
                                         <div className="text-primary font-bold">
-                                            {new Date(currentModule.liveSession.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            {currentModule.liveSession.endTime ? new Date(currentModule.liveSession.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                                         </div>
                                     </div>
                                 </div>
                                 <div className="pt-4 w-full max-w-xs">
-                                    {new Date(currentModule.liveSession.endTime) < new Date() ? (
+                                    {currentModule.liveSession.endTime && new Date(currentModule.liveSession.endTime) < new Date() ? (
                                         <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-sm">
                                             <p className="font-semibold text-yellow-600 dark:text-yellow-400 mb-1">⏰ Sessione Terminata</p>
                                             <p className="text-muted-foreground">
@@ -504,7 +510,7 @@ export function CoursePlayer({
                                         </div>
                                     ) : (
                                         <JoinSessionButton
-                                            meetingUrl={currentModule.liveSession.meetingUrl}
+                                            meetingUrl={currentModule.liveSession.meetingUrl || ''}
                                             moduleId={currentModule.id}
                                             liveSessionId={currentModule.liveSession.id}
                                             userId={userId}

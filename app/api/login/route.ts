@@ -42,17 +42,17 @@ export async function POST(request: Request) {
             )
         }
 
-        console.log("[LOGIN] Checking isApproved:", (user as any).isApproved)
-        if (!(user as any).isApproved) {
+        console.log("[LOGIN] Checking isApproved:", user.isApproved)
+        if (!user.isApproved) {
             return NextResponse.json(
                 { error: "Account non ancora approvato" },
                 { status: 403 }
             )
         }
 
-        // Auth.js usa nomi diversi in base all'ambiente
-        const isProduction = process.env.NODE_ENV === "production"
-        const cookieName = isProduction
+        // Auth.js usa cookie __Secure- quando AUTH_URL è https
+        const useSecureCookies = (process.env.AUTH_URL || "").startsWith("https://")
+        const cookieName = useSecureCookies
             ? "__Secure-authjs.session-token"
             : "authjs.session-token"
 
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
         const cookieStore = await cookies()
         cookieStore.set(cookieName, token, {
             httpOnly: true,
-            secure: isProduction,
+            secure: useSecureCookies,
             sameSite: "lax",
             path: "/",
             maxAge: maxAge,

@@ -64,11 +64,11 @@ export async function generateQuizQuestions(topic: string, count: number = 5) {
 
         return { success: true, questions: validated.data.questions }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Gemini API Error:", error)
         return {
             success: false,
-            error: `Errore: ${error.message || "Errore sconosciuto durante la generazione"}`
+            error: `Errore: ${error instanceof Error ? error.message : "Errore sconosciuto durante la generazione"}`
         }
     }
 }

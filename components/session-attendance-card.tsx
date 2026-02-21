@@ -68,7 +68,7 @@ export function SessionAttendanceCard({
         startTransition(async () => {
             const result = await selfCheckIn(session.id)
             if (result.success && result.attendance) {
-                setLocalAttendance(result.attendance as any)
+                setLocalAttendance(result.attendance as SessionAttendanceCardProps["attendance"])
             }
         })
     }
@@ -77,7 +77,7 @@ export function SessionAttendanceCard({
         startTransition(async () => {
             const result = await selfCheckOut(session.id)
             if (result.success && result.attendance) {
-                setLocalAttendance(result.attendance as any)
+                setLocalAttendance(result.attendance as SessionAttendanceCardProps["attendance"])
             }
         })
     }

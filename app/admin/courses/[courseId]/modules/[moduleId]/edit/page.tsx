@@ -13,7 +13,7 @@ export default async function EditModulePage({
 
     const { courseId, moduleId } = await params
 
-    const module = await db.module.findUnique({
+    const courseModule = await db.module.findUnique({
         where: { id: moduleId },
         include: {
             course: {
@@ -26,18 +26,18 @@ export default async function EditModulePage({
         }
     })
 
-    if (!module || module.courseId !== courseId) {
+    if (!courseModule || courseModule.courseId !== courseId) {
         redirect(`/admin/courses/${courseId}`)
     }
 
     // Fetch available live sessions not already linked to other modules
-    let availableSessions: any[] = []
+    let availableSessions: { id: string; title: string; startTime: Date | null; endTime: Date | null; meetingUrl: string | null }[] = []
     try {
         availableSessions = await db.liveSession.findMany({
             where: {
                 OR: [
                     { module: { is: null } },
-                    { id: module.liveSessionId ?? undefined }
+                    { id: courseModule.liveSessionId ?? undefined }
                 ]
             },
             orderBy: { createdAt: "desc" },
@@ -58,10 +58,10 @@ export default async function EditModulePage({
             <div className="max-w-4xl mx-auto px-6 py-8">
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-primary mb-2">Modifica Modulo</h1>
-                    <p className="text-muted-foreground">Corso: {module.course.title}</p>
+                    <p className="text-muted-foreground">Corso: {courseModule.course.title}</p>
                 </div>
 
-                <EditModuleForm module={JSON.parse(JSON.stringify(module))} courseId={courseId} availableSessions={JSON.parse(JSON.stringify(availableSessions))} />
+                <EditModuleForm module={JSON.parse(JSON.stringify(courseModule))} courseId={courseId} availableSessions={JSON.parse(JSON.stringify(availableSessions))} />
             </div>
         </div>
     )

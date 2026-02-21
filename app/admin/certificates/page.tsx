@@ -41,9 +41,7 @@ export default async function AdminCertificatesPage({
                     { certificateNumber: { contains: searchQuery, mode: 'insensitive' } }
                 ]
             } : {}),
-            // @ts-ignore - source field added in migration
             ...(sourceFilter === 'lms' ? { source: 'lms' } : {}),
-            // @ts-ignore
             ...(sourceFilter === 'tms' ? { source: 'tms' } : {})
         },
         include: {
@@ -96,9 +94,7 @@ export default async function AdminCertificatesPage({
             number: c.certificateNumber,
             downloadUrl: `/api/certificates/${c.id}/download`,
             verifyUrl: `/verify/${c.certificateNumber}`,
-            // @ts-ignore - source field added in migration
             source: (c.source || 'lms') as 'lms' | 'tms',
-            // @ts-ignore
             tmsSyncedAt: c.tmsSyncedAt as Date | null
         })),
         ...(sourceFilter !== 'tms' ? quizCertificates.map(q => ({

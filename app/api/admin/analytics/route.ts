@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
-import { startOfWeek, startOfMonth, subMonths, format } from "date-fns"
+import { startOfMonth, subMonths, format } from "date-fns"
 
 export async function GET() {
     try {

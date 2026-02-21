@@ -897,7 +897,7 @@ export async function syncAttendanceFromLiveSessions(registerId: string) {
       }
     }
 
-    let participantsImported = newUserIds.length
+    const participantsImported = newUserIds.length
     let entriesCreated = 0
     let attendancesFilled = 0
 
@@ -969,8 +969,8 @@ export async function syncAttendanceFromLiveSessions(registerId: string) {
         data: {
           registerId,
           date: entryDate,
-          startTime: entryStartTime,
-          endTime: entryEndTime,
+          startTime: entryStartTime || new Date(),
+          endTime: entryEndTime || new Date(),
           pauseMinutes: 0,
           effectiveHours,
           topics: ls.title + (ls.description ? ` - ${ls.description}` : ""),

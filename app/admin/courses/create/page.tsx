@@ -88,7 +88,7 @@ export default function CreateCoursePage() {
                                 ))}
                             </SelectContent>
                         </Select>
-                        <p className="text-xs text-muted-foreground">Assegna automaticamente a tutti i dipendenti dell'azienda.</p>
+                        <p className="text-xs text-muted-foreground">Assegna automaticamente a tutti i dipendenti dell&apos;azienda.</p>
                     </div>
 
                     <div className="space-y-2">

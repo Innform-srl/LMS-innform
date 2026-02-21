@@ -43,7 +43,7 @@ interface AttendanceRow {
 
 export function AttendanceGrid({
     entryId,
-    registerId,
+    registerId: _registerId,
     effectiveHours,
     participants,
     existingAttendances,

@@ -65,7 +65,7 @@ export function CommentsList({ comments, courseId, moduleId, currentUser }: Comm
                 title: "Risposta inviata",
                 description: "La tua risposta è stata pubblicata con successo."
             })
-        } catch (error) {
+        } catch {
             toast({
                 title: "Errore",
                 description: "Non è stato possibile inviare la risposta.",

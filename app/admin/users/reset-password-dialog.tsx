@@ -49,7 +49,7 @@ export function ResetPasswordDialog({ userId, userName }: ResetPasswordDialogPro
                     variant: "destructive",
                 })
             }
-        } catch (error) {
+        } catch (_error) {
             toast({
                 title: "Errore",
                 description: "Si è verificato un errore imprevisto",

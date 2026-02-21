@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth"
 import { redirect, notFound } from "next/navigation"
 import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { getRegister, getAvailableUsersForRegister } from "@/app/actions/registers"
 import { ParticipantsManager } from "./participants-manager"
 

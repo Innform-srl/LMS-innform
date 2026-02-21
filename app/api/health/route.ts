@@ -31,7 +31,7 @@ export async function GET() {
             version: process.env.npm_package_version || '1.0.0',
             environment: process.env.NODE_ENV
         })
-    } catch (error: any) {
+    } catch (error: unknown) {
         const responseTime = Date.now() - startTime
 
         return NextResponse.json({
@@ -40,7 +40,7 @@ export async function GET() {
             checks: {
                 database: {
                     status: 'disconnected',
-                    error: error.message,
+                    error: error instanceof Error ? error.message : "Unknown error",
                     responseTime: `${responseTime}ms`
                 },
                 api: {

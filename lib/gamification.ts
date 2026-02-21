@@ -9,7 +9,7 @@ export { calculateLevel, pointsForNextLevel }
 export async function awardPoints(
     userId: string,
     points: number,
-    reason: string
+    _reason: string
 ): Promise<{ newTotal: number; leveledUp: boolean; newLevel: number }> {
     // Get or create user stats
     let stats = await db.userStats.findUnique({

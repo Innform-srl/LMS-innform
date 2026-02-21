@@ -10,8 +10,8 @@ import { createEntry, getLiveSessionsForRegister } from "@/app/actions/registers
 type LiveSessionOption = {
     id: string
     title: string
-    startTime: Date
-    endTime: Date
+    startTime: Date | null
+    endTime: Date | null
     sessionType: string
     _count: { attendance: number }
     alreadyLinked: boolean
@@ -37,13 +37,17 @@ export function AddEntryForm({ registerId }: { registerId: string }) {
     })
 
     useEffect(() => {
-        if (isOpen) {
-            setLoadingSessions(true)
-            getLiveSessionsForRegister(registerId).then((sessions) => {
+        if (!isOpen) return
+        let cancelled = false
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setLoadingSessions(true)
+        getLiveSessionsForRegister(registerId).then((sessions) => {
+            if (!cancelled) {
                 setLiveSessions(sessions)
                 setLoadingSessions(false)
-            })
-        }
+            }
+        })
+        return () => { cancelled = true }
     }, [isOpen, registerId])
 
     const handleSelectLiveSession = (sessionId: string) => {
@@ -54,8 +58,8 @@ export function AddEntryForm({ registerId }: { registerId: string }) {
         const ls = liveSessions.find((s) => s.id === sessionId)
         if (!ls) return
 
-        const start = new Date(ls.startTime)
-        const end = new Date(ls.endTime)
+        const start = ls.startTime ? new Date(ls.startTime) : new Date()
+        const end = ls.endTime ? new Date(ls.endTime) : new Date()
         const dateStr = start.toISOString().split("T")[0]
         const startTimeStr = start.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", hour12: false })
         const endTimeStr = end.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", hour12: false })
@@ -152,7 +156,7 @@ export function AddEntryForm({ registerId }: { registerId: string }) {
                                 <option value="">-- Compilazione manuale --</option>
                                 {availableSessions.map((s) => (
                                     <option key={s.id} value={s.id}>
-                                        {new Date(s.startTime).toLocaleDateString("it-IT")} - {s.title} ({s._count.attendance} presenze)
+                                        {s.startTime ? new Date(s.startTime).toLocaleDateString("it-IT") : 'N/D'} - {s.title} ({s._count.attendance} presenze)
                                     </option>
                                 ))}
                             </select>

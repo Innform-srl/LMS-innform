@@ -26,7 +26,7 @@ export function TimeTracker({ courseId, isActive, onTimeUpdate }: TimeTrackerPro
             setIsPageVisible(visible)
         }
 
-        setIsPageVisible(!document.hidden)
+        requestAnimationFrame(() => setIsPageVisible(!document.hidden))
         document.addEventListener('visibilitychange', handleVisibilityChange)
 
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
@@ -71,6 +71,7 @@ export function TimeTracker({ courseId, isActive, onTimeUpdate }: TimeTrackerPro
         return () => {
             if (intervalRef.current) clearInterval(intervalRef.current)
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [courseId, isActive, isTracking, router])
 
     if (!isActive) return null

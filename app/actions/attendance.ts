@@ -85,6 +85,10 @@ export async function selfCheckIn(sessionId: string) {
             return { success: false, error: "Sessione non trovata" }
         }
 
+        if (!liveSession.startTime) {
+            return { success: false, error: "Orario di inizio sessione non impostato" }
+        }
+
         const now = new Date()
         const sessionStart = new Date(liveSession.startTime)
         const checkInWindow = new Date(sessionStart.getTime() - 15 * 60 * 1000) // 15 min before
@@ -93,7 +97,7 @@ export async function selfCheckIn(sessionId: string) {
             return { success: false, error: "Check-in disponibile 15 minuti prima dell'inizio" }
         }
 
-        if (now > liveSession.endTime) {
+        if (liveSession.endTime && now > liveSession.endTime) {
             return { success: false, error: "Sessione terminata" }
         }
 
@@ -335,6 +339,10 @@ export async function markAbsentUsers(sessionId: string) {
 
         if (!liveSession) {
             return { success: false, error: "Sessione non trovata" }
+        }
+
+        if (!liveSession.endTime) {
+            return { success: false, error: "Orario di fine sessione non impostato" }
         }
 
         const now = new Date()

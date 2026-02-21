@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         // Create dir if not exists
         try {
             await mkdir(uploadDir, { recursive: true })
-        } catch (e) {
+        } catch (_e) {
             // Ignore if exists
         }
 

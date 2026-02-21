@@ -1,5 +1,3 @@
-import { db } from '@/lib/db'
-
 /**
  * Email templates for deadline reminders
  */

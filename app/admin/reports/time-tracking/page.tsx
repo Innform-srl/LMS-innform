@@ -31,23 +31,15 @@ export default function TimeTrackingReportPage() {
     const [departmentFilter, setDepartmentFilter] = useState("")
     const [statusFilter, setStatusFilter] = useState("")
 
-    useEffect(() => {
-        loadData()
-    }, [])
-
-    useEffect(() => {
-        filterData()
-    }, [data, searchTerm, departmentFilter, statusFilter])
-
     const loadData = async () => {
         setLoading(true)
         const result = await getTimeTrackingReport()
         if (result.success && result.data) {
             // Map the data to flatten userDepartment object to string
-            const mappedData = result.data.map((row: any) => ({
+            const mappedData = result.data.map((row) => ({
                 ...row,
-                userDepartment: row.userDepartment?.name || null
-            }))
+                userDepartment: typeof row.userDepartment === 'object' && row.userDepartment !== null ? row.userDepartment.name : null
+            })) as ReportRow[]
             setData(mappedData)
         }
         setLoading(false)
@@ -74,6 +66,15 @@ export default function TimeTrackingReportPage() {
 
         setFilteredData(filtered)
     }
+
+    useEffect(() => {
+        loadData()
+    }, [])
+
+    useEffect(() => {
+        filterData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data, searchTerm, departmentFilter, statusFilter])
 
     const handleExportCSV = async () => {
         const result = await exportTimeTrackingCSV()

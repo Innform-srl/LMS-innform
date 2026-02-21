@@ -3,11 +3,12 @@
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
+import { Prisma } from "@prisma/client"
 import { sendQuizResultEmail } from "@/lib/email"
 import { trackQuizCompletion } from "@/lib/gamification"
 import { notifyTMSQuizCompleted } from "@/lib/tms-webhook-service"
 
-export async function submitQuizAttempt(quizId: string, answers: Record<string, any>) {
+export async function submitQuizAttempt(quizId: string, answers: Record<string, unknown>) {
     const session = await auth()
     if (!session?.user?.id) return { success: false, message: "Non autorizzato" }
 
@@ -49,7 +50,7 @@ export async function submitQuizAttempt(quizId: string, answers: Record<string, 
             const userAnswer = answers[question.id]
             let isCorrect = false
             let selectedOption: number | null = null
-            let selectedOptions: any = null
+            let selectedOptions: number[] | null = null
             let textAnswer: string | null = null
 
             if (question.type === "MULTIPLE_CHOICE" || question.type === "TRUE_FALSE") {
@@ -57,7 +58,6 @@ export async function submitQuizAttempt(quizId: string, answers: Record<string, 
                 isCorrect = selectedOption === question.correctAnswer
             } else if (question.type === "MULTI_SELECT") {
                 selectedOptions = userAnswer as number[] // Array of selected indices
-                // @ts-ignore
                 const correctOptions = question.correctAnswers as number[] || []
 
                 // Check if arrays match (ignoring order)
@@ -67,7 +67,6 @@ export async function submitQuizAttempt(quizId: string, answers: Record<string, 
                 }
             } else if (question.type === "SHORT_ANSWER") {
                 textAnswer = userAnswer as string
-                // @ts-ignore
                 const correctAnswerText = question.textAnswer || ""
 
                 // Case insensitive comparison
@@ -82,7 +81,7 @@ export async function submitQuizAttempt(quizId: string, answers: Record<string, 
             return {
                 questionId: question.id,
                 selectedOption,
-                selectedOptions,
+                selectedOptions: selectedOptions === null ? Prisma.JsonNull : selectedOptions,
                 textAnswer,
                 isCorrect
             }
@@ -173,7 +172,7 @@ export async function getQuizResults(attemptId: string) {
         if (!attempt || attempt.userId !== session.user.id) return null
 
         return attempt
-    } catch (error) {
+    } catch (_error) {
         return null
     }
 }
@@ -202,7 +201,7 @@ export async function canTakeQuiz(quizId: string) {
             attempts: attemptCount,
             maxAttempts: Infinity // quiz.maxAttempts
         }
-    } catch (error) {
+    } catch (_error) {
         return { canTake: false, message: "Errore" }
     }
 }

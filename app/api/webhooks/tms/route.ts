@@ -26,7 +26,7 @@ const RATE_LIMIT_REQUESTS = 30
 const RATE_LIMIT_WINDOW_MS = 60 * 1000
 
 export async function POST(req: Request) {
-  const requestId = crypto.randomUUID()
+  const _requestId = crypto.randomUUID()
   const startTime = Date.now()
 
   try {

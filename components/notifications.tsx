@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bell, Check } from "lucide-react"
+import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     Popover,
@@ -10,19 +10,22 @@ import {
 } from "@/components/ui/popover"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { getNotifications, getUnreadNotificationCount, markNotificationAsRead, markAllNotificationsAsRead } from "@/app/actions/notifications"
-import { cn } from "@/lib/utils"
-import Link from "next/link"
-import { formatDistanceToNow } from "date-fns"
-import { it } from "date-fns/locale"
 import { NotificationItem } from "./notification-item"
 
 export function NotificationCenter() {
-    const [notifications, setNotifications] = useState<any[]>([])
+    const [notifications, setNotifications] = useState<{ id: string; title: string; message: string; isRead: boolean; link?: string | null; createdAt: string | Date; icon?: string | null; type?: string }[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
     const [isOpen, setIsOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
 
+    const loadData = async () => {
+        // Only fetch count initially, fetch full list when popover opens
+        const count = await getUnreadNotificationCount()
+        setUnreadCount(count)
+    }
+
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadData()
         // Poll for new notifications every 3 minutes (instead of 1) and only when tab is visible
         const interval = setInterval(() => {
@@ -44,12 +47,6 @@ export function NotificationCenter() {
             document.removeEventListener('visibilitychange', handleVisibilityChange)
         }
     }, [])
-
-    const loadData = async () => {
-        // Only fetch count initially, fetch full list when popover opens
-        const count = await getUnreadNotificationCount()
-        setUnreadCount(count)
-    }
 
     // Load full notifications only when popover opens
     useEffect(() => {

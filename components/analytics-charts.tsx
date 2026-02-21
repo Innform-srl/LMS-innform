@@ -15,8 +15,8 @@ import {
 } from "recharts"
 
 interface AnalyticsChartsProps {
-    timeline: any[]
-    deptData: any[]
+    timeline: Record<string, unknown>[]
+    deptData: Record<string, unknown>[]
 }
 
 export default function AnalyticsCharts({ timeline, deptData }: AnalyticsChartsProps) {

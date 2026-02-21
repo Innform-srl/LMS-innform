@@ -11,7 +11,6 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
@@ -19,7 +18,7 @@ import { Loader2, Sparkles, Wand2 } from "lucide-react"
 import { useState } from "react"
 
 interface AiQuizGeneratorProps {
-    onQuestionsGenerated: (questions: any[]) => void
+    onQuestionsGenerated: (questions: { question: string; options: string[]; correctAnswer: number }[]) => void
 }
 
 export function AiQuizGenerator({ onQuestionsGenerated }: AiQuizGeneratorProps) {
@@ -50,7 +49,7 @@ export function AiQuizGenerator({ onQuestionsGenerated }: AiQuizGeneratorProps) 
                     variant: "destructive",
                 })
             }
-        } catch (error) {
+        } catch (_error) {
             toast({
                 title: "Errore",
                 description: "Si è verificato un errore imprevisto.",
@@ -79,7 +78,7 @@ export function AiQuizGenerator({ onQuestionsGenerated }: AiQuizGeneratorProps) 
                         Generatore AI
                     </DialogTitle>
                     <DialogDescription>
-                        Descrivi l'argomento del quiz o incolla il testo della lezione. L'AI genererà automaticamente 5 domande a risposta multipla.
+                        Descrivi l&apos;argomento del quiz o incolla il testo della lezione. L&apos;AI genererà automaticamente 5 domande a risposta multipla.
                     </DialogDescription>
                 </DialogHeader>
 

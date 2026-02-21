@@ -3,13 +3,14 @@
 import { Button } from "@/components/ui/button"
 import { deleteQuestion } from "@/app/actions/quiz"
 import { useState } from "react"
+import type { JsonValue } from "@prisma/client/runtime/library"
 
 type Question = {
     id: string
     question: string
     type: string
     explanation?: string | null
-    options: any
+    options: JsonValue
     correctAnswer: number
     points: number
     position: number
@@ -43,7 +44,7 @@ export function QuestionList({ questions, quizId }: { questions: Question[], qui
     return (
         <div className="space-y-4">
             {questions.map((question, index) => {
-                const options = Array.isArray(question.options) ? question.options : []
+                const options = Array.isArray(question.options) ? question.options as string[] : []
 
                 return (
                     <div key={question.id} className="bg-card border border-border rounded-xl p-6 hover:bg-accent/50 transition-colors">

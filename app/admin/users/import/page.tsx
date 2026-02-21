@@ -23,8 +23,8 @@ export default async function ImportUsersPage() {
 
         const hashedPassword = await bcrypt.hash("password", 10) // Default password
 
-        let successCount = 0
-        let errorCount = 0
+        let _successCount = 0
+        let _errorCount = 0
 
         for (const line of lines) {
             if (!line.trim()) continue
@@ -55,10 +55,10 @@ export default async function ImportUsersPage() {
                 })
 
                 await sendWelcomeEmail(email, name)
-                successCount++
+                _successCount++
             } catch (e) {
                 console.error(`Failed to import user ${email}:`, e)
-                errorCount++
+                _errorCount++
             }
         }
 
@@ -103,7 +103,7 @@ export default async function ImportUsersPage() {
                             Mario Rossi,mario@example.com,Sales<br />
                             Luigi Verdi,luigi@example.com,IT
                         </code>
-                        <p className="mt-2 text-xs opacity-70">La password di default sarà "password".</p>
+                        <p className="mt-2 text-xs opacity-70">La password di default sarà &quot;password&quot;.</p>
                     </div>
 
                     <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">

@@ -207,7 +207,7 @@ export default function WebhookDiagnosticsPage() {
                     <div className="flex justify-between items-center">
                         <div>
                             <h1 className="text-4xl font-bold mb-2">Diagnostica Webhook</h1>
-                            <p className="text-muted-foreground">Verifica lo stato dell'integrazione TMS-LMS</p>
+                            <p className="text-muted-foreground">Verifica lo stato dell&apos;integrazione TMS-LMS</p>
                         </div>
                         <Button onClick={runDiagnostics} disabled={isRunning}>
                             <RefreshCw className={`w-4 h-4 mr-2 ${isRunning ? 'animate-spin' : ''}`} />
@@ -248,7 +248,7 @@ export default function WebhookDiagnosticsPage() {
                             Test di Sistema
                         </CardTitle>
                         <CardDescription>
-                            Verifica tutti i componenti dell'integrazione webhook
+                            Verifica tutti i componenti dell&apos;integrazione webhook
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

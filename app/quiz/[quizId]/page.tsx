@@ -2,10 +2,6 @@ import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { QuizInterface } from "./quiz-interface"
-import { canTakeQuiz } from "@/app/actions/quiz-attempt"
-import { Card } from "@/components/ui/card"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
 
 export default async function TakeQuizPage({ params }: { params: Promise<{ quizId: string }> }) {
     const session = await auth()

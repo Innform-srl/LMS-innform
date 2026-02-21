@@ -6,13 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { submitQuizAttempt } from "@/app/actions/quiz-attempt"
 import { useRouter } from "next/navigation"
 import { trackModuleTime, getVideoProgress } from "@/app/actions/video-progress"
+import type { JsonValue } from "@prisma/client/runtime/library"
 
 type Question = {
     id: string
     question: string
     type: string
     explanation: string | null
-    options: any
+    options: JsonValue
     position: number
     points: number
 }
@@ -35,7 +36,7 @@ type Enrollment = {
 
 export function QuizInterface({
     quiz,
-    courseId,
+    courseId: _courseId,
     attempts,
     maxAttempts,
     enrollment,
@@ -58,7 +59,7 @@ export function QuizInterface({
 }) {
     const router = useRouter()
     const [currentQuestion, setCurrentQuestion] = useState(0)
-    const [answers, setAnswers] = useState<Record<string, any>>({})
+    const [answers, setAnswers] = useState<Record<string, string | number | number[]>>({})
     const [timeLeft, setTimeLeft] = useState<number | null>(
         quiz.timeLimit ? quiz.timeLimit * 60 : null
     )
@@ -133,9 +134,10 @@ export function QuizInterface({
         }, 1000)
 
         return () => clearInterval(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [timeLeft])
 
-    const handleAnswer = (questionId: string, value: any) => {
+    const handleAnswer = (questionId: string, value: string | number) => {
         const currentQ = quiz.questions.find(q => q.id === questionId)
         if (!currentQ) return
 
@@ -201,7 +203,7 @@ export function QuizInterface({
     if (currentQ.type === 'TRUE_FALSE') {
         options = ["Vero", "Falso"]
     } else {
-        options = Array.isArray(currentQ.options) ? currentQ.options : []
+        options = Array.isArray(currentQ.options) ? currentQ.options as string[] : []
     }
 
     const progress = ((currentQuestion + 1) / quiz.questions.length) * 100
@@ -210,10 +212,10 @@ export function QuizInterface({
     const timeProgress = courseMinDuration > 0
         ? Math.min((localTimeSpent / courseMinDuration) * 100, 100)
         : 100
-    const timeHours = Math.floor(localTimeSpent / 60)
-    const timeMinutes = localTimeSpent % 60
-    const requiredHours = Math.floor(courseMinDuration / 60)
-    const requiredMinutes = courseMinDuration % 60
+    const _timeHours = Math.floor(localTimeSpent / 60)
+    const _timeMinutes = localTimeSpent % 60
+    const _requiredHours = Math.floor(courseMinDuration / 60)
+    const _requiredMinutes = courseMinDuration % 60
 
     return (
         <div className="min-h-screen bg-background text-foreground transition-colors duration-300">

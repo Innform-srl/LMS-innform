@@ -62,7 +62,7 @@ export async function deleteLearningPath(id: string) {
         revalidatePath("/admin/learning-paths")
         revalidatePath("/learning-paths")
         return { success: true }
-    } catch (error) {
+    } catch (_error) {
         return { success: false, message: "Errore durante l'eliminazione" }
     }
 }
@@ -87,7 +87,7 @@ export async function addCourseToPath(pathId: string, courseId: string) {
         })
         revalidatePath(`/admin/learning-paths/${pathId}`)
         return { success: true }
-    } catch (error) {
+    } catch (_error) {
         return { success: false, message: "Errore durante l'aggiunta del corso" }
     }
 }
@@ -112,7 +112,7 @@ export async function removeCourseFromPath(pathId: string, courseId: string) {
             return { success: true }
         }
         return { success: false, message: "Relazione non trovata" }
-    } catch (error) {
+    } catch (_error) {
         return { success: false, message: "Errore durante la rimozione del corso" }
     }
 }
@@ -124,21 +124,21 @@ export async function getSuggestedLearningPaths(companyId?: string, departmentId
     }
 
     try {
-        const whereClause: any = {
-            OR: []
-        }
+        const orConditions: Array<{ companyId: string } | { departmentId: string }> = []
 
         if (companyId) {
-            whereClause.OR.push({ companyId })
+            orConditions.push({ companyId })
         }
 
         if (departmentId) {
-            whereClause.OR.push({ departmentId })
+            orConditions.push({ departmentId })
         }
 
-        if (whereClause.OR.length === 0) {
+        if (orConditions.length === 0) {
             return []
         }
+
+        const whereClause = { OR: orConditions }
 
         return await db.learningPath.findMany({
             where: whereClause,

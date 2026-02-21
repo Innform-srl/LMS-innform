@@ -26,7 +26,7 @@ export function ApproveUserButton({ userId }: { userId: string }) {
                     description: "Errore durante l'approvazione",
                 })
             }
-        } catch (error) {
+        } catch (_error) {
             toast({
                 variant: "destructive",
                 title: "Errore",

@@ -25,13 +25,6 @@ export function NotificationsBell() {
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
 
-    useEffect(() => {
-        fetchNotifications()
-        // Poll every minute
-        const interval = setInterval(fetchNotifications, 60000)
-        return () => clearInterval(interval)
-    }, [])
-
     async function fetchNotifications() {
         try {
             const res = await fetch(apiUrl('/api/notifications'))
@@ -44,6 +37,14 @@ export function NotificationsBell() {
             console.error("Failed to fetch notifications", error)
         }
     }
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        fetchNotifications()
+        // Poll every minute
+        const interval = setInterval(fetchNotifications, 60000)
+        return () => clearInterval(interval)
+    }, [])
 
     async function markAsRead(id: string) {
         try {

@@ -40,7 +40,7 @@ interface InstructorRow {
 
 export function InstructorEntrySection({
     entryId,
-    registerId,
+    registerId: _registerId,
     effectiveHours,
     instructors,
     existingEntries,

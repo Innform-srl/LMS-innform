@@ -50,36 +50,36 @@ export async function checkAndCompleteCourse(courseId: string, userId: string) {
     }
 
     // 4. Check Each Module
-    let completedModulesCount = 0
+    let _completedModulesCount = 0
 
-    for (const module of course.modules) {
+    for (const courseModule of course.modules) {
         // Check Module Progress (Time + Content)
         const progress = await db.moduleProgress.findUnique({
-            where: { userId_moduleId: { userId, moduleId: module.id } }
+            where: { userId_moduleId: { userId, moduleId: courseModule.id } }
         })
 
         if (!progress || !progress.completed) {
-            console.log(`Module ${module.title} not completed`)
-            return { completed: false, reason: `Module ${module.title} not completed` }
+            console.log(`Module ${courseModule.title} not completed`)
+            return { completed: false, reason: `Module ${courseModule.title} not completed` }
         }
 
         // Check Quiz (if exists)
-        if (module.quiz) {
+        if (courseModule.quiz) {
             const passedAttempt = await db.quizAttempt.findFirst({
                 where: {
-                    quizId: module.quiz.id,
+                    quizId: courseModule.quiz.id,
                     userId,
                     passed: true
                 }
             })
 
             if (!passedAttempt) {
-                console.log(`Quiz for module ${module.title} not passed`)
-                return { completed: false, reason: `Quiz for module ${module.title} not passed` }
+                console.log(`Quiz for module ${courseModule.title} not passed`)
+                return { completed: false, reason: `Quiz for module ${courseModule.title} not passed` }
             }
         }
 
-        completedModulesCount++
+        _completedModulesCount++
     }
 
     // 5. If all checks pass, mark course as completed

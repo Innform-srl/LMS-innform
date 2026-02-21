@@ -39,14 +39,6 @@ export default function ModuleTimeTrackingReportPage() {
     const [statusFilter, setStatusFilter] = useState("")
     const [expandedCourses, setExpandedCourses] = useState<Set<string>>(new Set())
 
-    useEffect(() => {
-        loadData()
-    }, [])
-
-    useEffect(() => {
-        filterData()
-    }, [data, searchTerm, courseFilter, departmentFilter, statusFilter])
-
     const loadData = async () => {
         setLoading(true)
         const result = await getModuleTimeTrackingReport()
@@ -82,6 +74,15 @@ export default function ModuleTimeTrackingReportPage() {
 
         setFilteredData(filtered)
     }
+
+    useEffect(() => {
+        loadData()
+    }, [])
+
+    useEffect(() => {
+        filterData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data, searchTerm, courseFilter, departmentFilter, statusFilter])
 
     const handleExportCSV = async () => {
         const filters: { courseId?: string } = {}

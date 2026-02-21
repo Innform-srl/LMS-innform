@@ -7,7 +7,7 @@ import { AchievementShowcaseComponent } from "@/components/achievement-showcase"
 import { LeaderboardComponent } from "@/components/leaderboard"
 import { Loader2, Trophy, Star, Flame, TrendingUp, Gamepad2, BarChart } from "lucide-react"
 import Link from "next/link"
-import { calculateLevel, pointsForNextLevel } from "@/lib/gamification-utils"
+import { pointsForNextLevel } from "@/lib/gamification-utils"
 import { apiUrl } from "@/lib/api"
 
 type UserStats = {
@@ -24,8 +24,10 @@ type UserStats = {
 
 export default function GamificationPage() {
     const [stats, setStats] = useState<UserStats | null>(null)
-    const [achievements, setAchievements] = useState<any>(null)
-    const [leaderboard, setLeaderboard] = useState<any>(null)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [achievements, setAchievements] = useState<{ totalUnlocked?: number; totalAvailable?: number; achievements?: any[] } | null>(null)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [leaderboard, setLeaderboard] = useState<{ leaderboard?: any[] } | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -160,7 +162,7 @@ export default function GamificationPage() {
                             I Tuoi Achievements
                         </h2>
                         {achievements && (
-                            <AchievementShowcaseComponent achievements={achievements.achievements} />
+                            <AchievementShowcaseComponent achievements={achievements.achievements || []} />
                         )}
                     </div>
 
@@ -172,7 +174,7 @@ export default function GamificationPage() {
                         </h2>
                         {leaderboard && (
                             <LeaderboardComponent
-                                leaderboard={leaderboard.leaderboard}
+                                leaderboard={leaderboard.leaderboard || []}
                                 currentUserId={stats.userId}
                             />
                         )}

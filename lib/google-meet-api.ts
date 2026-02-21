@@ -138,6 +138,25 @@ export async function getConferenceByMeetingCode(
   )[0]
 }
 
+interface RawMeetUser {
+  user?: string
+  displayName?: string
+}
+
+interface RawMeetParticipant {
+  name: string
+  earliestStartTime: string
+  latestEndTime: string
+  signedinUser?: RawMeetUser
+  anonymousUser?: RawMeetUser
+  phoneUser?: RawMeetUser
+}
+
+interface RawMeetSession {
+  startTime: string
+  endTime?: string
+}
+
 /**
  * Recupera tutti i partecipanti di una conferenza con le loro sessioni
  * Gestisce la paginazione dell'API Google Meet
@@ -147,7 +166,7 @@ export async function getConferenceParticipants(
   conferenceRecordName: string
 ): Promise<MeetParticipant[]> {
   // 1. Lista partecipanti (con paginazione)
-  const rawParticipants: any[] = []
+  const rawParticipants: RawMeetParticipant[] = []
   let nextPageToken: string | undefined
 
   do {
@@ -172,7 +191,7 @@ export async function getConferenceParticipants(
 
   for (const p of rawParticipants) {
     // 2. Per ogni partecipante, recupera le sessioni (con paginazione)
-    let sessions: MeetSession[] = []
+    const sessions: MeetSession[] = []
     let sessionsPageToken: string | undefined
 
     do {
@@ -188,7 +207,7 @@ export async function getConferenceParticipants(
       const sessionsData = await sessionsRes.json()
       const rawSessions = sessionsData.participantSessions || []
 
-      sessions.push(...rawSessions.map((s: any) => {
+      sessions.push(...rawSessions.map((s: RawMeetSession) => {
         const start = new Date(s.startTime)
         const end = s.endTime ? new Date(s.endTime) : new Date()
         const durationMinutes = Math.round((end.getTime() - start.getTime()) / (1000 * 60))

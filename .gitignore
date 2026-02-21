@@ -49,3 +49,6 @@ auth-debug.txt
 test-write.txt
 nul
 .emails_ignore/
+
+.vercel
+.env*.local

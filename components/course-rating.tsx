@@ -24,7 +24,7 @@ export function CourseRating({ courseId, initialRating, initialComment }: { cour
                 title: "Grazie!",
                 description: "La tua valutazione è stata salvata.",
             })
-        } catch (error) {
+        } catch {
             toast({
                 title: "Errore",
                 description: "Non è stato possibile salvare la valutazione.",

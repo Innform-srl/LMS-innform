@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
     addParticipants,
     importParticipantsFromCourse,
@@ -232,7 +231,7 @@ export function ParticipantsManager({ register, availableUsers, isEditable }: Pa
             {showAddForm && availableUsers.length === 0 && (
                 <Card className="bg-card border-border">
                     <CardContent className="p-4 text-center text-muted-foreground text-sm">
-                        Tutti gli utenti approvati sono gia' nel registro.
+                        Tutti gli utenti approvati sono gia&apos; nel registro.
                     </CardContent>
                 </Card>
             )}

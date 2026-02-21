@@ -17,14 +17,6 @@ export function NotificationBell() {
     const [isOpen, setIsOpen] = useState(false)
     const router = useRouter()
 
-    // Fetch unread count
-    useEffect(() => {
-        fetchUnreadCount()
-        // Poll every 30 seconds for new notifications
-        const interval = setInterval(fetchUnreadCount, 30000)
-        return () => clearInterval(interval)
-    }, [])
-
     const fetchUnreadCount = async () => {
         try {
             const res = await fetch(apiUrl('/api/notifications/unread-count'))
@@ -36,6 +28,15 @@ export function NotificationBell() {
             console.error('Failed to fetch unread count:', error)
         }
     }
+
+    // Fetch unread count
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        void fetchUnreadCount()
+        // Poll every 30 seconds for new notifications
+        const interval = setInterval(fetchUnreadCount, 30000)
+        return () => clearInterval(interval)
+    }, [])
 
     const handleMarkAllRead = async () => {
         try {

@@ -3,7 +3,6 @@
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 import { z } from "zod"
 
 const courseSchema = z.object({
@@ -11,7 +10,7 @@ const courseSchema = z.object({
     description: z.string().optional(),
 })
 
-export async function createCourse(prevState: any, formData: FormData) {
+export async function createCourse(prevState: { success?: boolean; message?: string } | null, formData: FormData) {
     const session = await auth()
     if (!session?.user) return { success: false, message: "Non autorizzato" }
 

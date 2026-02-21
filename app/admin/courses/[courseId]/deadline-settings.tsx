@@ -97,7 +97,7 @@ export function DeadlineSettings({ courseId, initialIsRequired, initialDueInDays
                     {isRequired && (
                         <div className="space-y-2 pl-6 border-l-2 border-primary/30">
                             <Label htmlFor="dueInDays" className="text-sm">
-                                Scadenza (giorni dall'assegnazione)
+                                Scadenza (giorni dall&apos;assegnazione)
                             </Label>
                             <Input
                                 id="dueInDays"
@@ -109,7 +109,7 @@ export function DeadlineSettings({ courseId, initialIsRequired, initialDueInDays
                                 className="bg-background border-input w-32"
                             />
                             <p className="text-xs text-muted-foreground">
-                                Gli utenti dovranno completare il corso entro {dueInDays} giorni dall'iscrizione.
+                                Gli utenti dovranno completare il corso entro {dueInDays} giorni dall&apos;iscrizione.
                             </p>
                         </div>
                     )}

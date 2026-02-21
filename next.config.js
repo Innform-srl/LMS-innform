@@ -67,7 +67,8 @@ const nextConfig = {
         if (dev) {
             config.watchOptions = {
                 ignored: ['**/node_modules/**', '**/.next/**', '**/.git/**', '**/.claude/**', '**/public/**'],
-                aggregateTimeout: 3000, // Wait 3s after last change before rebuilding
+                poll: 5000, // Poll every 5s instead of native fs.watch (fixes Windows spurious rebuilds)
+                aggregateTimeout: 3000,
             }
         }
         return config

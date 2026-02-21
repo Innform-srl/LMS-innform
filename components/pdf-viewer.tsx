@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Document, Page, pdfjs } from "react-pdf"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
@@ -8,8 +8,6 @@ import { useInView } from "react-intersection-observer"
 import {
     ChevronLeft,
     ChevronRight,
-    ZoomIn,
-    ZoomOut,
     Maximize,
     Minimize,
     Loader2,
@@ -18,9 +16,7 @@ import {
     RotateCcw,
     Volume2,
     VolumeX,
-    LayoutGrid,
-    ChevronUp,
-    ChevronDown
+    LayoutGrid
 } from "lucide-react"
 import "react-pdf/dist/Page/AnnotationLayer.css"
 import "react-pdf/dist/Page/TextLayer.css"
@@ -84,10 +80,10 @@ const Thumbnail = ({
     )
 }
 
-export function PDFViewer({ pdfUrl, totalPages: initialTotalPages, onComplete }: PDFViewerProps) {
+export function PDFViewer({ pdfUrl, totalPages: _initialTotalPages, onComplete }: PDFViewerProps) {
     const [numPages, setNumPages] = useState<number | null>(null)
     const [pageNumber, setPageNumber] = useState(1)
-    const [scale, setScale] = useState(1)
+    const [scale, _setScale] = useState(1)
     const [isFullscreen, setIsFullscreen] = useState(false)
     const [containerWidth, setContainerWidth] = useState<number>(0)
     const containerRef = useRef<HTMLDivElement>(null)
@@ -132,11 +128,12 @@ export function PDFViewer({ pdfUrl, totalPages: initialTotalPages, onComplete }:
         }
 
         return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isPlaying, pageNumber, numPages])
 
     // Reset timer on manual page change
     useEffect(() => {
-        setTimeElapsed(0)
+        requestAnimationFrame(() => setTimeElapsed(0))
     }, [pageNumber])
 
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {

@@ -24,6 +24,7 @@ export function SearchBar() {
             // Only clear if user explicitly cleared input
             // router.push('/search') // Optional: decide if clearing search goes to all results or stays
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedQuery, router, searchParams])
 
     const handleClear = () => {

@@ -50,10 +50,6 @@ export default function EngagementReportPage() {
     const [data, setData] = useState<EngagementData | null>(null)
     const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        loadData()
-    }, [])
-
     const loadData = async () => {
         setLoading(true)
         const result = await getEngagementReport()
@@ -62,6 +58,11 @@ export default function EngagementReportPage() {
         }
         setLoading(false)
     }
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        loadData()
+    }, [])
 
     const formatTime = (minutes: number) => {
         const hours = Math.floor(minutes / 60)
@@ -120,7 +121,7 @@ export default function EngagementReportPage() {
                     <div className="flex justify-between items-center">
                         <div>
                             <h1 className="text-4xl font-bold text-foreground mb-2">Report Engagement LMS</h1>
-                            <p className="text-muted-foreground">Analisi completa dell'utilizzo e coinvolgimento della piattaforma</p>
+                            <p className="text-muted-foreground">Analisi completa dell&apos;utilizzo e coinvolgimento della piattaforma</p>
                         </div>
                         <div className="flex gap-2">
                             <Button onClick={handleExportCSV} variant="outline" className="bg-green-600 hover:bg-green-700 text-white border-green-600">

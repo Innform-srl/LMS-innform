@@ -4,7 +4,7 @@ import { db } from "@/lib/db"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Award, BookOpen, GraduationCap, RefreshCw, Download, ExternalLink } from "lucide-react"
 
 export default async function CertificatesPage() {
@@ -71,9 +71,7 @@ export default async function CertificatesPage() {
             downloadUrl: `/api/certificates/${c.id}/download`,
             verifyUrl: `/verify/${c.certificateNumber}`,
             subtitle: "Certificato di Completamento Corso",
-            // @ts-ignore - source field added in migration
             source: (c.source || 'lms') as 'lms' | 'tms',
-            // @ts-ignore
             tmsSyncedAt: c.tmsSyncedAt as Date | null
         })),
         ...quizCertificates.map(q => ({

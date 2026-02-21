@@ -11,7 +11,6 @@ export async function POST(req: Request) {
 
         if (!content) return new NextResponse("Content required", { status: 400 })
 
-        // @ts-ignore
         const comment = await db.comment.create({
             data: {
                 content,
@@ -35,7 +34,6 @@ export async function GET(req: Request) {
         const courseId = searchParams.get("courseId")
         const moduleId = searchParams.get("moduleId")
 
-        // @ts-ignore
         const comments = await db.comment.findMany({
             where: {
                 courseId: courseId || undefined,

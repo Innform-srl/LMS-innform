@@ -3,7 +3,7 @@ import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 
 // Cache analytics data for 5 minutes
-let analyticsCache: { data: any; timestamp: number } | null = null
+let analyticsCache: { data: unknown; timestamp: number } | null = null
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 export async function GET() {

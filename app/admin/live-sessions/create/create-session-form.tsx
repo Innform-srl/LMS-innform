@@ -47,7 +47,7 @@ export function CreateSessionForm({ courses }: CreateSessionFormProps) {
             })
 
             router.push("/admin/live-sessions")
-        } catch (error) {
+        } catch (_error) {
             toast({
                 title: "Errore",
                 description: "Impossibile creare la sessione",

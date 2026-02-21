@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AiQuizGenerator } from "./ai-generator"
 import { useState } from "react"
-import { Loader2 } from "lucide-react"
 import Link from "next/link"
 
 interface CreateQuizFormProps {
@@ -15,8 +14,7 @@ interface CreateQuizFormProps {
 }
 
 export function CreateQuizForm({ courseId, moduleId }: CreateQuizFormProps) {
-    const [generatedQuestions, setGeneratedQuestions] = useState<any[]>([])
-    const [isLoading, setIsLoading] = useState(false)
+    const [generatedQuestions, setGeneratedQuestions] = useState<{ question: string; options: string[]; correctAnswer: number }[]>([])
 
     // We need to wrap the server action to handle the generated questions
     // Since createQuiz expects FormData, we'll append the questions as a hidden field JSON

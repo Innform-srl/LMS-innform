@@ -1,6 +1,6 @@
 
 import { db } from "@/lib/db"
-import { CheckCircle, XCircle, Award } from "lucide-react"
+import { CheckCircle, XCircle } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"

@@ -37,7 +37,7 @@ export default async function ManageLearningPathPage({
             published: true,
             NOT: {
                 id: {
-                    in: path.courses.map((c: any) => c.courseId)
+                    in: path.courses.map((c: { courseId: string }) => c.courseId)
                 }
             }
         }
@@ -80,7 +80,7 @@ export default async function ManageLearningPathPage({
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {path.courses.map((item: any, index: number) => (
+                                {path.courses.map((item: { id: string; course: { id: string; title: string } }, index: number) => (
                                     <div key={item.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border">
                                         <div className="flex items-center gap-3">
                                             <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">

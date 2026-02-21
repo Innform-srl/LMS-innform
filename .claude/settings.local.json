@@ -83,7 +83,10 @@
       "mcp__supabase__apply_migration",
       "mcp__supabase__execute_sql",
       "mcp__supabase__list_tables",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(echo:*)",
+      "Bash(npx next lint:*)",
+      "Bash(git check-ignore:*)"
     ],
     "additionalDirectories": [
       "c:\\Users\\frali\\LMS-INNFORM"

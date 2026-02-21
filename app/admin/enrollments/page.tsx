@@ -2,7 +2,6 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -88,7 +87,7 @@ export default async function EnrollmentsOverviewPage() {
         tmsSynced: allEnrollments.filter(e => e.tmsEnrollmentId).length,
     }
 
-    const getStatusBadge = (status: string, statusColor: string) => {
+    const getStatusBadge = (status: string, _statusColor: string) => {
         const configs: Record<string, { bg: string, text: string, border: string, icon: string, label: string }> = {
             COMPLETATO: { bg: "bg-green-500/10", text: "text-green-600", border: "border-green-500/30", icon: "✓", label: "Completato" },
             SCADUTO: { bg: "bg-red-500/10", text: "text-red-600", border: "border-red-500/30", icon: "❌", label: "Scaduto" },

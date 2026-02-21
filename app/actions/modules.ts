@@ -24,7 +24,7 @@ const moduleSchema = z.object({
     meetingUrl: z.string().optional().or(z.literal("")).nullable(),
 })
 
-export async function createModule(courseId: string, prevState: any, formData: FormData) {
+export async function createModule(courseId: string, prevState: { message?: string } | null, formData: FormData) {
     const session = await auth()
     if (!session?.user) return { message: "Non autorizzato" }
 
@@ -80,7 +80,7 @@ export async function createModule(courseId: string, prevState: any, formData: F
                         data: {
                             meetingUrl,
                             googleMeetCode
-                        } as any
+                        }
                     })
                 }
             } else {
@@ -97,8 +97,8 @@ export async function createModule(courseId: string, prevState: any, formData: F
                         meetingUrl,
                         googleMeetCode,
                         courseId,
-                        instructorId: session.user.id
-                    } as any
+                        instructorId: session.user.id!
+                    }
                 })
                 liveSessionId = liveSession.id
             }
@@ -137,7 +137,7 @@ export async function deleteModule(moduleId: string, courseId: string) {
         })
         revalidatePath(`/admin/courses/${courseId}`)
         return { success: true }
-    } catch (error) {
+    } catch (_error) {
         return { success: false, message: "Errore durante l'eliminazione" }
     }
 }
@@ -147,17 +147,17 @@ export async function toggleModulePublished(moduleId: string, courseId: string) 
     if (!session?.user) return { success: false, message: "Non autorizzato" }
 
     try {
-        const module = await db.module.findUnique({ where: { id: moduleId } })
-        if (!module) return { success: false, message: "Modulo non trovato" }
+        const courseModule = await db.module.findUnique({ where: { id: moduleId } })
+        if (!courseModule) return { success: false, message: "Modulo non trovato" }
 
         await db.module.update({
             where: { id: moduleId },
-            data: { published: !module.published }
+            data: { published: !courseModule.published }
         })
 
         revalidatePath(`/admin/courses/${courseId}`)
         return { success: true }
-    } catch (error) {
+    } catch (_error) {
         return { success: false, message: "Errore durante l'aggiornamento" }
     }
 }
@@ -178,7 +178,7 @@ export async function toggleCoursePublished(courseId: string) {
         revalidatePath(`/admin/courses/${courseId}`)
         revalidatePath(`/admin/courses`)
         return { success: true }
-    } catch (error) {
+    } catch (_error) {
         return { success: false, message: "Errore durante l'aggiornamento" }
     }
 }
@@ -204,7 +204,7 @@ export async function updateModule(
     if (!session?.user) return { success: false, error: "Non autorizzato" }
 
     try {
-        const module = await db.module.findUnique({
+        const courseModule = await db.module.findUnique({
             where: { id: moduleId },
             select: {
                 courseId: true,
@@ -212,11 +212,11 @@ export async function updateModule(
             }
         })
 
-        if (!module) {
+        if (!courseModule) {
             return { success: false, error: "Modulo non trovato" }
         }
 
-        let liveSessionId = module.liveSessionId
+        let liveSessionId = courseModule.liveSessionId
 
         if (data.contentType === "LIVE") {
             if (data.selectedSessionId) {
@@ -229,7 +229,7 @@ export async function updateModule(
                         data: {
                             meetingUrl: data.meetingUrl,
                             googleMeetCode
-                        } as any
+                        }
                     })
                 }
             } else {
@@ -246,7 +246,7 @@ export async function updateModule(
                             endTime: data.endTime ? new Date(data.endTime) : undefined,
                             meetingUrl: data.meetingUrl,
                             googleMeetCode
-                        } as any
+                        }
                     })
                 } else {
                     // Create new live session
@@ -259,9 +259,9 @@ export async function updateModule(
                                 endTime: new Date(data.endTime),
                                 meetingUrl: data.meetingUrl,
                                 googleMeetCode,
-                                courseId: module.courseId,
-                                instructorId: session.user.id
-                            } as any
+                                courseId: courseModule.courseId,
+                                instructorId: session.user.id!
+                            }
                         })
                         liveSessionId = liveSession.id
                     }
@@ -284,7 +284,7 @@ export async function updateModule(
             }
         })
 
-        revalidatePath(`/admin/courses/${module.courseId}`)
+        revalidatePath(`/admin/courses/${courseModule.courseId}`)
         return { success: true }
     } catch (error) {
         console.error("Error updating module:", error)

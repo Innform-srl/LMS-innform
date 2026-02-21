@@ -13,11 +13,6 @@ export async function POST(
         const { courseId } = await params
         const { minutes } = await req.json()
 
-        // Safety check for stale Prisma Client
-        // @ts-ignore
-        if (!db.enrollment) return new NextResponse("Server restart required", { status: 503 })
-
-        // @ts-ignore
         const enrollment = await db.enrollment.update({
             where: {
                 userId_courseId: {

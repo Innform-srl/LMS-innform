@@ -14,6 +14,7 @@ interface JoinSessionButtonProps {
 export function JoinSessionButton({
     meetingUrl,
     liveSessionId,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     moduleId,
     userId
 }: JoinSessionButtonProps) {

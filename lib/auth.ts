@@ -29,7 +29,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                         const passwordsMatch = await bcrypt.compare(password, user.password)
                         if (passwordsMatch) {
-                            if (!(user as any).isApproved) {
+                            if (!(user as unknown as { isApproved: boolean }).isApproved) {
                                 return null
                             }
                             // Extract IP and User-Agent from request headers
@@ -85,7 +85,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             // Only fetch from DB on initial login (when user object is present)
             // Otherwise use cached role from token
             if (user) {
-                token.role = (user as any).role
+                token.role = (user as unknown as { role: string }).role
             }
             return token
         }

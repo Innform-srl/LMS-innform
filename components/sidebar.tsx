@@ -22,8 +22,6 @@ import {
     ClipboardList
 } from "lucide-react"
 import { useState } from "react"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { NotificationCenter } from "@/components/notifications"
 
 interface SidebarProps {
     user: {
@@ -35,7 +33,7 @@ interface SidebarProps {
 
 export function Sidebar({ user }: SidebarProps) {
     const pathname = usePathname()
-    const router = useRouter()
+    const _router = useRouter()
     const [isOpen, setIsOpen] = useState(false)
 
     const handleLogout = async () => {

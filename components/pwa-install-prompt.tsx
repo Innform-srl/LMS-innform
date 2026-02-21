@@ -16,7 +16,7 @@ export function PWAInstallPrompt() {
     useEffect(() => {
         // Check if already dismissed this session
         if (sessionStorage.getItem("pwa-install-dismissed")) {
-            setDismissed(true)
+            requestAnimationFrame(() => setDismissed(true))
             return
         }
 

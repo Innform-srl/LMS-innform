@@ -4,7 +4,6 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { getRegisters } from "@/app/actions/registers"
-import { formatDate } from "@/lib/utils"
 import { DeleteRegisterButton } from "./delete-register-button"
 
 const statusLabels: Record<string, string> = {

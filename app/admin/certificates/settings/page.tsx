@@ -90,7 +90,7 @@ export default function CertificateSettingsPage() {
         <div className="p-8 max-w-6xl mx-auto min-h-screen bg-background text-foreground">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-foreground mb-2">Impostazioni Certificati</h1>
-                <p className="text-muted-foreground">Configura l'aspetto e il contenuto dei certificati</p>
+                <p className="text-muted-foreground">Configura l&apos;aspetto e il contenuto dei certificati</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -296,7 +296,7 @@ export default function CertificateSettingsPage() {
                             ✕
                         </button>
                         <h2 className="text-2xl font-bold mb-4 text-foreground">Anteprima Certificato</h2>
-                        <p className="text-muted-foreground mb-4">Questa è un'anteprima del certificato basata sulle impostazioni correnti.</p>
+                        <p className="text-muted-foreground mb-4">Questa è un&apos;anteprima del certificato basata sulle impostazioni correnti.</p>
                         <p className="text-sm text-muted-foreground">Per vedere il certificato completo con PDF, completa un corso.</p>
                     </div>
                 </div>

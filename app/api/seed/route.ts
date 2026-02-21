@@ -20,7 +20,7 @@ export async function GET() {
         })
 
         return NextResponse.json({ success: true, admin })
-    } catch (error) {
+    } catch (_error) {
         return NextResponse.json({ success: false, error: "Failed to seed" }, { status: 500 })
     }
 }

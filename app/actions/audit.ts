@@ -2,12 +2,13 @@
 
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { Prisma } from "@prisma/client"
 
 export interface AuditLogParams {
     action: string
     entityType: string
     entityId?: string
-    metadata?: Record<string, any>
+    metadata?: Prisma.InputJsonValue
 }
 
 /**
@@ -82,7 +83,7 @@ export async function getAuditLogs(options?: {
         const limit = options?.limit || 50
         const skip = (page - 1) * limit
 
-        const where: any = {}
+        const where: Record<string, string> = {}
         if (options?.userId) where.userId = options.userId
         if (options?.action) where.action = options.action
         if (options?.entityType) where.entityType = options.entityType

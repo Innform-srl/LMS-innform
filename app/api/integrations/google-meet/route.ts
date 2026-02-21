@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { Prisma } from "@prisma/client"
 import {
   getGoogleOAuthUrl,
   getConferenceByMeetingCode,
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
   }
 
   let participantEmails: string[] = []
-  let meetParticipantsData: Array<{
+  const meetParticipantsData: Array<{
     email: string
     displayName: string
     checkInTime: Date
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
     sessions: Array<{ startTime: string; endTime: string | null; durationMinutes: number }>
     participantType: "google" | "anonymous" | "phone"
   }> = []
-  let unmatchedParticipants: Array<{
+  const unmatchedParticipants: Array<{
     displayName: string
     checkInTime: string
     checkOutTime: string | null
@@ -230,10 +231,10 @@ export async function POST(request: NextRequest) {
           })
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Google Meet API error:", err)
       return NextResponse.json(
-        { error: `Errore API Google Meet: ${err.message}` },
+        { error: `Errore API Google Meet: ${err instanceof Error ? err.message : "Unknown error"}` },
         { status: 500 }
       )
     }
@@ -353,7 +354,7 @@ export async function POST(request: NextRequest) {
     await db.liveSession.update({
       where: { id: sessionId },
       data: {
-        unmatchedMeetParticipants: allUnmatched.length > 0 ? allUnmatched : null
+        unmatchedMeetParticipants: allUnmatched.length > 0 ? allUnmatched : Prisma.DbNull
       }
     })
   }
@@ -475,12 +476,12 @@ export async function PATCH(request: NextRequest) {
   })
 
   if (liveSession?.unmatchedMeetParticipants) {
-    const unmatched = liveSession.unmatchedMeetParticipants as any[]
-    const updated = unmatched.filter((p: any) => p.displayName !== displayName)
+    const unmatched = liveSession.unmatchedMeetParticipants as Array<{ displayName: string }>
+    const updated = unmatched.filter((p: { displayName: string }) => p.displayName !== displayName)
     await db.liveSession.update({
       where: { id: sessionId },
       data: {
-        unmatchedMeetParticipants: updated.length > 0 ? updated : null
+        unmatchedMeetParticipants: updated.length > 0 ? updated : Prisma.DbNull
       }
     })
   }

@@ -4,13 +4,12 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getCompanies, getDepartments, searchUsers } from "@/app/actions/organizations"
 import { assignCourseToCompany, assignCourseToDepartment, enrollUser, unenrollUser, getCourseEnrollments, getUnenrolledUsers } from "@/app/actions/enrollments"
 import { toast } from "sonner"
-import { Loader2, Search, Trash2, UserPlus, Users, Building, Briefcase, UserCheck } from "lucide-react"
+import { Loader2, Search, Trash2, UserPlus, Users, Building, Briefcase } from "lucide-react"
 
 interface CourseAssignmentsProps {
     courseId: string
@@ -27,15 +26,11 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
 
     // Individual Enrollment State
     const [searchQuery, setSearchQuery] = useState("")
-    const [searchResults, setSearchResults] = useState<any[]>([])
+    const [searchResults, setSearchResults] = useState<{ id: string; name: string | null; email: string; department: { name: string } | null; company: { name: string } | null }[]>([])
     const [isSearching, setIsSearching] = useState(false)
-    const [enrollments, setEnrollments] = useState<any[]>([])
+    const [enrollments, setEnrollments] = useState<{ id: string; userId: string; createdAt: Date; user: { id: string; name: string | null; email: string; department: { name: string } | null; company: { name: string } | null } }[]>([])
     const [showUnenrolled, setShowUnenrolled] = useState(false)
-    const [unenrolledUsers, setUnenrolledUsers] = useState<any[]>([])
-
-    useEffect(() => {
-        loadData()
-    }, [])
+    const [unenrolledUsers, setUnenrolledUsers] = useState<{ id: string; name: string | null; email: string; department: { name: string } | null; company: { name: string } | null }[]>([])
 
     const loadData = async () => {
         const [companiesData, departmentsData, enrollmentsData] = await Promise.all([
@@ -47,6 +42,11 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
         setDepartments(departmentsData)
         setEnrollments(enrollmentsData)
     }
+
+    useEffect(() => {
+        loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const loadUnenrolledUsers = async () => {
         setIsLoading(true)
@@ -156,7 +156,7 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
                                     <Building className="w-4 h-4 text-primary" />
                                     <h3 className="font-semibold">Per Azienda</h3>
                                 </div>
-                                <p className="text-sm text-muted-foreground">Assegna il corso a tutti i dipendenti di un'azienda.</p>
+                                <p className="text-sm text-muted-foreground">Assegna il corso a tutti i dipendenti di un&apos;azienda.</p>
                                 <div className="flex gap-2">
                                     <Select value={selectedCompany} onValueChange={setSelectedCompany}>
                                         <SelectTrigger>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { FileText, Video, Upload, Calendar } from "lucide-react"
+import { FileText, Video, Calendar } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import dynamic from "next/dynamic"
@@ -66,7 +66,7 @@ export function CreateModuleForm({ courseId, availableSessions = [] }: { courseI
             } else {
                 alert("Errore upload: " + data.message)
             }
-        } catch (err) {
+        } catch (_err) {
             alert("Errore durante l'upload")
         } finally {
             setIsUploading(false)
@@ -110,7 +110,7 @@ export function CreateModuleForm({ courseId, availableSessions = [] }: { courseI
                             placeholder="0 per nessuna durata minima"
                             className="mt-2"
                         />
-                        <p className="text-xs text-muted-foreground">Tempo minimo che l'utente deve passare su questo modulo per completarlo.</p>
+                        <p className="text-xs text-muted-foreground">Tempo minimo che l&apos;utente deve passare su questo modulo per completarlo.</p>
                     </div>
 
                     <div className="space-y-4">
@@ -225,7 +225,7 @@ export function CreateModuleForm({ courseId, availableSessions = [] }: { courseI
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <p className="text-xs text-muted-foreground">Seleziona un'aula virtuale esistente o creane una nuova.</p>
+                                    <p className="text-xs text-muted-foreground">Seleziona un&apos;aula virtuale esistente o creane una nuova.</p>
                                 </div>
                             )}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

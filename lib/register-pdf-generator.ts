@@ -219,7 +219,8 @@ function drawCover(
     settings: PDFSettings,
     pageWidth: number,
     pageHeight: number,
-    contentWidth: number
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _contentWidth: number
 ) {
     // Border
     doc.rect(30, 30, pageWidth - 60, pageHeight - 60).lineWidth(2).stroke(settings.primaryColor)
@@ -625,7 +626,8 @@ function drawInternalCover(
     settings: PDFSettings,
     pageWidth: number,
     pageHeight: number,
-    contentWidth: number
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _contentWidth: number
 ) {
     doc.rect(35, 35, pageWidth - 70, pageHeight - 70).lineWidth(1).stroke(settings.primaryColor)
 

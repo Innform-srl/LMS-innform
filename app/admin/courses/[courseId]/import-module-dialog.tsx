@@ -26,16 +26,10 @@ export function ImportModuleDialog({ courseId }: ImportModuleDialogProps) {
     const [open, setOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [isImporting, setIsImporting] = useState(false)
-    const [courses, setCourses] = useState<any[]>([])
+    const [courses, setCourses] = useState<{ id: string; title: string; modules: { id: string; title: string; contentType: string | null }[] }[]>([])
     const [selectedCourseId, setSelectedCourseId] = useState<string>("")
     const [selectedModuleId, setSelectedModuleId] = useState<string>("")
     const router = useRouter()
-
-    useEffect(() => {
-        if (open) {
-            loadCourses()
-        }
-    }, [open])
 
     const loadCourses = async () => {
         setIsLoading(true)
@@ -43,6 +37,13 @@ export function ImportModuleDialog({ courseId }: ImportModuleDialogProps) {
         setCourses(data)
         setIsLoading(false)
     }
+
+    useEffect(() => {
+        if (open) {
+            loadCourses()
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open])
 
     const handleImport = async () => {
         if (!selectedModuleId) return
@@ -115,9 +116,9 @@ export function ImportModuleDialog({ courseId }: ImportModuleDialogProps) {
                                     {selectedCourse.modules.length === 0 ? (
                                         <div className="p-2 text-center text-sm text-muted-foreground">Nessun modulo disponibile</div>
                                     ) : (
-                                        selectedCourse.modules.map((module: any) => (
-                                            <SelectItem key={module.id} value={module.id}>
-                                                {module.title}
+                                        selectedCourse.modules.map((courseModule: { id: string; title: string; contentType: string | null }) => (
+                                            <SelectItem key={courseModule.id} value={courseModule.id}>
+                                                {courseModule.title}
                                             </SelectItem>
                                         ))
                                     )}

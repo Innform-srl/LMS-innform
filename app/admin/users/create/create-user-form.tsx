@@ -30,7 +30,7 @@ export function CreateUserForm({ departments, companies }: CreateUserFormProps) 
     const router = useRouter()
     const { toast } = useToast()
     const [isLoading, setIsLoading] = useState(false)
-    const [suggestedPaths, setSuggestedPaths] = useState<any[]>([])
+    const [suggestedPaths, setSuggestedPaths] = useState<{ id: string; title: string; company?: { name: string } | null; department?: { name: string } | null }[]>([])
     const [selectedPaths, setSelectedPaths] = useState<string[]>([])
 
     const [selectedDepartment, setSelectedDepartment] = useState<string>("")

@@ -8,11 +8,11 @@ interface Notification {
     id: string
     title: string
     message: string
-    type: string
-    icon: string | null
+    type?: string
+    icon?: string | null
     isRead: boolean
-    link: string | null
-    createdAt: string
+    link?: string | null
+    createdAt: string | Date
 }
 
 interface NotificationItemProps {
@@ -48,13 +48,13 @@ export function NotificationItem({ notification, onMarkAsRead, onClose }: Notifi
 
     const getIcon = () => {
         if (notification.icon) {
-            const IconComponent = (Icons as any)[notification.icon]
+            const IconComponent = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[notification.icon]
             if (IconComponent) {
                 return <IconComponent className="w-5 h-5" />
             }
         }
         // Default icons based on type
-        const defaultIcons: Record<string, any> = {
+        const defaultIcons: Record<string, React.ComponentType<{ className?: string }>> = {
             NEW_COURSE: Icons.BookOpen,
             DEADLINE_REMINDER: Icons.Clock,
             COMMENT_REPLY: Icons.MessageCircle,
@@ -65,11 +65,11 @@ export function NotificationItem({ notification, onMarkAsRead, onClose }: Notifi
             ERROR: Icons.XCircle,
             INFO: Icons.Info,
         }
-        const DefaultIcon = defaultIcons[notification.type] || Icons.Bell
+        const DefaultIcon = defaultIcons[notification.type || 'INFO'] || Icons.Bell
         return <DefaultIcon className="w-5 h-5" />
     }
 
-    const timeAgo = (date: string) => {
+    const timeAgo = (date: string | Date) => {
         const now = new Date()
         const then = new Date(date)
         const seconds = Math.floor((now.getTime() - then.getTime()) / 1000)
@@ -93,7 +93,7 @@ export function NotificationItem({ notification, onMarkAsRead, onClose }: Notifi
             <div className="flex gap-3">
                 <div className={cn(
                     "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
-                    typeColors[notification.type as keyof typeof typeColors] || typeColors.INFO
+                    typeColors[(notification.type || 'INFO') as keyof typeof typeColors] || typeColors.INFO
                 )}>
                     {getIcon()}
                 </div>

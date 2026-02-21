@@ -12,7 +12,7 @@ export async function GET(req: Request) {
     const type = searchParams.get('type') || 'users'
 
     try {
-        let data: any[] = []
+        let data: Record<string, string | number>[] = []
         let fields: string[] = []
 
         if (type === 'users') {
@@ -29,7 +29,7 @@ export async function GET(req: Request) {
             })
 
             data = users.map(user => ({
-                Name: user.name,
+                Name: user.name || '',
                 Email: user.email,
                 Role: user.role,
                 Joined: user.createdAt.toISOString().split('T')[0],
@@ -47,7 +47,7 @@ export async function GET(req: Request) {
             })
 
             data = attempts.map(attempt => ({
-                User: attempt.user.name,
+                User: attempt.user.name || '',
                 Email: attempt.user.email,
                 Quiz: attempt.quiz.title,
                 Score: `${attempt.score}%`,

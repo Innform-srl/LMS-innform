@@ -1,13 +1,14 @@
 // Utility functions for audit logging
 
 import { db } from './db'
+import { Prisma } from '@prisma/client'
 
 export interface AuditLogParams {
     userId?: string
     action: string
     entityType: string
     entityId?: string
-    metadata?: any
+    metadata?: Record<string, unknown>
     request?: Request
 }
 
@@ -25,7 +26,7 @@ export async function logAuditEvent(params: AuditLogParams) {
                 action: params.action,
                 entityType: params.entityType,
                 entityId: params.entityId,
-                metadata: params.metadata || null,
+                metadata: (params.metadata as Prisma.InputJsonValue) || Prisma.DbNull,
                 ipAddress,
                 userAgent,
             }

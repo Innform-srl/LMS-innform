@@ -147,6 +147,10 @@ export async function POST(
             return NextResponse.json({ error: "Sessione non trovata" }, { status: 404 })
         }
 
+        if (!liveSession.startTime) {
+            return NextResponse.json({ error: "Orario di inizio sessione non impostato" }, { status: 400 })
+        }
+
         const now = new Date()
         const sessionStart = new Date(liveSession.startTime)
         const checkInWindow = new Date(sessionStart.getTime() - 15 * 60 * 1000)

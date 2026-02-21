@@ -23,9 +23,8 @@ export async function updateVideoProgress(
 
     try {
         // Get module to check minimum duration
-        const module = await db.module.findUnique({
+        const courseModule = await db.module.findUnique({
             where: { id: moduleId },
-            // @ts-ignore
             select: { minimumDuration: true, courseId: true }
         })
 
@@ -43,10 +42,8 @@ export async function updateVideoProgress(
             }
         })
 
-        // @ts-ignore
         const timeSpent = currentProgress?.timeSpent || 0
-        // @ts-ignore
-        const minDurationSeconds = (module?.minimumDuration || 0) * 60
+        const minDurationSeconds = (courseModule?.minimumDuration || 0) * 60
 
         // Complete only if content is watched AND time requirement is met
         // If minimumDuration is 0, minDurationSeconds is 0, so timeSpent >= 0 is always true
@@ -87,8 +84,8 @@ export async function updateVideoProgress(
         })
 
         // If module is completed, update enrollment progress
-        if (isComplete && module) {
-            await updateCourseProgress(module.courseId, session.user.id)
+        if (isComplete && courseModule) {
+            await updateCourseProgress(courseModule.courseId, session.user.id)
         }
 
         return { success: true, progress }
@@ -214,12 +211,12 @@ export async function trackModuleTime(moduleId: string, seconds: number) {
 
     try {
         // Get module to find courseId
-        const module = await db.module.findUnique({
+        const courseModule = await db.module.findUnique({
             where: { id: moduleId },
             select: { courseId: true }
         })
 
-        if (!module) {
+        if (!courseModule) {
             return { success: false, error: "Modulo non trovato" }
         }
 
@@ -231,14 +228,12 @@ export async function trackModuleTime(moduleId: string, seconds: number) {
                 }
             },
             update: {
-                // @ts-ignore
                 timeSpent: { increment: seconds },
                 updatedAt: new Date()
             },
             create: {
                 userId: session.user.id,
                 moduleId,
-                // @ts-ignore
                 timeSpent: seconds,
                 updatedAt: new Date()
             }
@@ -249,7 +244,7 @@ export async function trackModuleTime(moduleId: string, seconds: number) {
             where: {
                 userId_courseId: {
                     userId: session.user.id,
-                    courseId: module.courseId
+                    courseId: courseModule.courseId
                 }
             },
             data: {
@@ -258,7 +253,6 @@ export async function trackModuleTime(moduleId: string, seconds: number) {
             }
         })
 
-        // @ts-ignore
         return { success: true, timeSpent: progress.timeSpent }
     } catch (error) {
         console.error("Error tracking module time:", error)
@@ -278,16 +272,14 @@ export async function markModuleComplete(moduleId: string) {
 
     try {
         // Check minimum duration requirement
-        const module = await db.module.findUnique({
+        const courseModule = await db.module.findUnique({
             where: { id: moduleId },
-            // @ts-ignore
             select: { minimumDuration: true, courseId: true, contentType: true }
         })
 
-        if (!module) return { success: false, error: "Modulo non trovato" }
+        if (!courseModule) return { success: false, error: "Modulo non trovato" }
 
-        // @ts-ignore
-        if (module.minimumDuration > 0 && module.contentType !== 'LIVE') {
+        if (courseModule.minimumDuration > 0 && courseModule.contentType !== 'LIVE') {
             const progress = await db.moduleProgress.findUnique({
                 where: {
                     userId_moduleId: {
@@ -298,10 +290,8 @@ export async function markModuleComplete(moduleId: string) {
             })
 
             // Check timeSpent (wall clock), NOT watchedSeconds (video position)
-            // @ts-ignore
             const timeSpent = progress?.timeSpent || 0
-            // @ts-ignore
-            const requiredSeconds = module.minimumDuration * 60
+            const requiredSeconds = courseModule.minimumDuration * 60
 
             if (timeSpent < requiredSeconds) {
                 const remainingMinutes = Math.ceil((requiredSeconds - timeSpent) / 60)
@@ -332,7 +322,7 @@ export async function markModuleComplete(moduleId: string) {
         })
 
         // Update course progress
-        await updateCourseProgress(module.courseId, session.user.id)
+        await updateCourseProgress(courseModule.courseId, session.user.id)
 
         return { success: true }
     } catch (error) {

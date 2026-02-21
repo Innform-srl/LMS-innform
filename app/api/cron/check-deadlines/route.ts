@@ -92,8 +92,8 @@ export async function GET(request: Request) {
                 })
 
                 results.reminders3Days++
-            } catch (error: any) {
-                results.errors.push(`3 days reminder error for ${enrollment.user.email}: ${error.message}`)
+            } catch (error: unknown) {
+                results.errors.push(`3 days reminder error for ${enrollment.user.email}: ${error instanceof Error ? error.message : "Unknown error"}`)
             }
         }
 
@@ -150,8 +150,8 @@ export async function GET(request: Request) {
                 })
 
                 results.reminders1Day++
-            } catch (error: any) {
-                results.errors.push(`1 day reminder error for ${enrollment.user.email}: ${error.message}`)
+            } catch (error: unknown) {
+                results.errors.push(`1 day reminder error for ${enrollment.user.email}: ${error instanceof Error ? error.message : "Unknown error"}`)
             }
         }
 
@@ -200,8 +200,8 @@ export async function GET(request: Request) {
                 })
 
                 results.overdueNotifications++
-            } catch (error: any) {
-                results.errors.push(`Overdue notification error for ${enrollment.user.email}: ${error.message}`)
+            } catch (error: unknown) {
+                results.errors.push(`Overdue notification error for ${enrollment.user.email}: ${error instanceof Error ? error.message : "Unknown error"}`)
             }
         }
 
@@ -211,12 +211,12 @@ export async function GET(request: Request) {
             results
         })
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Cron job error:', error)
         return NextResponse.json(
             {
                 success: false,
-                error: error.message
+                error: error instanceof Error ? error.message : "Unknown error"
             },
             { status: 500 }
         )

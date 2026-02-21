@@ -1,5 +1,4 @@
 import { Resend } from 'resend'
-import { render } from '@react-email/render'
 // import WelcomeEmail from '@/emails/welcome'
 // import CertificateEmail from '@/emails/certificate-earned'
 // import CourseReminderEmail from '@/emails/course-reminder'
@@ -55,12 +54,12 @@ export async function sendCertificateEmail(
     toEmail: string,
     userName: string,
     courseTitle: string,
-    certificateNumber: string,
-    certificateId: string,
-    verificationCode: string
+    _certificateNumber: string,
+    _certificateId: string,
+    _verificationCode: string
 ) {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+        const _baseUrl = process.env.NEXT_PUBLIC_APP_URL
         // const emailHtml = await render(CertificateEmail({
         //     userName,
         //     courseTitle,
@@ -96,7 +95,7 @@ export async function sendCourseReminderEmail(
     courseTitle: string,
     courseId: string,
     dueDate: Date,
-    progress: number
+    _progress: number
 ) {
     try {
         const now = new Date()

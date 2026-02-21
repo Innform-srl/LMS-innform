@@ -41,7 +41,7 @@ export function CommentForm({ courseId, moduleId }: CommentFormProps) {
                 title: "Commento inviato",
                 description: "Il tuo commento è stato pubblicato con successo."
             })
-        } catch (error) {
+        } catch {
             toast({
                 title: "Errore",
                 description: "Non è stato possibile inviare il commento.",

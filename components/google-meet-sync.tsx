@@ -82,6 +82,7 @@ export function GoogleMeetSync({ sessionId, googleMeetCode, onSync }: GoogleMeet
         if (open) {
             loadConnectionStatus()
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open])
 
     const loadConnectionStatus = async () => {
@@ -450,7 +451,7 @@ export function GoogleMeetSync({ sessionId, googleMeetCode, onSync }: GoogleMeet
                                             Connetti Google Meet
                                         </p>
                                         <p className="text-xs text-gray-400 mb-4">
-                                            Autorizza l'accesso per sincronizzare automaticamente i partecipanti
+                                            Autorizza l&apos;accesso per sincronizzare automaticamente i partecipanti
                                             con orari reali di ingresso e uscita.
                                         </p>
                                         <Button

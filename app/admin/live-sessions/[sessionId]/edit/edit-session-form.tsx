@@ -63,7 +63,7 @@ export function EditSessionForm({ session: liveSession, courses }: EditSessionFo
             })
 
             router.push("/admin/live-sessions")
-        } catch (error) {
+        } catch (_error) {
             toast({
                 title: "Errore",
                 description: "Impossibile aggiornare la sessione",

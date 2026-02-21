@@ -72,8 +72,8 @@ export async function GET(request: Request) {
                                 <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin: 16px 0;">
                                     <strong>${session.title}</strong><br/>
                                     ${session.course?.title ? `Corso: ${session.course.title}<br/>` : ''}
-                                    Data: ${session.startTime.toLocaleDateString('it-IT')}<br/>
-                                    Ora: ${session.startTime.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - ${session.endTime.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                                    Data: ${session.startTime!.toLocaleDateString('it-IT')}<br/>
+                                    Ora: ${session.startTime!.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - ${session.endTime!.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
                                 </div>
                                 <a href="${session.meetingUrl}" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
                                     Link alla Sessione
@@ -85,15 +85,15 @@ export async function GET(request: Request) {
                     notificationsToCreate.push({
                         userId: attendance.user.id,
                         title: "Sessione domani",
-                        message: `La sessione "${session.title}" inizia domani alle ${session.startTime.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`,
+                        message: `La sessione "${session.title}" inizia domani alle ${session.startTime!.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`,
                         type: NotificationType.INFO,
                         icon: "calendar",
                         link: `/live-sessions`
                     })
 
                     results.reminders24h++
-                } catch (error: any) {
-                    results.errors.push(`24h reminder error for ${attendance.user.email}: ${error.message}`)
+                } catch (error: unknown) {
+                    results.errors.push(`24h reminder error for ${attendance.user.email}: ${error instanceof Error ? error.message : "Unknown error"}`)
                 }
             }
 
@@ -169,8 +169,8 @@ export async function GET(request: Request) {
                     })
 
                     results.reminders1h++
-                } catch (error: any) {
-                    results.errors.push(`1h reminder error for ${attendance.user.email}: ${error.message}`)
+                } catch (error: unknown) {
+                    results.errors.push(`1h reminder error for ${attendance.user.email}: ${error instanceof Error ? error.message : "Unknown error"}`)
                 }
             }
 
@@ -228,12 +228,12 @@ export async function GET(request: Request) {
             results
         })
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Session reminders cron error:', error)
         return NextResponse.json(
             {
                 success: false,
-                error: error.message
+                error: error instanceof Error ? error.message : "Unknown error"
             },
             { status: 500 }
         )

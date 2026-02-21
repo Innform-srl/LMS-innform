@@ -7,7 +7,7 @@ interface CourseCardProps {
         id: string
         title: string
         description: string | null
-        modules?: { id: string }[] | any[] // Optional modules array
+        modules?: { id: string }[] // Optional modules array
         _count?: {
             modules: number
         }

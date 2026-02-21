@@ -135,7 +135,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ use
                                 const isCompleted = enrollment.completed
                                 const hasProgress = enrollment.progress > 0
                                 const isSuspended = !isCompleted && hasProgress && enrollment.progress < 100
-                                const isActive = !isCompleted && !isSuspended
+                                const _isActive = !isCompleted && !isSuspended
 
                                 let statusBadge
                                 let statusColor

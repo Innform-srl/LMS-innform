@@ -55,7 +55,7 @@ function AuthPageContent() {
                 router.push("/")
                 router.refresh()
             }
-        } catch (error) {
+        } catch (_error) {
             setError("Si è verificato un errore.")
         } finally {
             setIsLoading(false)

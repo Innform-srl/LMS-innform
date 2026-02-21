@@ -14,7 +14,7 @@ export const db = globalForPrisma.prisma || new PrismaClient({
 
 // Enable query logging in development for debugging slow queries
 if (process.env.NODE_ENV === "development") {
-  // @ts-ignore - Prisma types don't expose $on in all versions
+  // @ts-expect-error - Prisma types don't expose $on in all versions
   db.$on?.("query", (e: { query: string; duration: number }) => {
     if (e.duration > 100) {
       console.warn(`Slow query (${e.duration}ms):`, e.query)

@@ -62,7 +62,7 @@ export default function RegisterPage() {
                     description: result.error || "Errore durante la registrazione",
                 })
             }
-        } catch (error) {
+        } catch {
             toast({
                 variant: "destructive",
                 title: "Errore",

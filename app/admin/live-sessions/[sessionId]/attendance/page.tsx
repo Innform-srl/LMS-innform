@@ -4,8 +4,8 @@ import Link from "next/link"
 import { getSessionAttendance } from "@/app/actions/attendance"
 import { AttendanceTable } from "./attendance-table"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Calendar, Clock, MapPin, Users, Video, Download } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { ArrowLeft, Calendar, Clock, MapPin, Users, Video } from "lucide-react"
 
 export default async function SessionAttendancePage({
     params
@@ -159,7 +159,7 @@ export default async function SessionAttendancePage({
                     attendance={liveSession.attendance}
                     isEnded={isEnded}
                     googleMeetCode={liveSession.googleMeetCode}
-                    unmatchedMeetParticipants={liveSession.unmatchedMeetParticipants as any[] | null}
+                    unmatchedMeetParticipants={liveSession.unmatchedMeetParticipants as { displayName: string; email?: string; checkInTime: string | null; checkOutTime: string | null; durationMinutes: number; sessionCount: number; sessions: Array<{ startTime: string; endTime: string | null; durationMinutes: number }>; participantType: "google" | "anonymous" | "phone" }[] | null}
                     instructorId={liveSession.instructorId}
                 />
             </div>

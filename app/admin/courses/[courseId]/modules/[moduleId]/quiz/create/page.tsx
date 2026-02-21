@@ -15,7 +15,7 @@ export default async function CreateQuizPage({
 
     const { courseId, moduleId } = await params
 
-    const module = await db.module.findUnique({
+    const courseModule = await db.module.findUnique({
         where: { id: moduleId },
         include: {
             course: true,
@@ -23,12 +23,12 @@ export default async function CreateQuizPage({
         }
     })
 
-    if (!module) {
+    if (!courseModule) {
         return <div className="p-8">Modulo non trovato</div>
     }
 
-    if (module.quiz) {
-        redirect(`/admin/quiz/${module.quiz.id}`)
+    if (courseModule.quiz) {
+        redirect(`/admin/quiz/${courseModule.quiz.id}`)
     }
 
     return (
@@ -44,10 +44,10 @@ export default async function CreateQuizPage({
                 <Card className="bg-card border-border">
                     <CardHeader>
                         <CardTitle className="text-2xl text-foreground">
-                            <span className="text-primary">Crea Quiz</span> per {module.title}
+                            <span className="text-primary">Crea Quiz</span> per {courseModule.title}
                         </CardTitle>
                         <p className="text-muted-foreground text-sm mt-2">
-                            Corso: {module.course.title}
+                            Corso: {courseModule.course.title}
                         </p>
                     </CardHeader>
                     <CardContent>

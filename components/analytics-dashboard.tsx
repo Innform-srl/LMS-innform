@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Users, BookOpen, GraduationCap, Activity } from "lucide-react"
@@ -21,9 +21,9 @@ const AnalyticsCharts = dynamic(() => import("./analytics-charts"), {
 })
 
 export function AnalyticsDashboard() {
-    const [overview, setOverview] = useState<any>(null)
-    const [timeline, setTimeline] = useState<any[]>([])
-    const [deptData, setDeptData] = useState<any[]>([])
+    const [overview, setOverview] = useState<Record<string, number> | null>(null)
+    const [timeline, setTimeline] = useState<Record<string, unknown>[]>([])
+    const [deptData, setDeptData] = useState<Record<string, unknown>[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {

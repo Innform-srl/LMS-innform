@@ -50,10 +50,6 @@ export default function MyAnalyticsPage() {
     const [loading, setLoading] = useState(true)
     const [expandedCourses, setExpandedCourses] = useState<Set<string>>(new Set())
 
-    useEffect(() => {
-        loadData()
-    }, [])
-
     const loadData = async () => {
         setLoading(true)
         const result = await getUserModuleTimeAnalytics()
@@ -66,6 +62,11 @@ export default function MyAnalyticsPage() {
         }
         setLoading(false)
     }
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        void loadData()
+    }, [])
 
     const formatTime = (seconds: number) => {
         const hours = Math.floor(seconds / 3600)

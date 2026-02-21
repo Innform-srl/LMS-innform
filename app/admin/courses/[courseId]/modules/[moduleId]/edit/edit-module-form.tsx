@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { updateModule } from "@/app/actions/modules"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FileText, Video, Upload, Calendar } from "lucide-react"
+import { FileText, Video, Calendar } from "lucide-react"
 import { apiUrl } from "@/lib/api"
 import dynamic from "next/dynamic"
 
@@ -40,10 +40,10 @@ type Module = {
     pdfUrl?: string | null
     minimumDuration?: number | null
     position: number
-    liveSession?: any
+    liveSession?: { id: string; title: string; startTime: string | null; endTime: string | null; meetingUrl: string | null } | null
 }
 
-export function EditModuleForm({ module, courseId, availableSessions = [] }: { module: any, courseId: string, availableSessions?: AvailableSession[] }) {
+export function EditModuleForm({ module, courseId, availableSessions = [] }: { module: Module & { liveSessionId?: string | null; totalPages?: number | null; course: { id: string; title: string } }, courseId: string, availableSessions?: AvailableSession[] }) {
     const router = useRouter()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
@@ -81,7 +81,7 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
             } else {
                 alert("Errore upload: " + data.message)
             }
-        } catch (err) {
+        } catch (_err) {
             alert("Errore durante l'upload")
         } finally {
             setIsUploading(false)
@@ -152,7 +152,7 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                         placeholder="0 per nessuna durata minima"
                         className="mt-2"
                     />
-                    <p className="text-xs text-muted-foreground">Tempo minimo che l'utente deve passare su questo modulo per completarlo.</p>
+                    <p className="text-xs text-muted-foreground">Tempo minimo che l&apos;utente deve passare su questo modulo per completarlo.</p>
                 </div>
 
                 <div className="space-y-4">
@@ -274,7 +274,7 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <p className="text-xs text-muted-foreground">Seleziona un'aula virtuale esistente o creane una nuova.</p>
+                                <p className="text-xs text-muted-foreground">Seleziona un&apos;aula virtuale esistente o creane una nuova.</p>
                             </div>
                         )}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

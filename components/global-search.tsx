@@ -13,7 +13,7 @@ export function GlobalSearch() {
     const [open, setOpen] = React.useState(false)
     const [query, setQuery] = React.useState("")
     const debouncedQuery = useDebounce(query, 300)
-    const [data, setData] = React.useState<any[]>([])
+    const [data, setData] = React.useState<{ id: string; title: string }[]>([])
     const [loading, setLoading] = React.useState(false)
     const router = useRouter()
 

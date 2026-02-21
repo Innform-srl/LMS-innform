@@ -112,7 +112,7 @@ export function CertificatePreview({
 
                 {/* Additional Info */}
                 <p className="text-center text-sm text-gray-500 mt-4">
-                    Il certificato include un codice QR per la verifica dell'autenticità
+                    Il certificato include un codice QR per la verifica dell&apos;autenticità
                 </p>
             </div>
         </div>

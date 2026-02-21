@@ -33,9 +33,9 @@ export async function UpcomingSessionsList() {
                                 <div className="flex justify-between items-start mb-2">
                                     <h4 className="font-semibold line-clamp-1">{liveSession.title}</h4>
                                     <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-1 rounded">
-                                        {new Date(liveSession.startTime).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}
+                                        {liveSession.startTime ? new Date(liveSession.startTime).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }) : 'N/D'}
                                         {' '}
-                                        {new Date(liveSession.startTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                                        {liveSession.startTime ? new Date(liveSession.startTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                                     </span>
                                 </div>
                                 {liveSession.course && (
@@ -44,7 +44,7 @@ export async function UpcomingSessionsList() {
                                     </p>
                                 )}
                                 <JoinSessionButton
-                                    meetingUrl={liveSession.meetingUrl}
+                                    meetingUrl={liveSession.meetingUrl || ''}
                                     moduleId={liveSession.module?.id}
                                     liveSessionId={liveSession.id}
                                 />

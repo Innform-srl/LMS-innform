@@ -81,9 +81,9 @@ export async function GET(
                     throw new Error(`Fonts not found. Tried: ${regPath} AND ${absReg}`)
                 }
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error("Failed to load local fonts", e)
-            return new NextResponse(`Font Load Error: ${e.message} | Debug: ${debugInfo.join('; ')}`, { status: 500 })
+            return new NextResponse(`Font Load Error: ${e instanceof Error ? e.message : "Unknown error"} | Debug: ${debugInfo.join('; ')}`, { status: 500 })
         }
 
         // CRITICAL FIX: Pass the font buffer directly to the constructor
@@ -196,8 +196,8 @@ export async function GET(
                 })
         })
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error generating certificate:', error)
-        return new NextResponse(`Internal Server Error: ${error.message}`, { status: 500 })
+        return new NextResponse(`Internal Server Error: ${error instanceof Error ? error.message : "Unknown error"}`, { status: 500 })
     }
 }

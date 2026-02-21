@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { Prisma } from "@prisma/client"
 
 export async function getTimeTrackingReport(options?: {
     page?: number
@@ -21,7 +22,7 @@ export async function getTimeTrackingReport(options?: {
         const skip = (page - 1) * pageSize
 
         // Build where clause for filtering
-        const where: any = {}
+        const where: Prisma.EnrollmentWhereInput = {}
         if (options?.userId) where.userId = options.userId
         if (options?.courseId) where.courseId = options.courseId
         if (options?.status === "completed") where.completed = true
@@ -400,7 +401,7 @@ export async function getModuleTimeTrackingReport(filters?: {
 
     try {
         // Build where clause for enrollments
-        const enrollmentWhere: any = {}
+        const enrollmentWhere: Prisma.EnrollmentWhereInput = {}
         if (filters?.userId) enrollmentWhere.userId = filters.userId
         if (filters?.courseId) enrollmentWhere.courseId = filters.courseId
 

@@ -33,7 +33,7 @@ export async function getUnreadNotificationCount() {
             }
         })
         return count
-    } catch (error) {
+    } catch (_error) {
         return 0
     }
 }
@@ -52,7 +52,7 @@ export async function markNotificationAsRead(notificationId: string) {
         })
         revalidatePath("/")
         return { success: true }
-    } catch (error) {
+    } catch (_error) {
         return { success: false }
     }
 }
@@ -71,7 +71,7 @@ export async function markAllNotificationsAsRead() {
         })
         revalidatePath("/")
         return { success: true }
-    } catch (error) {
+    } catch (_error) {
         return { success: false }
     }
 }

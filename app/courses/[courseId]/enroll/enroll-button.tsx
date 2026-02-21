@@ -44,7 +44,7 @@ export function EnrollButton({ courseId }: { courseId: string }) {
                     description: result.message || "Impossibile iscriversi al corso",
                 })
             }
-        } catch (error) {
+        } catch (_error) {
             toast({
                 variant: "destructive",
                 title: "Errore",

@@ -32,7 +32,7 @@ export default async function UsersPage({
     const search = typeof params.search === 'string' ? params.search : undefined
     const page = typeof params.page === 'string' ? Math.max(1, parseInt(params.page)) : 1
 
-    const where: any = {}
+    const where: { departmentId?: string; OR?: Array<{ name?: { contains: string; mode: 'insensitive' }; email?: { contains: string; mode: 'insensitive' } }> } = {}
     if (departmentId) where.departmentId = departmentId
     if (search) {
         where.OR = [
@@ -161,7 +161,7 @@ export default async function UsersPage({
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {pendingUsers.map((user: any) => (
+                                {pendingUsers.map((user: { id: string; name: string | null; email: string; createdAt: Date }) => (
                                     <TableRow key={user.id}>
                                         <TableCell className="font-medium">{user.name}</TableCell>
                                         <TableCell>{user.email}</TableCell>
@@ -199,7 +199,7 @@ export default async function UsersPage({
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            users.map((user: any) => {
+                            users.map((user: { id: string; name: string | null; email: string; role: string; createdAt: Date; department: { id: string; name: string } | null; company: { id: string; name: string } | null; _count: { enrollments: number }; enrollments: { timeSpent: number }[] }) => {
                                 const totalSeconds = user.enrollments.reduce((acc: number, curr: { timeSpent: number }) => acc + curr.timeSpent, 0)
                                 const hours = Math.floor(totalSeconds / 3600)
                                 const minutes = Math.floor((totalSeconds % 3600) / 60)

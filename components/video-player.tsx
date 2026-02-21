@@ -21,13 +21,13 @@ export function VideoPlayer({
     onProgress,
     onComplete
 }: VideoPlayerProps) {
-    const [isPlaying, setIsPlaying] = useState(false)
+    const [_isPlaying, setIsPlaying] = useState(false)
     const [currentTime, setCurrentTime] = useState(0)
     const [duration, setDuration] = useState(0)
     const [watchedSeconds, setWatchedSeconds] = useState(0)
     const videoRef = useRef<HTMLVideoElement>(null)
     const iframeRef = useRef<HTMLIFrameElement>(null)
-    const progressIntervalRef = useRef<any>(null)
+    const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
     const lastSaveRef = useRef(0)
 
     const videoInfo = detectVideoProvider(videoUrl)
@@ -88,6 +88,7 @@ export function VideoPlayer({
             video.removeEventListener('play', handlePlay)
             video.removeEventListener('pause', handlePause)
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [videoInfo.provider, moduleId, initialPosition, watchedSeconds])
 
     // For YouTube/Vimeo, we track via postMessage API (more complex, simplified here)
@@ -121,6 +122,7 @@ export function VideoPlayer({
             // Fallback: save with current watched as duration to ensure progress is recorded
             saveProgress(watchedSeconds, watchedSeconds, currentTime)
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [watchedSeconds, duration, currentTime, moduleId, videoInfo.provider, minDuration])
 
     const effectiveDuration = duration > 0 ? duration : (minDuration * 60)
@@ -165,7 +167,7 @@ export function VideoPlayer({
                     </div>
                     <h3 className="text-lg font-medium text-foreground mb-1">Video non disponibile</h3>
                     <p className="text-sm text-muted-foreground">
-                        L'URL del video non è valido o mancante.
+                        L&apos;URL del video non è valido o mancante.
                         {videoUrl && <span className="block mt-2 text-xs font-mono bg-muted p-1 rounded">{videoUrl}</span>}
                     </p>
                 </div>

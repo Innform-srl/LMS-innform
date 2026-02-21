@@ -4,7 +4,7 @@ import { CreateModuleForm } from "./create-module-form"
 export default async function CreateModulePage({ params }: { params: Promise<{ courseId: string }> }) {
     const { courseId } = await params
 
-    let availableSessions: any[] = []
+    let availableSessions: { id: string; title: string; startTime: Date | null; endTime: Date | null; meetingUrl: string | null }[] = []
     try {
         // Fetch available live sessions not already linked to a module
         availableSessions = await db.liveSession.findMany({

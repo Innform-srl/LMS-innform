@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
+import { Role } from "@prisma/client"
 
 export async function approveUser(userId: string) {
     const session = await auth()
@@ -17,7 +18,7 @@ export async function approveUser(userId: string) {
             data: {
                 isApproved: true,
                 approvedAt: new Date()
-            } as any
+            }
         })
 
         revalidatePath("/admin/users")
@@ -62,12 +63,12 @@ export async function createUser(formData: FormData) {
                 name,
                 email,
                 password: hashedPassword,
-                role: role as any,
+                role: role as Role,
                 departmentId: departmentId || null,
                 companyId: companyId || null,
                 isApproved: true, // Admin created users are auto-approved
                 approvedAt: new Date(),
-            } as any
+            }
         })
 
         // Batch enroll user in learning path courses - optimized query

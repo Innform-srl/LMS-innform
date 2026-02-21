@@ -14,7 +14,7 @@ const quizSchema = z.object({
     maxAttempts: z.number().min(1).default(3),
 })
 
-const questionSchema = z.object({
+const _questionSchema = z.object({
     question: z.string().min(1, { message: "La domanda è obbligatoria" }),
     type: z.enum(["MULTIPLE_CHOICE", "TRUE_FALSE", "MULTI_SELECT", "SHORT_ANSWER"]).default("MULTIPLE_CHOICE"),
     explanation: z.string().optional(),
@@ -38,7 +38,7 @@ export async function createQuiz(moduleId: string, formData: FormData) {
 
     // Handle AI generated questions
     const aiQuestionsJson = formData.get("aiQuestions") as string
-    let aiQuestions: any[] = []
+    let aiQuestions: { question: string; options: string[]; correctAnswer: number; explanation?: string }[] = []
     if (aiQuestionsJson) {
         try {
             aiQuestions = JSON.parse(aiQuestionsJson)
@@ -91,7 +91,7 @@ export async function createQuiz(moduleId: string, formData: FormData) {
     }
 }
 
-export async function addQuestion(quizId: string, prevState: any, formData: FormData) {
+export async function addQuestion(quizId: string, prevState: { message: string; success?: boolean } | null, formData: FormData) {
     const session = await auth()
     if (!session?.user) {
         return { message: "Non autorizzato" }
@@ -102,7 +102,7 @@ export async function addQuestion(quizId: string, prevState: any, formData: Form
     const explanation = formData.get("explanation") as string
 
     let options: string[] = []
-    let correctAnswers: number[] = []
+    const correctAnswers: number[] = []
     let textAnswer: string | undefined = undefined
     let correctAnswer = 0
 
@@ -188,7 +188,7 @@ export async function deleteQuestion(questionId: string, quizId: string) {
         })
         revalidatePath(`/admin/quiz/${quizId}`)
         return { success: true }
-    } catch (error) {
+    } catch (_error) {
         return { success: false, message: "Errore durante l'eliminazione" }
     }
 }

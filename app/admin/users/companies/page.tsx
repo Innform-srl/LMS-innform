@@ -3,7 +3,6 @@ import { redirect } from "next/navigation"
 import { getCompanies } from "@/app/actions/companies"
 import { CreateCompanyForm } from "./create-company-form"
 import { CompanyList } from "./company-list"
-import Link from "next/link"
 
 export default async function CompaniesPage() {
     const session = await auth()

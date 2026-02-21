@@ -46,7 +46,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
             } else {
                 throw new Error("Failed to update profile")
             }
-        } catch (error) {
+        } catch {
             toast({
                 title: "Errore",
                 description: "Impossibile aggiornare il profilo.",
@@ -99,10 +99,10 @@ export function SettingsForm({ user }: SettingsFormProps) {
                 const data = await res.json()
                 throw new Error(data.error || "Failed to change password")
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 title: "Errore",
-                description: error.message || "Impossibile cambiare la password.",
+                description: error instanceof Error ? error.message : "Impossibile cambiare la password.",
                 variant: "destructive"
             })
         } finally {
