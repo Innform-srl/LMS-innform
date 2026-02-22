@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { getLiveSessions } from "@/app/actions/live-sessions"
 import { formatDate } from "@/lib/utils"
-import { JoinSessionButton } from "@/components/join-session-button"
 
 export default async function LiveSessionsPage() {
     const session = await auth()
@@ -64,18 +63,19 @@ export default async function LiveSessionsPage() {
                                                 {session.description || "Nessuna descrizione disponibile."}
                                             </p>
 
-                                            <div className="space-y-4 mt-auto">
+                                            <div className="space-y-2 mt-auto">
                                                 {session.course && (
                                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                         <span>📚</span>
                                                         <span className="truncate">{session.course.title}</span>
                                                     </div>
                                                 )}
-
-                                                <JoinSessionButton
-                                                    meetingUrl={session.meetingUrl || ""}
-                                                    liveSessionId={session.id}
-                                                />
+                                                {session.endTime && (
+                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                        <span>🕐</span>
+                                                        <span>Fino alle {session.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </CardContent>
                                     </Card>

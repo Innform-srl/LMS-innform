@@ -2,7 +2,6 @@
 import { auth } from "@/lib/auth"
 import { getUpcomingSessions } from "@/app/actions/live-sessions"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { JoinSessionButton } from "@/components/join-session-button"
 import Link from "next/link"
 
 export async function UpcomingSessionsList() {
@@ -39,15 +38,10 @@ export async function UpcomingSessionsList() {
                                     </span>
                                 </div>
                                 {liveSession.course && (
-                                    <p className="text-xs text-muted-foreground mb-3">
+                                    <p className="text-xs text-muted-foreground">
                                         {liveSession.course.title}
                                     </p>
                                 )}
-                                <JoinSessionButton
-                                    meetingUrl={liveSession.meetingUrl || ''}
-                                    moduleId={liveSession.module?.id}
-                                    liveSessionId={liveSession.id}
-                                />
                             </CardContent>
                         </Card>
                     ))}
