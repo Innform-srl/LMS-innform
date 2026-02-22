@@ -2,8 +2,24 @@
 
 import { Button } from "@/components/ui/button"
 import { deleteModule, toggleModulePublished } from "@/app/actions/modules"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
+
+function formatDate(date: Date | string) {
+    const d = new Date(date)
+    const day = d.getDate().toString().padStart(2, '0')
+    const month = (d.getMonth() + 1).toString().padStart(2, '0')
+    const year = d.getFullYear()
+    const hours = d.getHours().toString().padStart(2, '0')
+    const minutes = d.getMinutes().toString().padStart(2, '0')
+    return `${day}/${month}/${year} ${hours}:${minutes}`
+}
+
+function ClientDate({ date }: { date: Date | string }) {
+    const [formatted, setFormatted] = useState("")
+    useEffect(() => { setFormatted(formatDate(date)) }, [date])
+    return <>{formatted}</>
+}
 
 type Module = {
     id: string
@@ -77,7 +93,7 @@ export function ModuleList({ modules, courseId }: { modules: Module[], courseId:
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
-                                    Live: {module.liveSession.startTime ? `${new Date(module.liveSession.startTime).toLocaleDateString()} ${new Date(module.liveSession.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Da programmare'}
+                                    Live: {module.liveSession.startTime ? <ClientDate date={module.liveSession.startTime} /> : 'Da programmare'}
                                 </div>
                             )}
                             {module.quiz ? (

@@ -34,7 +34,7 @@ export function ImportModuleDialog({ courseId }: ImportModuleDialogProps) {
     const loadCourses = async () => {
         setIsLoading(true)
         const data = await getModulesFromOtherCourses(courseId)
-        setCourses(data)
+        setCourses(Array.isArray(data) ? data : [])
         setIsLoading(false)
     }
 
@@ -64,7 +64,7 @@ export function ImportModuleDialog({ courseId }: ImportModuleDialogProps) {
         }
     }
 
-    const selectedCourse = courses.find(c => c.id === selectedCourseId)
+    const selectedCourse = courses?.find(c => c.id === selectedCourseId)
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>

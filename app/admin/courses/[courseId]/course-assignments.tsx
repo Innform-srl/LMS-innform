@@ -33,14 +33,18 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
     const [unenrolledUsers, setUnenrolledUsers] = useState<{ id: string; name: string | null; email: string; department: { name: string } | null; company: { name: string } | null }[]>([])
 
     const loadData = async () => {
-        const [companiesData, departmentsData, enrollmentsData] = await Promise.all([
-            getCompanies(),
-            getDepartments(),
-            getCourseEnrollments(courseId)
-        ])
-        setCompanies(companiesData)
-        setDepartments(departmentsData)
-        setEnrollments(enrollmentsData)
+        try {
+            const [companiesData, departmentsData, enrollmentsData] = await Promise.all([
+                getCompanies(),
+                getDepartments(),
+                getCourseEnrollments(courseId)
+            ])
+            setCompanies(Array.isArray(companiesData) ? companiesData : [])
+            setDepartments(Array.isArray(departmentsData) ? departmentsData : [])
+            setEnrollments(Array.isArray(enrollmentsData) ? enrollmentsData : [])
+        } catch (error) {
+            console.error("Error loading course data:", error)
+        }
     }
 
     useEffect(() => {
@@ -132,6 +136,8 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
         setSearchResults([])
     }
 
+    const safeEnrollments = enrollments ?? []
+
     return (
         <Card className="bg-card border-border">
             <CardHeader>
@@ -146,7 +152,7 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
                     <TabsList>
                         <TabsTrigger value="group">Assegnazione Gruppo</TabsTrigger>
                         <TabsTrigger value="individual">Assegnazione Individuale</TabsTrigger>
-                        <TabsTrigger value="list">Utenti Iscritti ({enrollments.length})</TabsTrigger>
+                        <TabsTrigger value="list">Utenti Iscritti ({safeEnrollments.length})</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="group" className="space-y-6">
@@ -239,7 +245,7 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
                                 )
                             ) : (
                                 searchResults.map(user => {
-                                    const isEnrolled = enrollments.some(e => e.userId === user.id)
+                                    const isEnrolled = safeEnrollments.some(e => e.userId === user.id)
                                     return (
                                         <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50">
                                             <div>
@@ -270,10 +276,10 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
 
                     <TabsContent value="list">
                         <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                            {enrollments.length === 0 ? (
+                            {safeEnrollments.length === 0 ? (
                                 <div className="text-center text-muted-foreground py-8">Nessun utente iscritto a questo corso.</div>
                             ) : (
-                                enrollments.map(enrollment => (
+                                safeEnrollments.map(enrollment => (
                                     <div key={enrollment.id} className="flex items-center justify-between p-3 border rounded-lg">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">

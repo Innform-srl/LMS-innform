@@ -218,9 +218,16 @@ export function CreateModuleForm({ courseId, availableSessions = [] }: { courseI
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="new">Crea nuova sessione</SelectItem>
-                                            {availableSessions.map((s) => (
+                                            {[...availableSessions]
+                                                .filter(s => !s.startTime || new Date(s.startTime) >= new Date(new Date().toDateString()))
+                                                .sort((a, b) => {
+                                                    if (!a.startTime) return 1
+                                                    if (!b.startTime) return -1
+                                                    return new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+                                                })
+                                                .map((s, i) => (
                                                 <SelectItem key={s.id} value={s.id}>
-                                                    {s.title}{s.startTime ? ` - ${new Date(s.startTime).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}` : ""}
+                                                    {i + 2}. {s.title}{s.startTime ? ` - ${new Date(s.startTime).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}` : ""}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
