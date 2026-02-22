@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { getLiveSessions } from "@/app/actions/live-sessions"
 import { formatDate } from "@/lib/utils"
+import { JoinSessionButton } from "@/components/join-session-button"
 
 export default async function LiveSessionsPage() {
     const session = await auth()
@@ -15,6 +16,7 @@ export default async function LiveSessionsPage() {
 
     const upcomingSessions = allSessions.filter(s => !s.endTime || new Date(s.endTime) >= now)
     const pastSessions = allSessions.filter(s => s.endTime && new Date(s.endTime) < now)
+    const oneDayMs = 24 * 60 * 60 * 1000
 
     return (
         <div className="min-h-screen p-8 bg-background text-foreground">
@@ -63,19 +65,24 @@ export default async function LiveSessionsPage() {
                                                 {session.description || "Nessuna descrizione disponibile."}
                                             </p>
 
-                                            <div className="space-y-2 mt-auto">
+                                            <div className="space-y-3 mt-auto">
                                                 {session.course && (
                                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                         <span>📚</span>
                                                         <span className="truncate">{session.course.title}</span>
                                                     </div>
                                                 )}
-                                                {session.endTime && (
-                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                        <span>🕐</span>
-                                                        <span>Fino alle {session.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+
+                                                {session.startTime && (new Date(session.startTime).getTime() - now.getTime()) <= oneDayMs ? (
+                                                    <JoinSessionButton
+                                                        meetingUrl={session.meetingUrl || ""}
+                                                        liveSessionId={session.id}
+                                                    />
+                                                ) : session.startTime ? (
+                                                    <div className="text-center text-xs text-muted-foreground bg-muted/50 rounded-lg py-2 px-3">
+                                                        Disponibile dal {new Date(new Date(session.startTime).getTime() - oneDayMs).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
                                                     </div>
-                                                )}
+                                                ) : null}
                                             </div>
                                         </CardContent>
                                     </Card>

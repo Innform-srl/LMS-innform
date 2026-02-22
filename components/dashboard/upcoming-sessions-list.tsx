@@ -2,6 +2,7 @@
 import { auth } from "@/lib/auth"
 import { getUpcomingSessions } from "@/app/actions/live-sessions"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { JoinSessionButton } from "@/components/join-session-button"
 import Link from "next/link"
 
 export async function UpcomingSessionsList() {
@@ -11,6 +12,9 @@ export async function UpcomingSessionsList() {
     const upcomingSessions = await getUpcomingSessions()
 
     if (upcomingSessions.length === 0) return null
+
+    const now = new Date()
+    const oneDayMs = 24 * 60 * 60 * 1000
 
     return (
         <Card className="glass border-border mb-8 bg-gradient-to-r from-indigo-500/10 to-purple-500/10">
@@ -38,9 +42,16 @@ export async function UpcomingSessionsList() {
                                     </span>
                                 </div>
                                 {liveSession.course && (
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-xs text-muted-foreground mb-3">
                                         {liveSession.course.title}
                                     </p>
+                                )}
+                                {liveSession.startTime && (new Date(liveSession.startTime).getTime() - now.getTime()) <= oneDayMs && (
+                                    <JoinSessionButton
+                                        meetingUrl={liveSession.meetingUrl || ''}
+                                        moduleId={liveSession.module?.id}
+                                        liveSessionId={liveSession.id}
+                                    />
                                 )}
                             </CardContent>
                         </Card>
