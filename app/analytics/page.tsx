@@ -7,6 +7,7 @@ import { Loader2, BookOpen, Award, Clock, TrendingUp, AlertCircle, CheckCircle2 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { apiUrl } from "@/lib/api"
+import { formatDateOnly } from "@/lib/utils"
 
 type UserAnalyticsData = {
     overview: {
@@ -283,7 +284,7 @@ export default function UserAnalyticsPage() {
                                                 <div className="flex-1">
                                                     <h4 className="font-semibold text-white mb-1">{achievement.courseTitle}</h4>
                                                     <p className="text-xs text-gray-400">
-                                                        Completato il {new Date(achievement.completedAt).toLocaleDateString('it-IT')}
+                                                        Completato il {formatDateOnly(new Date(achievement.completedAt))}
                                                     </p>
                                                     {achievement.hasCertificate && achievement.certificateNumber && (
                                                         <p className="text-xs text-green-400 mt-1">

@@ -9,6 +9,7 @@ import { updateModule } from "@/app/actions/modules"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FileText, Video, Calendar } from "lucide-react"
 import { apiUrl } from "@/lib/api"
+import { formatDate } from "@/lib/utils"
 import dynamic from "next/dynamic"
 
 const RichTextEditor = dynamic(
@@ -276,7 +277,7 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                                             })
                                             .map((s, i) => (
                                             <SelectItem key={s.id} value={s.id}>
-                                                {i + 2}. {s.title}{s.startTime ? ` - ${new Date(s.startTime).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}` : ""}
+                                                {i + 2}. {s.title}{s.startTime ? ` - ${formatDate(new Date(s.startTime))}` : ""}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>

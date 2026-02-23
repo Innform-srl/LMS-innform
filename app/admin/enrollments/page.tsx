@@ -13,6 +13,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { RefreshCw } from "lucide-react"
+import { formatDateOnly } from "@/lib/utils"
 
 export default async function EnrollmentsOverviewPage() {
     const session = await auth()
@@ -193,7 +194,7 @@ export default async function EnrollmentsOverviewPage() {
                                     <TableCell>
                                         {e.dueDate ? (
                                             <div className="text-sm">
-                                                <div>{new Date(e.dueDate).toLocaleDateString()}</div>
+                                                <div>{formatDateOnly(new Date(e.dueDate))}</div>
                                                 {e.daysUntil !== null && (
                                                     <div className={`text-xs ${e.daysUntil < 0 ? 'text-red-500' : e.daysUntil <= 7 ? 'text-orange-500' : 'text-muted-foreground'}`}>
                                                         {e.daysUntil < 0 ? `Scaduto ${Math.abs(e.daysUntil)}gg fa` : `Tra ${e.daysUntil}gg`}
@@ -213,7 +214,7 @@ export default async function EnrollmentsOverviewPage() {
                                                 </Badge>
                                                 {e.tmsSyncedAt && (
                                                     <span className="text-xs text-muted-foreground" title={`ID: ${e.tmsEnrollmentId}`}>
-                                                        {new Date(e.tmsSyncedAt).toLocaleDateString()}
+                                                        {formatDateOnly(new Date(e.tmsSyncedAt))}
                                                     </span>
                                                 )}
                                             </div>

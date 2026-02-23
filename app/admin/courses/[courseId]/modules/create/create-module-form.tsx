@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import dynamic from "next/dynamic"
 import { apiUrl } from "@/lib/api"
+import { formatDate } from "@/lib/utils"
 
 const RichTextEditor = dynamic(
     () => import("@/components/rich-text-editor").then(mod => ({ default: mod.RichTextEditor })),
@@ -227,7 +228,7 @@ export function CreateModuleForm({ courseId, availableSessions = [] }: { courseI
                                                 })
                                                 .map((s, i) => (
                                                 <SelectItem key={s.id} value={s.id}>
-                                                    {i + 2}. {s.title}{s.startTime ? ` - ${new Date(s.startTime).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}` : ""}
+                                                    {i + 2}. {s.title}{s.startTime ? ` - ${formatDate(new Date(s.startTime))}` : ""}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>

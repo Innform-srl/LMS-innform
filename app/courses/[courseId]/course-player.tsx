@@ -484,19 +484,19 @@ export function CoursePlayer({
                                     <div className="bg-muted/50 p-4 rounded-xl border border-border">
                                         <div className="text-sm text-muted-foreground mb-1">Inizio</div>
                                         <div className="font-semibold text-lg">
-                                            {currentModule.liveSession.startTime ? new Date(currentModule.liveSession.startTime).toLocaleDateString() : 'N/D'}
+                                            {currentModule.liveSession.startTime ? (() => { const d = new Date(currentModule.liveSession.startTime!); return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}` })() : 'N/D'}
                                         </div>
                                         <div className="text-primary font-bold">
-                                            {currentModule.liveSession.startTime ? new Date(currentModule.liveSession.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                            {currentModule.liveSession.startTime ? (() => { const d = new Date(currentModule.liveSession.startTime!); return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}` })() : '--:--'}
                                         </div>
                                     </div>
                                     <div className="bg-muted/50 p-4 rounded-xl border border-border">
                                         <div className="text-sm text-muted-foreground mb-1">Fine</div>
                                         <div className="font-semibold text-lg">
-                                            {currentModule.liveSession.endTime ? new Date(currentModule.liveSession.endTime).toLocaleDateString() : 'N/D'}
+                                            {currentModule.liveSession.endTime ? (() => { const d = new Date(currentModule.liveSession.endTime!); return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}` })() : 'N/D'}
                                         </div>
                                         <div className="text-primary font-bold">
-                                            {currentModule.liveSession.endTime ? new Date(currentModule.liveSession.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                            {currentModule.liveSession.endTime ? (() => { const d = new Date(currentModule.liveSession.endTime!); return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}` })() : '--:--'}
                                         </div>
                                     </div>
                                 </div>

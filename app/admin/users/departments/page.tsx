@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table"
 import { revalidatePath } from "next/cache"
 import { Plus, Trash2 } from "lucide-react"
+import { formatDateOnly } from "@/lib/utils"
 
 export default async function DepartmentsPage() {
     const session = await auth()
@@ -97,7 +98,7 @@ export default async function DepartmentsPage() {
                                         <TableRow key={dept.id} className="border-border hover:bg-muted/50">
                                             <TableCell className="font-medium text-foreground">{dept.name}</TableCell>
                                             <TableCell className="text-foreground">{dept._count.users}</TableCell>
-                                            <TableCell className="text-foreground">{dept.createdAt.toLocaleDateString()}</TableCell>
+                                            <TableCell className="text-foreground">{formatDateOnly(dept.createdAt)}</TableCell>
                                             <TableCell className="text-right">
                                                 <form action={deleteDepartment.bind(null, dept.id)}>
                                                     <Button

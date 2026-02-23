@@ -11,6 +11,58 @@ function extractGoogleMeetCode(url: string): string | null {
     return match ? match[1] : null
 }
 
+/**
+ * When a new module is added (or published) in a course, reset completion
+ * for all enrollments that were marked as completed, since the new module
+ * hasn't been completed by anyone yet. Also delete associated certificates.
+ */
+async function resetCourseCompletions(courseId: string) {
+    // Find all completed enrollments for this course
+    const completedEnrollments = await db.enrollment.findMany({
+        where: { courseId, completed: true },
+        select: { id: true, userId: true }
+    })
+
+    if (completedEnrollments.length === 0) return
+
+    const enrollmentIds = completedEnrollments.map(e => e.id)
+
+    // Delete certificates for these enrollments
+    await db.certificate.deleteMany({
+        where: { enrollmentId: { in: enrollmentIds } }
+    })
+
+    // Get total published modules count (including the new one that was just created)
+    const totalModules = await db.module.count({
+        where: { courseId, published: true }
+    })
+
+    // Reset enrollment completion and recalculate progress for each enrollment
+    for (const enrollment of completedEnrollments) {
+        // Count how many published modules this user has completed
+        const completedModules = await db.moduleProgress.count({
+            where: {
+                completed: true,
+                module: { courseId, published: true },
+                userId: enrollment.userId
+            }
+        })
+
+        const newProgress = totalModules > 0 ? (completedModules / totalModules) * 100 : 0
+
+        await db.enrollment.update({
+            where: { id: enrollment.id },
+            data: {
+                completed: false,
+                completedAt: null,
+                progress: newProgress
+            }
+        })
+    }
+
+    console.log(`Reset completion for ${completedEnrollments.length} enrollments in course ${courseId}`)
+}
+
 const moduleSchema = z.object({
     title: z.string().min(1, { message: "Il titolo è obbligatorio" }),
     description: z.string().optional(),
@@ -104,7 +156,7 @@ export async function createModule(courseId: string, prevState: { message?: stri
             }
         }
 
-        await db.module.create({
+        const newModule = await db.module.create({
             data: {
                 title,
                 description: description || null,
@@ -118,6 +170,11 @@ export async function createModule(courseId: string, prevState: { message?: stri
                 liveSessionId
             }
         })
+
+        // If the new module is published, reset completions for enrolled students
+        if (newModule.published) {
+            await resetCourseCompletions(courseId)
+        }
     } catch (error) {
         console.error(error)
         return { message: "Errore durante la creazione del modulo" }
@@ -150,10 +207,17 @@ export async function toggleModulePublished(moduleId: string, courseId: string) 
         const courseModule = await db.module.findUnique({ where: { id: moduleId } })
         if (!courseModule) return { success: false, message: "Modulo non trovato" }
 
+        const newPublished = !courseModule.published
+
         await db.module.update({
             where: { id: moduleId },
-            data: { published: !courseModule.published }
+            data: { published: newPublished }
         })
+
+        // If publishing a module, reset completions since students haven't completed this one
+        if (newPublished) {
+            await resetCourseCompletions(courseId)
+        }
 
         revalidatePath(`/admin/courses/${courseId}`)
         return { success: true }
@@ -340,7 +404,7 @@ export async function duplicateModule(moduleId: string, targetCourseId: string) 
 
         const newPosition = (lastModule?.position || 0) + 1
 
-        await db.module.create({
+        const duplicated = await db.module.create({
             data: {
                 title: sourceModule.title + " (Copia)",
                 description: sourceModule.description,
@@ -355,6 +419,11 @@ export async function duplicateModule(moduleId: string, targetCourseId: string) 
                 courseId: targetCourseId
             }
         })
+
+        // If the duplicated module is published, reset completions
+        if (duplicated.published) {
+            await resetCourseCompletions(targetCourseId)
+        }
 
         revalidatePath(`/admin/courses/${targetCourseId}`)
         return { success: true, message: "Modulo importato con successo" }

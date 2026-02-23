@@ -165,7 +165,8 @@ export function AttendanceTable({ sessionId, attendance, isEnded, googleMeetCode
 
     const formatTime = (date: Date | string | null) => {
         if (!date || !mounted) return "—"
-        return new Date(date).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+        const d = new Date(date)
+        return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`
     }
 
     const filteredAttendance = attendance.filter((a) => {

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { createEntry, getLiveSessionsForRegister } from "@/app/actions/registers"
+import { formatDateOnly } from "@/lib/utils"
 
 type LiveSessionOption = {
     id: string
@@ -61,8 +62,8 @@ export function AddEntryForm({ registerId }: { registerId: string }) {
         const start = ls.startTime ? new Date(ls.startTime) : new Date()
         const end = ls.endTime ? new Date(ls.endTime) : new Date()
         const dateStr = start.toISOString().split("T")[0]
-        const startTimeStr = start.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", hour12: false })
-        const endTimeStr = end.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", hour12: false })
+        const startTimeStr = `${start.getHours().toString().padStart(2,'0')}:${start.getMinutes().toString().padStart(2,'0')}`
+        const endTimeStr = `${end.getHours().toString().padStart(2,'0')}:${end.getMinutes().toString().padStart(2,'0')}`
 
         const deliveryMode = ls.sessionType === "IN_PERSON" ? "IN_PERSON" as const : "ONLINE" as const
 
@@ -156,7 +157,7 @@ export function AddEntryForm({ registerId }: { registerId: string }) {
                                 <option value="">-- Compilazione manuale --</option>
                                 {availableSessions.map((s) => (
                                     <option key={s.id} value={s.id}>
-                                        {s.startTime ? new Date(s.startTime).toLocaleDateString("it-IT") : 'N/D'} - {s.title} ({s._count.attendance} presenze)
+                                        {s.startTime ? formatDateOnly(new Date(s.startTime)) : 'N/D'} - {s.title} ({s._count.attendance} presenze)
                                     </option>
                                 ))}
                             </select>

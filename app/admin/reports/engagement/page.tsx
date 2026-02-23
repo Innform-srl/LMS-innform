@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getEngagementReport, exportEngagementCSV } from "@/app/actions/reports"
 import Link from "next/link"
 import { RefreshCw, Users, Clock, BookOpen, CheckCircle, TrendingUp, AlertTriangle, Download } from "lucide-react"
+import { formatDateOnly } from "@/lib/utils"
 
 type EngagementData = {
     overview: {
@@ -326,7 +327,7 @@ export default function EngagementReportPage() {
                                                 </div>
                                                 <div className="text-xs text-muted-foreground">
                                                     {user.lastActivity
-                                                        ? `Ultimo: ${new Date(user.lastActivity).toLocaleDateString("it-IT")}`
+                                                        ? `Ultimo: ${formatDateOnly(new Date(user.lastActivity))}`
                                                         : "Nessuna attività"
                                                     }
                                                 </div>

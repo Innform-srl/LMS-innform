@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { ResetPasswordDialog } from "./reset-password-dialog"
 import { ApproveUserButton } from "./approve-button"
 import { DeleteUserButton } from "./delete-user-button"
+import { formatDateOnly } from "@/lib/utils"
 
 const PAGE_SIZE = 20
 
@@ -165,7 +166,7 @@ export default async function UsersPage({
                                     <TableRow key={user.id}>
                                         <TableCell className="font-medium">{user.name}</TableCell>
                                         <TableCell>{user.email}</TableCell>
-                                        <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                                        <TableCell>{formatDateOnly(new Date(user.createdAt))}</TableCell>
                                         <TableCell className="text-right">
                                             <ApproveUserButton userId={user.id} />
                                         </TableCell>
@@ -218,7 +219,7 @@ export default async function UsersPage({
                                         <TableCell className="text-orange-400 font-mono text-xs">
                                             {hours}h {minutes}m
                                         </TableCell>
-                                        <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                                        <TableCell>{formatDateOnly(new Date(user.createdAt))}</TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
                                                 <ResetPasswordDialog userId={user.id} userName={user.name || user.email} />

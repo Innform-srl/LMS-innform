@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { CourseActions } from "./course-actions"
+import { formatDateOnly } from "@/lib/utils"
 
 export default async function CoursesPage() {
     const session = await auth()
@@ -356,7 +357,7 @@ export default async function CoursesPage() {
                                                 </div>
                                                 {course.archivedAt && (
                                                     <p className="text-xs text-muted-foreground mb-4">
-                                                        Archiviato il {new Date(course.archivedAt).toLocaleDateString('it-IT')}
+                                                        Archiviato il {formatDateOnly(new Date(course.archivedAt))}
                                                     </p>
                                                 )}
                                                 <Link href={`/admin/courses/${course.id}`} className="w-full">

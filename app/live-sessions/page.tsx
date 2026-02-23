@@ -53,11 +53,6 @@ export default async function LiveSessionsPage() {
                                                 <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
                                                     {session.startTime ? formatDate(session.startTime) : "Da definire"}
                                                 </div>
-                                                {session.startTime && (
-                                                    <div className="text-sm font-mono text-muted-foreground">
-                                                        {session.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </div>
-                                                )}
                                             </div>
 
                                             <h3 className="text-xl font-bold mb-2 line-clamp-2">{session.title}</h3>
@@ -80,7 +75,7 @@ export default async function LiveSessionsPage() {
                                                     />
                                                 ) : session.startTime ? (
                                                     <div className="text-center text-xs text-muted-foreground bg-muted/50 rounded-lg py-2 px-3">
-                                                        Disponibile dal {new Date(new Date(session.startTime).getTime() - oneDayMs).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                                        Disponibile dal {(() => { const d = new Date(new Date(session.startTime).getTime() - oneDayMs); return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}` })()}
                                                     </div>
                                                 ) : null}
                                             </div>

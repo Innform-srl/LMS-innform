@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from "next/navigation"
 import { apiUrl } from "@/lib/api"
+import { formatDateOnly } from "@/lib/utils"
 
 type CertificateSettings = {
     id: string
@@ -264,7 +265,7 @@ export default function CertificateSettingsPage() {
                                     {settings.bodyTemplate
                                         .replace("{userName}", "Mario Rossi")
                                         .replace("{courseTitle}", "Sicurezza sul Lavoro")
-                                        .replace("{completionDate}", new Date().toLocaleDateString("it-IT"))
+                                        .replace("{completionDate}", formatDateOnly(new Date()))
                                     }
                                 </div>
                             </div>
@@ -277,7 +278,7 @@ export default function CertificateSettingsPage() {
                                 </div>
                                 <div className="text-right">
                                     <div className="text-sm text-gray-500">Data:</div>
-                                    <div className="font-semibold">{new Date().toLocaleDateString("it-IT")}</div>
+                                    <div className="font-semibold">{formatDateOnly(new Date())}</div>
                                 </div>
                             </div>
                         </div>

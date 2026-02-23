@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { formatDateOnly, formatTime } from "@/lib/utils"
 
 export default async function UserReportPage({
     params
@@ -108,10 +109,10 @@ export default async function UserReportPage({
                     </CardHeader>
                     <CardContent>
                         <div className="text-lg font-bold text-blue-400">
-                            {lastLogin ? new Date(lastLogin).toLocaleDateString() : 'Mai'}
+                            {lastLogin ? formatDateOnly(new Date(lastLogin)) : 'Mai'}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                            {lastLogin ? new Date(lastLogin).toLocaleTimeString() : '-'}
+                            {lastLogin ? formatTime(new Date(lastLogin)) : '-'}
                         </div>
                     </CardContent>
                 </Card>
@@ -161,7 +162,7 @@ export default async function UserReportPage({
                                         <div>
                                             <p className="font-medium text-foreground">{attempt.quiz.title}</p>
                                             <p className="text-xs text-muted-foreground">
-                                                {new Date(attempt.completedAt).toLocaleDateString()}
+                                                {formatDateOnly(new Date(attempt.completedAt))}
                                             </p>
                                         </div>
                                         <div className="text-right">
@@ -199,7 +200,7 @@ export default async function UserReportPage({
                                             <div>
                                                 <p className="text-sm font-medium text-foreground">Login effettuato</p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {new Date(log.createdAt).toLocaleDateString()} alle {new Date(log.createdAt).toLocaleTimeString()}
+                                                    {formatDateOnly(new Date(log.createdAt))} alle {formatTime(new Date(log.createdAt))}
                                                 </p>
                                             </div>
                                         </div>

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import * as Icons from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, formatDateOnly } from "@/lib/utils"
 
 interface Notification {
     id: string
@@ -78,7 +78,7 @@ export function NotificationItem({ notification, onMarkAsRead, onClose }: Notifi
         if (seconds < 3600) return `${Math.floor(seconds / 60)}m fa`
         if (seconds < 86400) return `${Math.floor(seconds / 3600)}h fa`
         if (seconds < 604800) return `${Math.floor(seconds / 86400)}g fa`
-        return then.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })
+        return formatDateOnly(then)
     }
 
     return (

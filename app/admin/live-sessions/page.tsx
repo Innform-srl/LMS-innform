@@ -40,7 +40,7 @@ export default async function AdminLiveSessionsPage() {
                                 <CardContent className="p-6 flex items-center justify-between">
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="text-xl font-semibold text-foreground">{session.title}</h3>
+                                            <h3 className="text-xl font-semibold text-foreground">{session.title.replace(/(\d{4})-(\d{2})-(\d{2})/, (_m, y, mo, d) => `${d}/${mo}/${y}`)}</h3>
                                             {session.hiddenFromStudents && (
                                                 <span className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 px-2 py-0.5 rounded-full font-medium">
                                                     Nascosta
@@ -48,7 +48,7 @@ export default async function AdminLiveSessionsPage() {
                                             )}
                                         </div>
                                         <div className="text-sm text-muted-foreground space-y-1">
-                                            <p>📅 {session.startTime ? formatDate(session.startTime) : "Data non definita"}{session.endTime ? ` - ${session.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ""}</p>
+                                            <p>📅 {session.startTime ? formatDate(session.startTime) : "Data non definita"}{session.endTime ? ` - ${new Date(session.endTime).getHours().toString().padStart(2, '0')}:${new Date(session.endTime).getMinutes().toString().padStart(2, '0')}` : ""}</p>
                                             {session.course && <p>📚 Corso: {session.course.title}</p>}
                                             <p>👤 Istruttore: {session.instructor.name}</p>
                                         </div>

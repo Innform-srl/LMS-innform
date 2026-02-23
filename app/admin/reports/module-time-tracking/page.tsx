@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { getModuleTimeTrackingReport, exportModuleTimeTrackingCSV } from "@/app/actions/reports"
 import Link from "next/link"
 import { Clock, FileDown, BookOpen, Users, CheckCircle2, Timer } from "lucide-react"
+import { formatDateOnly } from "@/lib/utils"
 
 type ModuleReportRow = {
     moduleProgressId: string
@@ -395,7 +396,7 @@ export default function ModuleTimeTrackingReportPage() {
                                                                     </span>
                                                                 </div>
                                                                 <div className="text-xs text-muted-foreground min-w-[80px] text-right">
-                                                                    {new Date(module.lastActivity).toLocaleDateString("it-IT")}
+                                                                    {formatDateOnly(new Date(module.lastActivity))}
                                                                 </div>
                                                             </div>
                                                         </div>

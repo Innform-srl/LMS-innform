@@ -1,5 +1,6 @@
 
 import { db } from "@/lib/db"
+import { formatDateOnly, formatTime } from "@/lib/utils"
 import { CheckCircle, XCircle } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -92,11 +93,7 @@ export default async function VerifyCertificatePage({
                         <div>
                             <p className="text-sm text-gray-500 mb-1">Data di Rilascio</p>
                             <p className="text-lg font-medium text-gray-900">
-                                {certificate.issuedAt.toLocaleDateString('it-IT', {
-                                    day: 'numeric',
-                                    month: 'long',
-                                    year: 'numeric'
-                                })}
+                                {formatDateOnly(certificate.issuedAt)}
                             </p>
                         </div>
                         <div>
@@ -110,7 +107,7 @@ export default async function VerifyCertificatePage({
 
                 <div className="text-center">
                     <p className="text-sm text-gray-500 mb-6">
-                        Verificato il {new Date().toLocaleDateString('it-IT')} alle {new Date().toLocaleTimeString('it-IT')}
+                        Verificato il {formatDateOnly(new Date())} alle {formatTime(new Date())}
                     </p>
                     <Link href="/">
                         <Button className="bg-indigo-600 hover:bg-indigo-700">

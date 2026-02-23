@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AssignCourseForm } from "./assign-course-form"
+import { formatDateOnly } from "@/lib/utils"
 
 export default async function UserDetailPage({ params }: { params: Promise<{ userId: string }> }) {
     const session = await auth()
@@ -170,8 +171,8 @@ export default async function UserDetailPage({ params }: { params: Promise<{ use
                                                     </span>
                                                 </div>
                                                 <p className="text-sm text-muted-foreground">
-                                                    Assegnato il {new Date(enrollment.createdAt).toLocaleDateString()}
-                                                    {enrollment.completedAt && ` • Completato il ${new Date(enrollment.completedAt).toLocaleDateString()}`}
+                                                    Assegnato il {formatDateOnly(new Date(enrollment.createdAt))}
+                                                    {enrollment.completedAt && ` • Completato il ${formatDateOnly(new Date(enrollment.completedAt))}`}
                                                 </p>
                                             </div>
                                         </div>

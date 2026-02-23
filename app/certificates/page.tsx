@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Award, BookOpen, GraduationCap, RefreshCw, Download, ExternalLink } from "lucide-react"
+import { formatDateOnly } from "@/lib/utils"
 
 export default async function CertificatesPage() {
     const session = await auth()
@@ -194,7 +195,7 @@ export default async function CertificatesPage() {
                                         </div>
                                         <div className="text-right space-y-1">
                                             <span className="text-xs text-muted-foreground block">
-                                                {new Date(certificate.date).toLocaleDateString("it-IT")}
+                                                {formatDateOnly(new Date(certificate.date))}
                                             </span>
                                             <div className="flex gap-1 justify-end">
                                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${certificate.type === 'COURSE' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary-foreground'}`}>
@@ -241,7 +242,7 @@ export default async function CertificatesPage() {
                                     {certificate.tmsSyncedAt && (
                                         <div className="mt-3 pt-3 border-t border-border/50 text-xs text-muted-foreground flex items-center gap-1">
                                             <RefreshCw className="w-3 h-3" />
-                                            Sincronizzato: {new Date(certificate.tmsSyncedAt).toLocaleDateString("it-IT")}
+                                            Sincronizzato: {formatDateOnly(new Date(certificate.tmsSyncedAt))}
                                         </div>
                                     )}
                                 </div>

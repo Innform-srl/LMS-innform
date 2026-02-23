@@ -36,9 +36,7 @@ export async function UpcomingSessionsList() {
                                 <div className="flex justify-between items-start mb-2">
                                     <h4 className="font-semibold line-clamp-1">{liveSession.title}</h4>
                                     <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-1 rounded">
-                                        {liveSession.startTime ? new Date(liveSession.startTime).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }) : 'N/D'}
-                                        {' '}
-                                        {liveSession.startTime ? new Date(liveSession.startTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                        {liveSession.startTime ? (() => { const d = new Date(liveSession.startTime!); return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}` })() : 'N/D'}
                                     </span>
                                 </div>
                                 {liveSession.course && (

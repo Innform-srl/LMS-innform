@@ -6,6 +6,7 @@ import { getUserModuleTimeAnalytics } from "@/app/actions/reports"
 import Link from "next/link"
 import { Clock, BookOpen, CheckCircle2, Timer, TrendingUp, Loader2, GraduationCap, ChevronDown, ChevronRight } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
+import { formatDateOnly } from "@/lib/utils"
 
 type ModuleAnalytics = {
     moduleId: string
@@ -356,7 +357,7 @@ export default function MyAnalyticsPage() {
                                                                 <div className="font-medium text-foreground">{module.moduleTitle}</div>
                                                                 {module.lastActivity && (
                                                                     <div className="text-xs text-muted-foreground mt-1">
-                                                                        Ultima attività: {new Date(module.lastActivity).toLocaleDateString("it-IT")}
+                                                                        Ultima attività: {formatDateOnly(new Date(module.lastActivity))}
                                                                     </div>
                                                                 )}
                                                             </div>

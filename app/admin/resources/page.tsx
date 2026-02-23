@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table"
 import { revalidatePath } from "next/cache"
 import { FileText, Plus, Trash2, Download } from "lucide-react"
+import { formatDateOnly } from "@/lib/utils"
 
 export default async function ResourcesPage() {
     const session = await auth()
@@ -121,7 +122,7 @@ export default async function ResourcesPage() {
                                                 {res.title}
                                             </TableCell>
                                             <TableCell>{res.fileType}</TableCell>
-                                            <TableCell>{res.createdAt.toLocaleDateString()}</TableCell>
+                                            <TableCell>{formatDateOnly(res.createdAt)}</TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <a href={res.fileUrl} target="_blank" rel="noopener noreferrer">

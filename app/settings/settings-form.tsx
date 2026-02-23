@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/components/ui/use-toast"
 import { User, Mail, Calendar, Shield } from "lucide-react"
 import { apiUrl } from "@/lib/api"
+import { formatDateOnly } from "@/lib/utils"
 
 interface SettingsFormProps {
     user: {
@@ -158,11 +159,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
                                 <div className="flex items-center gap-2">
                                     <Calendar className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-sm text-muted-foreground">
-                                        {new Date(user.createdAt).toLocaleDateString("it-IT", {
-                                            year: "numeric",
-                                            month: "long",
-                                            day: "numeric"
-                                        })}
+                                        {formatDateOnly(new Date(user.createdAt))}
                                     </span>
                                 </div>
                             </div>

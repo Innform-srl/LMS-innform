@@ -23,6 +23,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Video, Upload, Mail, RefreshCw, CheckCircle, AlertCircle, Zap, ExternalLink, User, Clock, UserPlus, Check } from "lucide-react"
+import { formatTime as formatTimeUtil } from "@/lib/utils"
 
 interface GoogleMeetSyncProps {
     sessionId: string
@@ -311,8 +312,8 @@ export function GoogleMeetSync({ sessionId, googleMeetCode, onSync }: GoogleMeet
                                                             </span>
                                                         </div>
                                                         <div className="text-xs text-muted-foreground mb-2">
-                                                            {new Date(p.checkInTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-                                                            {p.checkOutTime && ` – ${new Date(p.checkOutTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`}
+                                                            {formatTimeUtil(new Date(p.checkInTime))}
+                                                            {p.checkOutTime && ` – ${formatTimeUtil(new Date(p.checkOutTime))}`}
                                                             {p.sessionCount > 1 && ` (${p.sessionCount} connessioni)`}
                                                         </div>
                                                         {associatedIndexes.has(idx) ? (

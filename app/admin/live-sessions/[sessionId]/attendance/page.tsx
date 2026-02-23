@@ -6,6 +6,7 @@ import { AttendanceTable } from "./attendance-table"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowLeft, Calendar, Clock, MapPin, Users, Video } from "lucide-react"
+import { formatDateOnly, formatTime } from "@/lib/utils"
 
 export default async function SessionAttendancePage({
     params
@@ -48,13 +49,13 @@ export default async function SessionAttendancePage({
                                 {sessionStart && (
                                     <span className="flex items-center gap-1">
                                         <Calendar className="w-4 h-4" />
-                                        {sessionStart.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                        {formatDateOnly(sessionStart)}
                                     </span>
                                 )}
                                 {sessionStart && sessionEnd && (
                                     <span className="flex items-center gap-1">
                                         <Clock className="w-4 h-4" />
-                                        {sessionStart.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - {sessionEnd.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                                        {formatTime(sessionStart)} - {formatTime(sessionEnd)}
                                     </span>
                                 )}
                                 {liveSession.physicalRoom && (

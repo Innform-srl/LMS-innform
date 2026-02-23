@@ -10,6 +10,7 @@ import { getCompanies, getDepartments, searchUsers } from "@/app/actions/organiz
 import { assignCourseToCompany, assignCourseToDepartment, enrollUser, unenrollUser, getCourseEnrollments, getUnenrolledUsers } from "@/app/actions/enrollments"
 import { toast } from "sonner"
 import { Loader2, Search, Trash2, UserPlus, Users, Building, Briefcase } from "lucide-react"
+import { formatDateOnly } from "@/lib/utils"
 
 interface CourseAssignmentsProps {
     courseId: string
@@ -292,7 +293,7 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <div className="text-sm text-muted-foreground">
-                                                Iscritto il {new Date(enrollment.createdAt).toLocaleDateString()}
+                                                Iscritto il {formatDateOnly(new Date(enrollment.createdAt))}
                                             </div>
                                             <Button
                                                 size="icon"

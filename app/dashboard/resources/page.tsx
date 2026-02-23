@@ -11,6 +11,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { FileText, Download } from "lucide-react"
+import { formatDateOnly } from "@/lib/utils"
 
 export default async function EmployeeResourcesPage() {
     const session = await auth()
@@ -57,7 +58,7 @@ export default async function EmployeeResourcesPage() {
                                             {res.title}
                                         </TableCell>
                                         <TableCell>{res.fileType}</TableCell>
-                                        <TableCell>{res.createdAt.toLocaleDateString()}</TableCell>
+                                        <TableCell>{formatDateOnly(res.createdAt)}</TableCell>
                                         <TableCell className="text-right">
                                             <a href={res.fileUrl} target="_blank" rel="noopener noreferrer">
                                                 <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300 hover:bg-blue-400/10">

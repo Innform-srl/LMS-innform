@@ -3,6 +3,7 @@
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { formatDateOnly } from "@/lib/utils"
 
 interface DeadlineBadgeProps {
     dueDate: Date
@@ -68,7 +69,7 @@ export function DeadlineBadge({ dueDate, completed = false, size = 'md' }: Deadl
     // Più di 7 giorni
     return (
         <Badge variant="outline" className={`border-white/10 ${sizeClass}`}>
-            📅 Scadenza: {deadline.toLocaleDateString('it-IT')}
+            📅 Scadenza: {formatDateOnly(deadline)}
         </Badge>
     )
 }

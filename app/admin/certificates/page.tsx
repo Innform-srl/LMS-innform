@@ -14,6 +14,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { RefreshCw, Database } from "lucide-react"
+import { formatDateOnly } from "@/lib/utils"
 
 export default async function AdminCertificatesPage({
     searchParams,
@@ -216,7 +217,7 @@ export default async function AdminCertificatesPage({
                                                 </Badge>
                                                 {cert.tmsSyncedAt && (
                                                     <span className="text-xs text-muted-foreground">
-                                                        {new Date(cert.tmsSyncedAt).toLocaleDateString("it-IT")}
+                                                        {formatDateOnly(new Date(cert.tmsSyncedAt))}
                                                     </span>
                                                 )}
                                             </div>
@@ -228,7 +229,7 @@ export default async function AdminCertificatesPage({
                                         )}
                                     </TableCell>
                                     <TableCell>{cert.title}</TableCell>
-                                    <TableCell>{new Date(cert.date).toLocaleDateString("it-IT")}</TableCell>
+                                    <TableCell>{formatDateOnly(new Date(cert.date))}</TableCell>
                                     <TableCell className="font-mono text-xs">{cert.number}</TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">

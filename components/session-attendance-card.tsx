@@ -7,6 +7,7 @@ import { AttendanceBadge } from "@/components/attendance-badge"
 import { selfCheckIn, selfCheckOut, registerForSession } from "@/app/actions/attendance"
 import { Clock, LogIn, LogOut, Calendar, MapPin, Users } from "lucide-react"
 import { AttendanceStatus, SessionType } from "@prisma/client"
+import { formatDateOnly, formatTime as formatTimeUtil } from "@/lib/utils"
 
 interface SessionAttendanceCardProps {
     session: {
@@ -110,11 +111,11 @@ export function SessionAttendanceCard({
                     <div className="flex flex-wrap gap-4 text-sm text-gray-400">
                         <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4" />
-                            {sessionStart.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
+                            {formatDateOnly(sessionStart)}
                         </div>
                         <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4" />
-                            {sessionStart.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - {sessionEnd.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                            {formatTimeUtil(sessionStart)} - {formatTimeUtil(sessionEnd)}
                         </div>
                         {session.physicalRoom && (
                             <div className="flex items-center gap-2">
@@ -146,14 +147,14 @@ export function SessionAttendanceCard({
                         <div>
                             <span className="text-gray-400">Check-in:</span>{' '}
                             <span className="font-medium">
-                                {new Date(localAttendance.checkInTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                                {formatTimeUtil(new Date(localAttendance.checkInTime))}
                             </span>
                         </div>
                         {localAttendance.checkOutTime && (
                             <div>
                                 <span className="text-gray-400">Check-out:</span>{' '}
                                 <span className="font-medium">
-                                    {new Date(localAttendance.checkOutTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                                    {formatTimeUtil(new Date(localAttendance.checkOutTime))}
                                 </span>
                             </div>
                         )}
@@ -213,7 +214,7 @@ export function SessionAttendanceCard({
 
                 {isBeforeCheckIn && localAttendance && (
                     <p className="w-full text-sm text-gray-400 text-center">
-                        Check-in disponibile dalle {checkInWindow.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                        Check-in disponibile dalle {formatTimeUtil(checkInWindow)}
                     </p>
                 )}
             </div>

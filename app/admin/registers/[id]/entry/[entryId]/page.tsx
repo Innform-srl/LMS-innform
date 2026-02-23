@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth"
 import { redirect, notFound } from "next/navigation"
 import Link from "next/link"
 import { getEntry } from "@/app/actions/registers"
-import { formatDate } from "@/lib/utils"
+import { formatDate, formatTime } from "@/lib/utils"
 import { AttendanceGrid } from "./attendance-grid"
 import { InstructorEntrySection } from "./instructor-entry-section"
 
@@ -58,9 +58,9 @@ export default async function EntryPage({
                     </h1>
                     <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                         <span>
-                            {new Date(entry.startTime).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
+                            {formatTime(new Date(entry.startTime))}
                             {" - "}
-                            {new Date(entry.endTime).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
+                            {formatTime(new Date(entry.endTime))}
                         </span>
                         {entry.pauseMinutes > 0 && <span>Pausa: {entry.pauseMinutes} min</span>}
                         <span>Ore effettive: {formatHours(entry.effectiveHours)}</span>

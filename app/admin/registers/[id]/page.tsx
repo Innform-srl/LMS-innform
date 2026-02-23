@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { getRegister, getTeachersForRegister } from "@/app/actions/registers"
-import { formatDate } from "@/lib/utils"
+import { formatDate, formatTime } from "@/lib/utils"
 import { RegisterActions } from "./register-actions"
 import { AddEntryForm } from "./add-entry-form"
 import { ParticipantsSection } from "./participants-section"
@@ -197,9 +197,9 @@ export default async function RegisterDetailPage({ params }: { params: Promise<{
                                                     {formatDate(entry.date)}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {new Date(entry.startTime).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
+                                                    {formatTime(new Date(entry.startTime))}
                                                     {" - "}
-                                                    {new Date(entry.endTime).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
+                                                    {formatTime(new Date(entry.endTime))}
                                                     {entry.pauseMinutes > 0 && ` (pausa ${entry.pauseMinutes}min)`}
                                                     {" - "}
                                                     {formatHours(entry.effectiveHours)}
