@@ -25,6 +25,16 @@ export async function checkAndCompleteCourse(courseId: string, userId: string) {
         return { completed: false, reason: "Course not found" }
     }
 
+    // 1b. Check if there are unpublished (draft) modules - don't complete if course has incomplete content
+    const unpublishedModulesCount = await db.module.count({
+        where: { courseId, published: false }
+    })
+
+    if (unpublishedModulesCount > 0) {
+        console.log(`Course has ${unpublishedModulesCount} unpublished module(s), cannot mark as completed`)
+        return { completed: false, reason: "Course has unpublished modules" }
+    }
+
     // 2. Get Enrollment
     const enrollment = await db.enrollment.findUnique({
         where: { userId_courseId: { userId, courseId } },

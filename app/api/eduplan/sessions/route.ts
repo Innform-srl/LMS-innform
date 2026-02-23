@@ -218,7 +218,6 @@ export async function POST(req: Request) {
       description: payload.description || null,
       startTime: new Date(payload.start_time),
       endTime: new Date(payload.end_time),
-      meetingUrl: payload.meeting_url || '',
       courseId: payload.course_id,
       instructorId: instructor.id,
       sessionType,
@@ -232,14 +231,25 @@ export async function POST(req: Request) {
     let isExisting = false
 
     if (existingSession) {
+      // Only overwrite meetingUrl if EduPlan sends a non-empty one,
+      // otherwise preserve the URL set manually in the LMS
+      const updateData = {
+        ...sessionData,
+        ...(payload.meeting_url ? { meetingUrl: payload.meeting_url } : {}),
+      }
       liveSession = await db.liveSession.update({
         where: { id: existingSession.id },
-        data: sessionData,
+        data: updateData,
       })
       isExisting = true
       console.log('[EDUPLAN SESSIONS] Updated existing session:', liveSession.id)
     } else {
-      liveSession = await db.liveSession.create({ data: sessionData })
+      liveSession = await db.liveSession.create({
+        data: {
+          ...sessionData,
+          meetingUrl: payload.meeting_url || null,
+        },
+      })
       console.log('[EDUPLAN SESSIONS] Created new session:', liveSession.id)
     }
 

@@ -123,18 +123,16 @@ export async function createModule(courseId: string, prevState: { message?: stri
 
         if (contentType === "LIVE") {
             if (selectedSessionId) {
-                // Link to an existing live session and update meetingUrl if provided
+                // Link to an existing live session and always sync meetingUrl
                 liveSessionId = selectedSessionId
-                if (meetingUrl) {
-                    const googleMeetCode = extractGoogleMeetCode(meetingUrl)
-                    await db.liveSession.update({
-                        where: { id: selectedSessionId },
-                        data: {
-                            meetingUrl,
-                            googleMeetCode
-                        }
-                    })
-                }
+                const googleMeetCode = meetingUrl ? extractGoogleMeetCode(meetingUrl) : null
+                await db.liveSession.update({
+                    where: { id: selectedSessionId },
+                    data: {
+                        meetingUrl: meetingUrl || null,
+                        googleMeetCode
+                    }
+                })
             } else {
                 if (!meetingUrl) {
                     return { message: "Per le Live Session, il link meeting è obbligatorio" }
@@ -284,18 +282,16 @@ export async function updateModule(
 
         if (data.contentType === "LIVE") {
             if (data.selectedSessionId) {
-                // Link to an existing live session and update meetingUrl if provided
+                // Link to an existing live session and always sync meetingUrl
                 liveSessionId = data.selectedSessionId
-                if (data.meetingUrl) {
-                    const googleMeetCode = data.meetingUrl ? extractGoogleMeetCode(data.meetingUrl) : null
-                    await db.liveSession.update({
-                        where: { id: data.selectedSessionId },
-                        data: {
-                            meetingUrl: data.meetingUrl,
-                            googleMeetCode
-                        }
-                    })
-                }
+                const googleMeetCode = data.meetingUrl ? extractGoogleMeetCode(data.meetingUrl) : null
+                await db.liveSession.update({
+                    where: { id: data.selectedSessionId },
+                    data: {
+                        meetingUrl: data.meetingUrl || null,
+                        googleMeetCode
+                    }
+                })
             } else {
                 const googleMeetCode = data.meetingUrl ? extractGoogleMeetCode(data.meetingUrl) : null
 
@@ -308,20 +304,20 @@ export async function updateModule(
                             description: data.description,
                             startTime: data.startTime ? new Date(data.startTime) : undefined,
                             endTime: data.endTime ? new Date(data.endTime) : undefined,
-                            meetingUrl: data.meetingUrl,
+                            meetingUrl: data.meetingUrl || null,
                             googleMeetCode
                         }
                     })
                 } else {
                     // Create new live session
-                    if (data.startTime && data.endTime && data.meetingUrl) {
+                    if (data.startTime && data.endTime) {
                         const liveSession = await db.liveSession.create({
                             data: {
                                 title: data.title,
                                 description: data.description,
                                 startTime: new Date(data.startTime),
                                 endTime: new Date(data.endTime),
-                                meetingUrl: data.meetingUrl,
+                                meetingUrl: data.meetingUrl || null,
                                 googleMeetCode,
                                 courseId: courseModule.courseId,
                                 instructorId: session.user.id!
