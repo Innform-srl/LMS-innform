@@ -420,7 +420,7 @@ export function AttendanceTable({ sessionId, attendance, isEnded, googleMeetCode
                                                         <p className="font-medium text-foreground flex items-center gap-2">
                                                             {record.user.name || "—"}
                                                             {isInstructor && (
-                                                                <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full text-purple-500 bg-purple-500/10">
+                                                                <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full text-primary bg-primary/10">
                                                                     <GraduationCap className="w-3 h-3" />
                                                                     Docente
                                                                 </span>

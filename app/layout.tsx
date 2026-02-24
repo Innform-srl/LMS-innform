@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Sora, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster"
 import { ClientLayout } from "@/components/client-layout"
@@ -8,9 +8,16 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth-provider";
 import { PWARegister } from "@/components/pwa-register";
 
-const inter = Inter({
+const sora = Sora({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-sora",
+});
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-instrument",
 });
 
 export const metadata: Metadata = {
@@ -25,7 +32,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#6366f1",
+  themeColor: "#059669",
 };
 
 export default async function RootLayout({
@@ -46,7 +53,7 @@ export default async function RootLayout({
         `}} />
       </head>
       <body
-        className={`${inter.className} antialiased`}
+        className={`${sora.variable} ${instrumentSerif.variable} ${sora.className} antialiased`}
         suppressHydrationWarning
       >
         <AuthProvider>

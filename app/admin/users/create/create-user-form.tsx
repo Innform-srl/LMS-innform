@@ -189,7 +189,7 @@ export function CreateUserForm({ departments, companies }: CreateUserFormProps) 
                                             setSelectedPaths(selectedPaths.filter(id => id !== path.id))
                                         }
                                     }}
-                                    className="mt-1 h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                                    className="mt-1 h-4 w-4 rounded border-input text-primary focus:ring-ring"
                                 />
                                 <div>
                                     <label htmlFor={`path-${path.id}`} className="text-sm font-medium text-foreground block">

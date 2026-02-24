@@ -90,11 +90,11 @@ export function SessionAttendanceCard({
     }
 
     return (
-        <Card className="glass border-white/10 p-6">
+        <Card className="glass border-border p-6">
             <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-medium px-2 py-1 rounded bg-purple-500/20 text-purple-400">
+                        <span className="text-xs font-medium px-2 py-1 rounded bg-primary/15 text-primary">
                             {sessionTypeLabels[session.sessionType]}
                         </span>
                         {session.course && (
@@ -142,7 +142,7 @@ export function SessionAttendanceCard({
 
             {/* Attendance Info */}
             {localAttendance?.checkInTime && (
-                <div className="mt-4 pt-4 border-t border-white/10">
+                <div className="mt-4 pt-4 border-t border-border">
                     <div className="flex flex-wrap gap-6 text-sm">
                         <div>
                             <span className="text-gray-400">Check-in:</span>{' '}
@@ -206,7 +206,7 @@ export function SessionAttendanceCard({
                 {localAttendance?.status === 'PRESENT' || localAttendance?.status === 'LATE' ? (
                     <Button
                         onClick={() => window.open(session.meetingUrl, '_blank')}
-                        className="flex-1 bg-purple-600 hover:bg-purple-700"
+                        className="flex-1 bg-primary hover:bg-primary/90"
                     >
                         Accedi alla Sessione
                     </Button>

@@ -69,17 +69,17 @@ export default async function ImportUsersPage() {
     return (
         <div className="p-6 max-w-2xl mx-auto space-y-8">
             <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold text-foreground">
                     Importa Utenti
                 </h1>
                 <p className="text-gray-400 mt-2">Carica un file CSV per creare utenti in massa.</p>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-xl p-8 backdrop-blur-sm">
+            <div className="bg-muted border border-border rounded-xl p-8 backdrop-blur-sm">
                 <form action={importUsers} className="space-y-6">
                     <div className="space-y-4">
                         <Label>File CSV</Label>
-                        <div className="border-2 border-dashed border-white/10 rounded-lg p-8 text-center hover:bg-white/5 transition-colors">
+                        <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:bg-accent transition-colors">
                             <Input
                                 type="file"
                                 name="file"
@@ -98,7 +98,7 @@ export default async function ImportUsersPage() {
 
                     <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 text-sm text-blue-200">
                         <p className="font-semibold mb-1">Formato CSV Richiesto:</p>
-                        <code className="block bg-black/20 p-2 rounded mt-2">
+                        <code className="block bg-muted p-2 rounded mt-2">
                             Name,Email,Department<br />
                             Mario Rossi,mario@example.com,Sales<br />
                             Luigi Verdi,luigi@example.com,IT
@@ -106,7 +106,7 @@ export default async function ImportUsersPage() {
                         <p className="mt-2 text-xs opacity-70">La password di default sarà &quot;password&quot;.</p>
                     </div>
 
-                    <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                    <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                         Avvia Importazione
                     </Button>
                 </form>

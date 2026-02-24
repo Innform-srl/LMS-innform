@@ -53,7 +53,7 @@ export default async function ResourcesPage() {
         <div className="p-6 max-w-6xl mx-auto space-y-8">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                    <h1 className="text-3xl font-bold text-foreground">
                         Libreria Risorse
                     </h1>
                     <p className="text-gray-400 mt-2">Gestisci i file e le risorse condivise</p>
@@ -63,7 +63,7 @@ export default async function ResourcesPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* Create Form */}
                 <div className="md:col-span-1">
-                    <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-sm">
+                    <div className="bg-muted border border-border rounded-xl p-6 backdrop-blur-sm">
                         <h2 className="text-xl font-semibold mb-4">Nuova Risorsa</h2>
                         <form action={createResource} className="space-y-4">
                             <div className="space-y-2">
@@ -73,7 +73,7 @@ export default async function ResourcesPage() {
                                     name="title"
                                     placeholder="es. Manuale Sicurezza 2024"
                                     required
-                                    className="bg-black/20 border-white/10"
+                                    className="bg-muted border-border"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -83,11 +83,11 @@ export default async function ResourcesPage() {
                                     name="url"
                                     placeholder="https://..."
                                     required
-                                    className="bg-black/20 border-white/10"
+                                    className="bg-muted border-border"
                                 />
                                 <p className="text-xs text-gray-500">Inserisci un link esterno (es. Google Drive, Dropbox)</p>
                             </div>
-                            <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                                 <Plus className="w-4 h-4 mr-2" />
                                 Aggiungi
                             </Button>
@@ -97,10 +97,10 @@ export default async function ResourcesPage() {
 
                 {/* List */}
                 <div className="md:col-span-2">
-                    <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden backdrop-blur-sm">
+                    <div className="bg-muted border border-border rounded-xl overflow-hidden backdrop-blur-sm">
                         <Table>
-                            <TableHeader className="bg-white/5">
-                                <TableRow className="border-white/10 hover:bg-transparent">
+                            <TableHeader className="bg-muted/50">
+                                <TableRow className="border-border hover:bg-transparent">
                                     <TableHead>Titolo</TableHead>
                                     <TableHead>Tipo</TableHead>
                                     <TableHead>Data</TableHead>
@@ -116,7 +116,7 @@ export default async function ResourcesPage() {
                                     </TableRow>
                                 ) : (
                                     resources.map((res) => (
-                                        <TableRow key={res.id} className="border-white/10 hover:bg-white/5">
+                                        <TableRow key={res.id} className="border-border hover:bg-accent">
                                             <TableCell className="font-medium flex items-center gap-2">
                                                 <FileText className="w-4 h-4 text-blue-400" />
                                                 {res.title}
@@ -134,7 +134,7 @@ export default async function ResourcesPage() {
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                                                            className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                                                         >
                                                             <Trash2 className="w-4 h-4" />
                                                         </Button>

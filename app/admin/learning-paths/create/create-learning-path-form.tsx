@@ -62,7 +62,7 @@ export function CreateLearningPathForm({ departments, companies }: CreateLearnin
                     id="title"
                     name="title"
                     placeholder="Es: Onboarding Neoassunti"
-                    className="bg-white/5 border-white/10 focus:border-purple-500"
+                    className="bg-muted border-border focus:border-primary"
                     required
                 />
             </div>
@@ -73,7 +73,7 @@ export function CreateLearningPathForm({ departments, companies }: CreateLearnin
                     id="description"
                     name="description"
                     placeholder="Descrizione del percorso..."
-                    className="flex min-h-[100px] w-full rounded-md border border-input bg-white/5 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 border-white/10"
+                    className="flex min-h-[100px] w-full rounded-md border border-border bg-muted px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
             </div>
 
@@ -83,7 +83,7 @@ export function CreateLearningPathForm({ departments, companies }: CreateLearnin
                     <select
                         id="departmentId"
                         name="departmentId"
-                        className="w-full h-10 rounded-md border border-white/10 bg-black/20 px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-white"
+                        className="w-full h-10 rounded-md border border-border bg-muted px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-white"
                     >
                         <option value="">Nessun Dipartimento</option>
                         {departments.map((dept) => (
@@ -100,7 +100,7 @@ export function CreateLearningPathForm({ departments, companies }: CreateLearnin
                     <select
                         id="companyId"
                         name="companyId"
-                        className="w-full h-10 rounded-md border border-white/10 bg-black/20 px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-white"
+                        className="w-full h-10 rounded-md border border-border bg-muted px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-white"
                     >
                         <option value="">Nessuna Azienda</option>
                         {companies.map((company) => (
@@ -116,7 +116,7 @@ export function CreateLearningPathForm({ departments, companies }: CreateLearnin
             <div className="flex gap-3 pt-4">
                 <Button
                     type="submit"
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 btn-glow"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
                     disabled={isLoading}
                 >
                     {isLoading ? (
@@ -131,7 +131,7 @@ export function CreateLearningPathForm({ departments, companies }: CreateLearnin
                 <Button
                     type="button"
                     variant="outline"
-                    className="border-white/10 hover:bg-white/5"
+                    className="border-border hover:bg-accent"
                     onClick={() => router.back()}
                     disabled={isLoading}
                 >

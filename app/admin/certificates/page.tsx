@@ -164,7 +164,7 @@ export default async function AdminCertificatesPage({
                         <Button
                             variant={sourceFilter === 'tms' ? 'default' : 'outline'}
                             size="sm"
-                            className={sourceFilter === 'tms' ? 'bg-purple-600 hover:bg-purple-700' : ''}
+                            className={sourceFilter === 'tms' ? 'bg-primary hover:bg-primary/90' : ''}
                         >
                             <RefreshCw className="w-3 h-3 mr-1" />
                             TMS
@@ -211,7 +211,7 @@ export default async function AdminCertificatesPage({
                                     <TableCell>
                                         {cert.source === 'tms' ? (
                                             <div className="flex items-center gap-1">
-                                                <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
+                                                <Badge className="bg-primary/15 text-primary border-primary/30 text-xs">
                                                     <RefreshCw className="w-3 h-3 mr-1" />
                                                     TMS
                                                 </Badge>

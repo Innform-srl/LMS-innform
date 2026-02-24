@@ -41,8 +41,8 @@ export function RichTextEditor({ value, onChange, placeholder: _placeholder }: R
     }
 
     return (
-        <div className="border border-white/10 rounded-md overflow-hidden bg-white/5">
-            <div className="border-b border-white/10 bg-white/5 p-2 flex gap-1 flex-wrap">
+        <div className="border border-border rounded-md overflow-hidden bg-muted">
+            <div className="border-b border-border bg-muted p-2 flex gap-1 flex-wrap">
                 <Toggle
                     size="sm"
                     pressed={editor.isActive('bold')}

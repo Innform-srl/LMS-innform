@@ -471,8 +471,8 @@ export function CoursePlayer({
                             </div>
                         ) : currentModule.contentType === 'LIVE' && currentModule.liveSession ? (
                             <div className="bg-card min-h-[60vh] flex flex-col items-center justify-center p-8 text-center space-y-6">
-                                <div className="w-24 h-24 bg-purple-500/10 rounded-full flex items-center justify-center">
-                                    <Calendar className="w-12 h-12 text-purple-500" />
+                                <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
+                                    <Calendar className="w-12 h-12 text-primary" />
                                 </div>
                                 <div>
                                     <h2 className="text-3xl font-bold mb-2">{currentModule.liveSession.title}</h2>

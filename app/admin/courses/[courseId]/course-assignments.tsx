@@ -43,8 +43,10 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
             setCompanies(Array.isArray(companiesData) ? companiesData : [])
             setDepartments(Array.isArray(departmentsData) ? departmentsData : [])
             setEnrollments(Array.isArray(enrollmentsData) ? enrollmentsData : [])
-        } catch (error) {
-            console.error("Error loading course data:", error)
+        } catch {
+            setCompanies([])
+            setDepartments([])
+            setEnrollments([])
         }
     }
 
@@ -145,7 +147,11 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
         setSearchResults([])
     }
 
-    const safeEnrollments = enrollments ?? []
+    const safeEnrollments = Array.isArray(enrollments) ? enrollments : []
+    const safeCompanies = Array.isArray(companies) ? companies : []
+    const safeDepartments = Array.isArray(departments) ? departments : []
+    const safeSearchResults = Array.isArray(searchResults) ? searchResults : []
+    const safeUnenrolledUsers = Array.isArray(unenrolledUsers) ? unenrolledUsers : []
 
     return (
         <Card className="bg-card border-border">
@@ -178,7 +184,7 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
                                             <SelectValue placeholder="Seleziona Azienda" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {companies.map(c => (
+                                            {safeCompanies.map(c => (
                                                 <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                                             ))}
                                         </SelectContent>
@@ -201,7 +207,7 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
                                             <SelectValue placeholder="Seleziona Dipartimento" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {departments.map(d => (
+                                            {safeDepartments.map(d => (
                                                 <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                                             ))}
                                         </SelectContent>
@@ -234,10 +240,10 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
 
                         <div className="space-y-2 max-h-[400px] overflow-y-auto">
                             {showUnenrolled ? (
-                                unenrolledUsers.length === 0 && !isLoading ? (
+                                safeUnenrolledUsers.length === 0 && !isLoading ? (
                                     <div className="text-center text-muted-foreground py-4">Tutti gli utenti sono già iscritti.</div>
                                 ) : (
-                                    unenrolledUsers.map(user => (
+                                    safeUnenrolledUsers.map(user => (
                                         <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50">
                                             <div>
                                                 <div className="font-medium">{user.name}</div>
@@ -253,7 +259,7 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
                                     ))
                                 )
                             ) : (
-                                searchResults.map(user => {
+                                safeSearchResults.map(user => {
                                     const isEnrolled = safeEnrollments.some(e => e.userId === user.id)
                                     return (
                                         <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50">
@@ -277,7 +283,7 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
                                 })
                             )}
 
-                            {!showUnenrolled && searchQuery.length >= 2 && searchResults.length === 0 && !isSearching && (
+                            {!showUnenrolled && searchQuery.length >= 2 && safeSearchResults.length === 0 && !isSearching && (
                                 <div className="text-center text-muted-foreground py-4">Nessun utente trovato</div>
                             )}
                         </div>

@@ -68,7 +68,7 @@ export function DeadlineBadge({ dueDate, completed = false, size = 'md' }: Deadl
 
     // Più di 7 giorni
     return (
-        <Badge variant="outline" className={`border-white/10 ${sizeClass}`}>
+        <Badge variant="outline" className={`border-border ${sizeClass}`}>
             📅 Scadenza: {formatDateOnly(deadline)}
         </Badge>
     )
@@ -89,7 +89,7 @@ export function UpcomingDeadlinesCard({ courses }: DeadlineCardProps) {
     }
 
     return (
-        <Card className="glass border-white/10 p-6">
+        <Card className="glass border-border p-6">
             <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,7 +109,7 @@ export function UpcomingDeadlinesCard({ courses }: DeadlineCardProps) {
                         href={`/admin/courses/${item.courseId}`}
                         className="block"
                     >
-                        <div className="glass border-white/10 rounded-lg p-4 hover:bg-white/5 transition-colors">
+                        <div className="glass border-border rounded-lg p-4 hover:bg-accent transition-colors">
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
                                     <p className="font-semibold">{item.courseTitle}</p>

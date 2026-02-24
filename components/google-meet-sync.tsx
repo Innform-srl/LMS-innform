@@ -286,7 +286,7 @@ export function GoogleMeetSync({ sessionId, googleMeetCode, onSync }: GoogleMeet
                                         </p>
                                     )}
                                     {result.notFoundEmails && result.notFoundEmails.length > 0 && !result.unmatchedParticipants?.length && (
-                                        <div className="mt-4 text-left bg-white/5 rounded-lg p-3">
+                                        <div className="mt-4 text-left bg-muted rounded-lg p-3">
                                             <p className="text-xs text-gray-400 mb-2">Email non trovate:</p>
                                             <div className="text-xs text-gray-500 max-h-32 overflow-y-auto">
                                                 {result.notFoundEmails.map(email => (
@@ -303,7 +303,7 @@ export function GoogleMeetSync({ sessionId, googleMeetCode, onSync }: GoogleMeet
                                             </p>
                                             <div className="space-y-2 max-h-64 overflow-y-auto">
                                                 {result.unmatchedParticipants.map((p, idx) => (
-                                                    <div key={idx} className="bg-white/5 rounded-lg p-3 border border-orange-500/20">
+                                                    <div key={idx} className="bg-muted rounded-lg p-3 border border-orange-500/20">
                                                         <div className="flex items-center justify-between mb-2">
                                                             <span className="font-medium text-foreground text-sm">{p.displayName}</span>
                                                             <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -426,7 +426,7 @@ export function GoogleMeetSync({ sessionId, googleMeetCode, onSync }: GoogleMeet
                                         </div>
                                     )}
                                     {googleMeetCode && (
-                                        <div className="bg-white/5 rounded-lg p-3">
+                                        <div className="bg-muted rounded-lg p-3">
                                             <p className="text-xs text-gray-400">Codice Meet:</p>
                                             <p className="text-sm font-mono text-white">{googleMeetCode}</p>
                                         </div>
@@ -446,7 +446,7 @@ export function GoogleMeetSync({ sessionId, googleMeetCode, onSync }: GoogleMeet
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    <div className="bg-white/5 border border-white/10 rounded-lg p-4 text-center">
+                                    <div className="bg-muted border border-border rounded-lg p-4 text-center">
                                         <Video className="w-10 h-10 text-gray-500 mx-auto mb-3" />
                                         <p className="text-sm font-medium text-white mb-1">
                                             Connetti Google Meet

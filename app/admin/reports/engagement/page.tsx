@@ -237,9 +237,9 @@ export default function EngagementReportPage() {
 
                 {/* TMS Sync Stats */}
                 {data.overview.tmsSyncedEnrollments > 0 && (
-                    <Card className="bg-purple-500/10 border-purple-500/30 mb-8">
+                    <Card className="bg-primary/10 border-primary/30 mb-8">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-purple-400">
+                            <CardTitle className="flex items-center gap-2 text-primary">
                                 <RefreshCw className="w-5 h-5" />
                                 Sincronizzazione TMS
                             </CardTitle>
@@ -248,7 +248,7 @@ export default function EngagementReportPage() {
                             <div className="flex items-center gap-8">
                                 <div>
                                     <div className="text-sm text-muted-foreground">Iscrizioni da TMS</div>
-                                    <div className="text-2xl font-bold text-purple-400">{data.overview.tmsSyncedEnrollments}</div>
+                                    <div className="text-2xl font-bold text-primary">{data.overview.tmsSyncedEnrollments}</div>
                                 </div>
                                 <div>
                                     <div className="text-sm text-muted-foreground">% del Totale</div>

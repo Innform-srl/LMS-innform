@@ -69,7 +69,7 @@ export function NotificationsBell() {
                     )}
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 bg-gray-900 border-white/10 text-white">
+            <DropdownMenuContent align="end" className="w-80 bg-popover border-border text-white">
                 {notifications.length === 0 ? (
                     <div className="p-4 text-center text-sm text-gray-500">
                         Nessuna notifica
@@ -78,7 +78,7 @@ export function NotificationsBell() {
                     notifications.map((notification) => (
                         <DropdownMenuItem
                             key={notification.id}
-                            className={`p-4 border-b border-white/5 focus:bg-white/5 cursor-pointer ${!notification.isRead ? 'bg-white/5' : ''}`}
+                            className={`p-4 border-b border-border focus:bg-accent cursor-pointer ${!notification.isRead ? 'bg-muted' : ''}`}
                             onClick={() => markAsRead(notification.id)}
                         >
                             <div className="space-y-1">

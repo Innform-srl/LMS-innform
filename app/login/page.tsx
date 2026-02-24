@@ -129,7 +129,7 @@ function AuthPageContent() {
                             </div>
 
                             {error && (
-                                <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                                <div className="text-destructive text-sm bg-destructive/10 border border-destructive/20 rounded-lg p-3">
                                     {error}
                                 </div>
                             )}

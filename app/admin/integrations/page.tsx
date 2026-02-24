@@ -36,7 +36,7 @@ function getDirectionIcon(direction: string) {
     if (direction === "incoming") {
         return <ArrowDownLeft className="w-4 h-4 text-blue-400" />
     }
-    return <ArrowUpRight className="w-4 h-4 text-purple-400" />
+    return <ArrowUpRight className="w-4 h-4 text-primary" />
 }
 
 export default async function IntegrationsPage() {

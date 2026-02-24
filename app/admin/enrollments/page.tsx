@@ -149,11 +149,11 @@ export default async function EnrollmentsOverviewPage() {
                         <div className="text-sm text-blue-600 mb-1 font-medium">In Corso</div>
                         <div className="text-3xl font-bold text-blue-600">{stats.inCorso}</div>
                     </Card>
-                    <Card className="p-4 border-2 border-purple-500/30">
-                        <div className="text-sm text-purple-600 mb-1 font-medium flex items-center gap-1">
+                    <Card className="p-4 border-2 border-primary/30">
+                        <div className="text-sm text-primary mb-1 font-medium flex items-center gap-1">
                             <RefreshCw className="w-3 h-3" /> TMS Sync
                         </div>
-                        <div className="text-3xl font-bold text-purple-600">{stats.tmsSynced}</div>
+                        <div className="text-3xl font-bold text-primary">{stats.tmsSynced}</div>
                     </Card>
                 </div>
 
@@ -208,7 +208,7 @@ export default async function EnrollmentsOverviewPage() {
                                     <TableCell>
                                         {e.tmsEnrollmentId ? (
                                             <div className="flex items-center gap-1">
-                                                <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
+                                                <Badge className="bg-primary/15 text-primary border-primary/30 text-xs">
                                                     <RefreshCw className="w-3 h-3 mr-1" />
                                                     Sync
                                                 </Badge>

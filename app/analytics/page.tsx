@@ -48,7 +48,7 @@ export default function UserAnalyticsPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-gray-900 to-black">
-                <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
         )
     }
@@ -57,7 +57,7 @@ export default function UserAnalyticsPage() {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-gray-900 to-black">
                 <div className="text-center">
-                    <h2 className="text-2xl font-bold text-red-400">Errore nel caricamento dei dati</h2>
+                    <h2 className="text-2xl font-bold text-destructive">Errore nel caricamento dei dati</h2>
                 </div>
             </div>
         )
@@ -87,7 +87,7 @@ export default function UserAnalyticsPage() {
 
                 {/* Overview Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <Card className="glass border-white/10">
+                    <Card className="glass border-border">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-sm font-medium text-gray-400">Corsi Totali</CardTitle>
@@ -102,7 +102,7 @@ export default function UserAnalyticsPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="glass border-white/10">
+                    <Card className="glass border-border">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-sm font-medium text-gray-400">Completati</CardTitle>
@@ -117,7 +117,7 @@ export default function UserAnalyticsPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="glass border-white/10">
+                    <Card className="glass border-border">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-sm font-medium text-gray-400">Certificati</CardTitle>
@@ -127,18 +127,18 @@ export default function UserAnalyticsPage() {
                         <CardContent>
                             <div className="text-3xl font-bold gradient-text">{overview.totalCertificates}</div>
                             <Link href="/certificates">
-                                <Button variant="link" className="text-xs p-0 h-auto text-purple-400 hover:text-purple-300">
+                                <Button variant="link" className="text-xs p-0 h-auto text-primary hover:text-primary/80">
                                     Vedi tutti →
                                 </Button>
                             </Link>
                         </CardContent>
                     </Card>
 
-                    <Card className="glass border-white/10">
+                    <Card className="glass border-border">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-sm font-medium text-gray-400">Tempo Totale</CardTitle>
-                                <Clock className="w-4 h-4 text-purple-400" />
+                                <Clock className="w-4 h-4 text-primary" />
                             </div>
                         </CardHeader>
                         <CardContent>
@@ -153,10 +153,10 @@ export default function UserAnalyticsPage() {
                 </div>
 
                 {/* Progress Chart */}
-                <Card className="glass border-white/10 mb-8">
+                <Card className="glass border-border mb-8">
                     <CardHeader>
                         <div className="flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-purple-400" />
+                            <TrendingUp className="w-5 h-5 text-primary" />
                             <CardTitle>Il Tuo Progresso</CardTitle>
                         </div>
                         <p className="text-sm text-gray-400">Ultimi 6 mesi</p>
@@ -198,7 +198,7 @@ export default function UserAnalyticsPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Upcoming Deadlines */}
-                    <Card className="glass border-white/10">
+                    <Card className="glass border-border">
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <AlertCircle className="w-5 h-5 text-orange-400" />
@@ -220,7 +220,7 @@ export default function UserAnalyticsPage() {
                                                 key={index}
                                                 className={`p-4 rounded-lg border transition-colors ${isUrgent
                                                     ? 'bg-red-500/10 border-red-500/30'
-                                                    : 'bg-white/5 border-white/10'
+                                                    : 'bg-muted border-border'
                                                     }`}
                                             >
                                                 <div className="flex items-start justify-between mb-2">
@@ -235,14 +235,14 @@ export default function UserAnalyticsPage() {
                                                 <div className="flex items-center gap-2">
                                                     <div className="h-2 bg-gray-700 rounded-full flex-1">
                                                         <div
-                                                            className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
+                                                            className="h-full bg-primary rounded-full"
                                                             style={{ width: `${deadline.progress}%` }}
                                                         />
                                                     </div>
                                                     <span className="text-xs text-gray-400">{deadline.progress}%</span>
                                                 </div>
                                                 <Link href={`/courses/${deadline.courseId}`}>
-                                                    <Button size="sm" className="mt-3 w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                                                    <Button size="sm" className="mt-3 w-full bg-primary text-primary-foreground hover:bg-primary/90">
                                                         Continua Corso
                                                     </Button>
                                                 </Link>
@@ -255,7 +255,7 @@ export default function UserAnalyticsPage() {
                     </Card>
 
                     {/* Recent Achievements */}
-                    <Card className="glass border-white/10">
+                    <Card className="glass border-border">
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <Award className="w-5 h-5 text-green-400" />

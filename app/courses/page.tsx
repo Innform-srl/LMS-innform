@@ -60,7 +60,7 @@ export default async function CourseCatalogPage({
                             <p className="text-gray-400">Esplora i corsi disponibili e inizia il tuo percorso di apprendimento</p>
                         </div>
                         <Link href="/">
-                            <Button variant="outline" className="border-white/10 hover:bg-white/5">
+                            <Button variant="outline" className="border-border hover:bg-accent">
                                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                                 </svg>
@@ -76,7 +76,7 @@ export default async function CourseCatalogPage({
 
                     {/* Stats */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <Card className="glass border-white/10">
+                        <Card className="glass border-border">
                             <CardHeader>
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -92,7 +92,7 @@ export default async function CourseCatalogPage({
                             </CardHeader>
                         </Card>
 
-                        <Card className="glass border-white/10">
+                        <Card className="glass border-border">
                             <CardHeader>
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -110,7 +110,7 @@ export default async function CourseCatalogPage({
                             </CardHeader>
                         </Card>
 
-                        <Card className="glass border-white/10">
+                        <Card className="glass border-border">
                             <CardHeader>
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">

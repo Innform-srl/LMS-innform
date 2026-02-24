@@ -100,7 +100,7 @@ export default async function UserReportPage({
                         <CardTitle className="text-sm font-medium text-muted-foreground">Media Quiz</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-purple-400">{avgScore}%</div>
+                        <div className="text-3xl font-bold text-primary">{avgScore}%</div>
                     </CardContent>
                 </Card>
                 <Card className="glass border-border">

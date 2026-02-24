@@ -144,13 +144,13 @@ export default async function CertificatesPage() {
                             </CardHeader>
                         </Card>
                         {tmsSyncedCount > 0 && (
-                            <Card className="border-purple-500/30">
+                            <Card className="border-primary/30">
                                 <CardHeader className="pb-2">
                                     <div className="flex items-center gap-2">
-                                        <RefreshCw className="w-5 h-5 text-purple-500" />
+                                        <RefreshCw className="w-5 h-5 text-primary" />
                                         <CardDescription>Sincronizzati TMS</CardDescription>
                                     </div>
-                                    <CardTitle className="text-3xl text-purple-500">{tmsSyncedCount}</CardTitle>
+                                    <CardTitle className="text-3xl text-primary">{tmsSyncedCount}</CardTitle>
                                 </CardHeader>
                             </Card>
                         )}
@@ -202,7 +202,7 @@ export default async function CertificatesPage() {
                                                     {certificate.type === 'COURSE' ? 'CORSO' : 'QUIZ'}
                                                 </span>
                                                 {certificate.source === 'tms' && (
-                                                    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-[10px] px-1.5">
+                                                    <Badge className="bg-primary/15 text-primary border-primary/30 text-[10px] px-1.5">
                                                         <RefreshCw className="w-2.5 h-2.5 mr-0.5" />
                                                         TMS
                                                     </Badge>

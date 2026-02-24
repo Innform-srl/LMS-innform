@@ -93,7 +93,7 @@ export function AddQuestionForm({ quizId }: { quizId: string }) {
                                     type="checkbox"
                                     name={`correctOption${index}`}
                                     value="true"
-                                    className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                                    className="w-4 h-4 rounded border-input text-primary focus:ring-ring"
                                 />
                             </div>
                             <Input
@@ -159,7 +159,7 @@ export function AddQuestionForm({ quizId }: { quizId: string }) {
 
             <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 btn-glow text-white"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

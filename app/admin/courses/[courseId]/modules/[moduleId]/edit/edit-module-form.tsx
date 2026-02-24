@@ -240,7 +240,7 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                 )}
 
                 {form.contentType === 'LIVE' && (
-                    <div className="space-y-4 border border-purple-500/30 p-4 rounded-lg bg-purple-500/5">
+                    <div className="space-y-4 border border-primary/30 p-4 rounded-lg bg-primary/5">
                         {availableSessions.length > 0 && (
                             <div className="space-y-2">
                                 <Label>Collega Aula Virtuale Esistente</Label>
@@ -263,7 +263,7 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                                         }
                                     }}
                                 >
-                                    <SelectTrigger className="bg-white/5 border-white/10">
+                                    <SelectTrigger className="bg-muted border-border">
                                         <SelectValue placeholder="Seleziona un'aula virtuale..." />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -294,7 +294,7 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                                     value={form.startTime}
                                     onChange={(e) => setForm({ ...form, startTime: e.target.value })}
                                     disabled={!!form.selectedSessionId}
-                                    className="bg-white/5 border-white/10"
+                                    className="bg-muted border-border"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -305,7 +305,7 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                                     value={form.endTime}
                                     onChange={(e) => setForm({ ...form, endTime: e.target.value })}
                                     disabled={!!form.selectedSessionId}
-                                    className="bg-white/5 border-white/10"
+                                    className="bg-muted border-border"
                                 />
                             </div>
                         </div>
@@ -317,7 +317,7 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                                 value={form.meetingUrl}
                                 onChange={(e) => setForm({ ...form, meetingUrl: e.target.value })}
                                 placeholder="https://..."
-                                className="bg-white/5 border-white/10"
+                                className="bg-muted border-border"
                             />
                         </div>
                     </div>

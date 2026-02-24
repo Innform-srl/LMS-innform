@@ -81,7 +81,7 @@ export function CompanyList({ companies }: CompanyListProps) {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleDelete(company.id)}
-                                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                    className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                                     disabled={company._count.users > 0}
                                     title={company._count.users > 0 ? "Impossibile eliminare: ci sono utenti associati" : "Elimina"}
                                 >

@@ -29,13 +29,13 @@ export default async function CreateUserPage() {
                         </svg>
                         Torna alla lista utenti
                     </Link>
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mt-2">
+                    <h1 className="text-3xl font-bold text-foreground mt-2">
                         Aggiungi Nuovo Utente
                     </h1>
                     <p className="text-gray-400 mt-2">Crea un nuovo account utente manualmente</p>
                 </div>
 
-                <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-sm">
+                <div className="bg-muted border border-border rounded-xl p-6 backdrop-blur-sm">
                     <CreateUserForm departments={departments} companies={companies} />
                 </div>
             </div>

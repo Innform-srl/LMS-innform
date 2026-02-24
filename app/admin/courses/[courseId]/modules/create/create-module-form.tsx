@@ -190,7 +190,7 @@ export function CreateModuleForm({ courseId, availableSessions = [] }: { courseI
                     )}
 
                     {contentType === 'LIVE' && (
-                        <div className="space-y-4 border border-purple-500/30 p-4 rounded-lg bg-purple-500/5">
+                        <div className="space-y-4 border border-primary/30 p-4 rounded-lg bg-primary/5">
                             <input type="hidden" name="selectedSessionId" value={selectedSessionId} />
                             {availableSessions.length > 0 && (
                                 <div className="space-y-2">
@@ -214,7 +214,7 @@ export function CreateModuleForm({ courseId, availableSessions = [] }: { courseI
                                             }
                                         }}
                                     >
-                                        <SelectTrigger className="bg-white/5 border-white/10">
+                                        <SelectTrigger className="bg-muted border-border">
                                             <SelectValue placeholder="Seleziona un'aula virtuale..." />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -246,7 +246,7 @@ export function CreateModuleForm({ courseId, availableSessions = [] }: { courseI
                                         value={sessionStartTime}
                                         onChange={(e) => setSessionStartTime(e.target.value)}
                                         disabled={!!selectedSessionId}
-                                        className="bg-white/5 border-white/10"
+                                        className="bg-muted border-border"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -258,7 +258,7 @@ export function CreateModuleForm({ courseId, availableSessions = [] }: { courseI
                                         value={sessionEndTime}
                                         onChange={(e) => setSessionEndTime(e.target.value)}
                                         disabled={!!selectedSessionId}
-                                        className="bg-white/5 border-white/10"
+                                        className="bg-muted border-border"
                                     />
                                 </div>
                             </div>
@@ -271,7 +271,7 @@ export function CreateModuleForm({ courseId, availableSessions = [] }: { courseI
                                     placeholder="https://..."
                                     value={sessionMeetingUrl}
                                     onChange={(e) => setSessionMeetingUrl(e.target.value)}
-                                    className="bg-white/5 border-white/10"
+                                    className="bg-muted border-border"
                                 />
                             </div>
                         </div>

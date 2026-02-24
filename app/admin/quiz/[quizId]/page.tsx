@@ -60,8 +60,8 @@ export default async function QuizManagementPage({ params }: { params: Promise<{
                     <Card className="bg-card border-border">
                         <CardHeader>
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-xl flex items-center justify-center">
-                                    <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                 </div>
@@ -132,7 +132,7 @@ export default async function QuizManagementPage({ params }: { params: Promise<{
                     <Card className="bg-card border-border">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <span className="w-1 h-6 bg-purple-500 rounded-full" />
+                                <span className="w-1 h-6 bg-primary rounded-full" />
                                 Domande del Quiz
                             </CardTitle>
                         </CardHeader>

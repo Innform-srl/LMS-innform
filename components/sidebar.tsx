@@ -205,7 +205,7 @@ export function Sidebar({ user }: SidebarProps) {
                         </div>
 
                         {(user.role === "ADMIN" || user.role === "TEACHER") && (
-                            <div className="mb-4 pt-4 border-t border-white/10">
+                            <div className="mb-4 pt-4 border-t border-border">
                                 <h3 className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                                     Amministrazione
                                 </h3>

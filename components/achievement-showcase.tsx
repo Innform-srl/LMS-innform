@@ -34,7 +34,7 @@ export function AchievementShowcaseComponent({ achievements }: AchievementShowca
 
     const categoryNames = {
         COURSE: { label: 'Corsi', icon: <Book className="w-5 h-5 text-blue-500" /> },
-        QUIZ: { label: 'Quiz', icon: <FileText className="w-5 h-5 text-purple-500" /> },
+        QUIZ: { label: 'Quiz', icon: <FileText className="w-5 h-5 text-primary" /> },
         STREAK: { label: 'Streak', icon: <Flame className="w-5 h-5 text-orange-500" /> },
         TIME: { label: 'Tempo', icon: <Clock className="w-5 h-5 text-green-500" /> },
         SPECIAL: { label: 'Speciali', icon: <Sparkles className="w-5 h-5 text-yellow-500" /> }

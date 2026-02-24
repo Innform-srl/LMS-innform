@@ -26,7 +26,7 @@ const typeColors = {
     SUCCESS: 'bg-green-500/10 text-green-500',
     WARNING: 'bg-yellow-500/10 text-yellow-500',
     ERROR: 'bg-red-500/10 text-red-500',
-    NEW_COURSE: 'bg-purple-500/10 text-purple-500',
+    NEW_COURSE: 'bg-primary/10 text-primary',
     DEADLINE_REMINDER: 'bg-orange-500/10 text-orange-500',
     COMMENT_REPLY: 'bg-cyan-500/10 text-cyan-500',
     CERTIFICATE_READY: 'bg-emerald-500/10 text-emerald-500',

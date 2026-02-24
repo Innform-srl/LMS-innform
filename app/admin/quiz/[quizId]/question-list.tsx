@@ -30,7 +30,7 @@ export function QuestionList({ questions, quizId }: { questions: Question[], qui
     if (questions.length === 0) {
         return (
             <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -50,14 +50,14 @@ export function QuestionList({ questions, quizId }: { questions: Question[], qui
                     <div key={question.id} className="bg-card border border-border rounded-xl p-6 hover:bg-accent/50 transition-colors">
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-start gap-3 flex-1">
-                                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                                     <span className="text-white font-semibold text-sm">{index + 1}</span>
                                 </div>
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-2">
                                         <span className={`text-xs px-2 py-0.5 rounded-full border ${question.type === 'TRUE_FALSE'
                                             ? 'bg-blue-100 border-blue-200 text-blue-700 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400'
-                                            : 'bg-purple-100 border-purple-200 text-purple-700 dark:bg-purple-500/10 dark:border-purple-500/20 dark:text-purple-400'
+                                            : 'bg-primary/10 border-primary/20 text-primary'
                                             }`}>
                                             {question.type === 'TRUE_FALSE' ? 'Vero/Falso' : 'Scelta Multipla'}
                                         </span>

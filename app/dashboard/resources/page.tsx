@@ -26,17 +26,17 @@ export default async function EmployeeResourcesPage() {
             <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                        <h1 className="text-3xl font-bold text-foreground">
                             Libreria Risorse
                         </h1>
                         <p className="text-gray-400 mt-2">Documenti e materiali utili per la tua formazione</p>
                     </div>
                 </div>
 
-                <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden backdrop-blur-sm">
+                <div className="bg-muted border border-border rounded-xl overflow-hidden backdrop-blur-sm">
                     <Table>
-                        <TableHeader className="bg-white/5">
-                            <TableRow className="border-white/10 hover:bg-transparent">
+                        <TableHeader className="bg-muted">
+                            <TableRow className="border-border hover:bg-transparent">
                                 <TableHead>Titolo</TableHead>
                                 <TableHead>Tipo</TableHead>
                                 <TableHead>Data</TableHead>
@@ -52,7 +52,7 @@ export default async function EmployeeResourcesPage() {
                                 </TableRow>
                             ) : (
                                 resources.map((res) => (
-                                    <TableRow key={res.id} className="border-white/10 hover:bg-white/5">
+                                    <TableRow key={res.id} className="border-border hover:bg-accent">
                                         <TableCell className="font-medium flex items-center gap-2">
                                             <FileText className="w-4 h-4 text-blue-400" />
                                             {res.title}
