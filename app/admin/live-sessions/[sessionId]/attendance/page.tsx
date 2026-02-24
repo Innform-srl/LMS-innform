@@ -40,10 +40,10 @@ export default async function SessionAttendancePage({
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Torna alle sessioni
                     </Link>
-                    <div className="flex justify-between items-start">
+                    <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                         <div>
                             <h1 className="text-3xl font-bold text-foreground mb-2">
-                                {liveSession.title}
+                                {liveSession.title.replace(/(\d{4})-(\d{2})-(\d{2})/, (_m, y, mo, d) => `${d}/${mo}/${y}`)}
                             </h1>
                             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                                 {sessionStart && (
@@ -75,20 +75,20 @@ export default async function SessionAttendancePage({
                                 </p>
                             )}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 shrink-0">
                             {isOngoing && (
-                                <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-500/20 text-green-400 animate-pulse">
+                                <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-500/20 text-green-400 animate-pulse whitespace-nowrap">
                                     In corso
                                 </span>
                             )}
                             {isEnded && (
-                                <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-500/20 text-gray-400">
+                                <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-500/20 text-gray-400 whitespace-nowrap">
                                     Terminata
                                 </span>
                             )}
                             {liveSession.meetingUrl && (
                                 <Link href={liveSession.meetingUrl} target="_blank">
-                                    <Button variant="outline" size="sm">
+                                    <Button variant="outline" size="sm" className="whitespace-nowrap">
                                         <Video className="w-4 h-4 mr-2" />
                                         Apri Meeting
                                     </Button>
@@ -149,7 +149,11 @@ export default async function SessionAttendancePage({
                     <Card className="bg-card border-border mb-8">
                         <CardContent className="p-4 flex items-center justify-between">
                             <span className="text-muted-foreground">Durata media partecipazione</span>
-                            <span className="text-xl font-bold text-foreground">{stats.averageDuration} minuti</span>
+                            <span className="text-xl font-bold text-foreground">
+                                {stats.averageDuration >= 60
+                                    ? `${Math.floor(stats.averageDuration / 60)}h ${stats.averageDuration % 60 > 0 ? `${stats.averageDuration % 60}min` : ""}`
+                                    : `${stats.averageDuration} minuti`}
+                            </span>
                         </CardContent>
                     </Card>
                 )}

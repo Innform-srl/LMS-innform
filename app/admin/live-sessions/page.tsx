@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { getAllLiveSessions, deleteLiveSession, toggleSessionVisibility } from "@/app/actions/live-sessions"
-import { formatDate } from "@/lib/utils"
+import { formatTime } from "@/lib/utils"
 
 export default async function AdminLiveSessionsPage() {
     const session = await auth()
@@ -48,7 +48,7 @@ export default async function AdminLiveSessionsPage() {
                                             )}
                                         </div>
                                         <div className="text-sm text-muted-foreground space-y-1">
-                                            <p>📅 {session.startTime ? formatDate(session.startTime) : "Data non definita"}{session.endTime ? ` - ${new Date(session.endTime).getHours().toString().padStart(2, '0')}:${new Date(session.endTime).getMinutes().toString().padStart(2, '0')}` : ""}</p>
+                                            <p>🕐 {session.startTime ? formatTime(session.startTime) : "Orario non definito"}{session.endTime ? ` - ${formatTime(session.endTime)}` : ""}</p>
                                             {session.course && <p>📚 Corso: {session.course.title}</p>}
                                             <p>👤 Istruttore: {session.instructor.name}</p>
                                         </div>

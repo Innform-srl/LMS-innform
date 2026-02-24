@@ -36,9 +36,9 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
     const loadData = async () => {
         try {
             const [companiesData, departmentsData, enrollmentsData] = await Promise.all([
-                getCompanies(),
-                getDepartments(),
-                getCourseEnrollments(courseId)
+                getCompanies().catch(() => []),
+                getDepartments().catch(() => []),
+                getCourseEnrollments(courseId).catch(() => [])
             ])
             setCompanies(Array.isArray(companiesData) ? companiesData : [])
             setDepartments(Array.isArray(departmentsData) ? departmentsData : [])
@@ -55,8 +55,12 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
 
     const loadUnenrolledUsers = async () => {
         setIsLoading(true)
-        const users = await getUnenrolledUsers(courseId)
-        setUnenrolledUsers(users)
+        try {
+            const users = await getUnenrolledUsers(courseId)
+            setUnenrolledUsers(Array.isArray(users) ? users : [])
+        } catch {
+            setUnenrolledUsers([])
+        }
         setIsLoading(false)
     }
 
@@ -94,8 +98,12 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
             return
         }
         setIsSearching(true)
-        const results = await searchUsers(query)
-        setSearchResults(results)
+        try {
+            const results = await searchUsers(query)
+            setSearchResults(Array.isArray(results) ? results : [])
+        } catch {
+            setSearchResults([])
+        }
         setIsSearching(false)
     }
 

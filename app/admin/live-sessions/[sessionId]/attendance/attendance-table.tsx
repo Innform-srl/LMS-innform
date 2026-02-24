@@ -82,19 +82,32 @@ function parseMeetNotes(notes: string | null): MeetMetadata | null {
     return null
 }
 
+function formatDuration(minutes: number): string {
+    if (minutes < 60) return `${minutes} min`
+    const h = Math.floor(minutes / 60)
+    const m = minutes % 60
+    return m > 0 ? `${h}h ${m}min` : `${h}h`
+}
+
+function formatDurationHours(minutes: number): string {
+    const h = Math.floor(minutes / 60)
+    const m = minutes % 60
+    return `${h.toString().padStart(1, '0')}:${m.toString().padStart(2, '0')} ore`
+}
+
 const participantTypeConfig = {
     google: { icon: Monitor, label: "Google", className: "text-blue-500 bg-blue-500/10" },
     anonymous: { icon: User, label: "Anonimo", className: "text-amber-500 bg-amber-500/10" },
     phone: { icon: Phone, label: "Telefono", className: "text-green-500 bg-green-500/10" },
 }
 
-const statusOptions: { value: AttendanceStatus; label: string }[] = [
-    { value: "REGISTERED", label: "Registrato" },
-    { value: "PRESENT", label: "Presente" },
-    { value: "ATTENDED", label: "Completato" },
-    { value: "ABSENT", label: "Assente" },
-    { value: "LATE", label: "In ritardo" },
-    { value: "EXCUSED", label: "Giustificato" },
+const statusOptions: { value: AttendanceStatus; label: string; icon: string; dotColor: string }[] = [
+    { value: "REGISTERED", label: "Registrato", icon: "📝", dotColor: "bg-blue-500" },
+    { value: "PRESENT", label: "Presente", icon: "✅", dotColor: "bg-green-500" },
+    { value: "ATTENDED", label: "Completato", icon: "🎯", dotColor: "bg-emerald-500" },
+    { value: "ABSENT", label: "Assente", icon: "❌", dotColor: "bg-red-500" },
+    { value: "LATE", label: "In ritardo", icon: "⏰", dotColor: "bg-orange-500" },
+    { value: "EXCUSED", label: "Giustificato", icon: "📋", dotColor: "bg-gray-500" },
 ]
 
 export function AttendanceTable({ sessionId, attendance, isEnded, googleMeetCode, unmatchedMeetParticipants, instructorId }: AttendanceTableProps) {
@@ -440,13 +453,16 @@ export function AttendanceTable({ sessionId, attendance, isEnded, googleMeetCode
                                                 onValueChange={(value) => handleStatusChange(record.id, value as AttendanceStatus)}
                                                 disabled={isPending}
                                             >
-                                                <SelectTrigger className="w-[160px] h-9 border-none bg-transparent shadow-none px-1 focus:ring-0 focus:ring-offset-0">
+                                                <SelectTrigger className="w-auto h-auto border-none bg-transparent shadow-none p-0 gap-1.5 focus:ring-0 focus:ring-offset-0 [&>svg]:opacity-30 [&>svg]:hover:opacity-60 [&>svg]:transition-opacity">
                                                     <AttendanceBadge status={record.status} size="sm" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {statusOptions.map((opt) => (
                                                         <SelectItem key={opt.value} value={opt.value}>
-                                                            {opt.label}
+                                                            <span className="flex items-center gap-2">
+                                                                <span className={`w-2 h-2 rounded-full ${opt.dotColor}`} />
+                                                                <span>{opt.icon} {opt.label}</span>
+                                                            </span>
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>
@@ -462,7 +478,7 @@ export function AttendanceTable({ sessionId, attendance, isEnded, googleMeetCode
                                             {(() => {
                                                 const meetData = parseMeetNotes(record.notes)
                                                 if (record.durationMinutes === null) return "—"
-                                                if (!meetData) return `${record.durationMinutes} min`
+                                                if (!meetData) return formatDurationHours(record.durationMinutes)
 
                                                 const sortedSessions = [...meetData.sessions].sort(
                                                     (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
@@ -474,7 +490,7 @@ export function AttendanceTable({ sessionId, attendance, isEnded, googleMeetCode
                                                 return (
                                                     <div>
                                                         <p className="font-medium text-foreground flex items-center gap-1.5">
-                                                            {record.durationMinutes} min
+                                                            {formatDurationHours(record.durationMinutes!)}
                                                             {meetData.sessionCount > 1 && (
                                                                 <span className="font-normal text-xs text-amber-500">
                                                                     ({meetData.sessionCount} connessioni)
@@ -503,7 +519,7 @@ export function AttendanceTable({ sessionId, attendance, isEnded, googleMeetCode
                                                                         )}
                                                                         <p className={`text-xs pl-2 py-0.5 border-l-2 ${end ? 'text-muted-foreground/70 border-muted-foreground/20' : 'text-green-500 border-green-400/30'}`}>
                                                                             {start} – {end ?? "in corso"}
-                                                                            {end && <span className="text-muted-foreground/50"> ({s.durationMinutes} min)</span>}
+                                                                            {end && <span className="text-muted-foreground/50"> ({formatDuration(s.durationMinutes)})</span>}
                                                                         </p>
                                                                     </Fragment>
                                                                 )
@@ -595,7 +611,7 @@ export function AttendanceTable({ sessionId, attendance, isEnded, googleMeetCode
                                                             {p.checkOutTime && ` – ${formatTime(p.checkOutTime)}`}
                                                         </span>
                                                     )}
-                                                    <span>{p.durationMinutes} min</span>
+                                                    <span>{formatDuration(p.durationMinutes)}</span>
                                                     {p.sessionCount > 1 && (
                                                         <span>({p.sessionCount} connessioni)</span>
                                                     )}

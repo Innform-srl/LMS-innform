@@ -4,9 +4,10 @@ import { db } from "@/lib/db"
 import { Prisma } from "@prisma/client"
 import {
   getGoogleOAuthUrl,
-  getConferenceByMeetingCode,
+  getAllConferencesByMeetingCode,
   getConferenceParticipants,
-  extractEmail
+  extractEmail,
+  type MeetParticipant
 } from "@/lib/google-meet-api"
 import { getValidAccessToken, isGoogleMeetConnected, disconnectGoogleMeet } from "@/lib/google-meet-tokens"
 
@@ -103,6 +104,7 @@ export async function POST(request: NextRequest) {
   }
 
   let participantEmails: string[] = []
+  let conferenceEnd: string | null = null
   const meetParticipantsData: Array<{
     email: string
     displayName: string
@@ -146,43 +148,136 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // Trova il conferenceRecord dal meetingCode
-      const conference = await getConferenceByMeetingCode(accessToken, liveSession.googleMeetCode)
-      if (!conference) {
+      // Trova TUTTI i conferenceRecord dal meetingCode (possono essere più di uno se il meeting è stato riavviato)
+      const allConferencesRaw = await getAllConferencesByMeetingCode(accessToken, liveSession.googleMeetCode)
+      if (allConferencesRaw.length === 0) {
         return NextResponse.json(
           { error: `Nessuna conferenza trovata per il codice ${liveSession.googleMeetCode}. La sessione è già terminata?` },
           { status: 404 }
         )
       }
 
-      // Recupera i partecipanti con le loro sessioni
-      const participants = await getConferenceParticipants(accessToken, conference.name)
+      // Filtra solo i conference records che si sovrappongono con il giorno della sessione
+      // Usa un range con margine di 2 ore prima/dopo per gestire anticipi e ritardi
+      const sessionStart = liveSession.startTime
+        ? new Date(liveSession.startTime.getTime() - 2 * 60 * 60 * 1000)
+        : null
+      const sessionEnd = liveSession.endTime
+        ? new Date(liveSession.endTime.getTime() + 2 * 60 * 60 * 1000)
+        : null
 
-      console.log(`[Google Meet Sync] Conference: ${conference.name}, Participants found: ${participants.length}`)
-      for (const p of participants) {
-        console.log(`[Google Meet Sync] Participant: "${p.displayName}", email: ${p.email}, type: ${p.participantType}, googleId: ${p.googleId}`)
+      const allConferences = allConferencesRaw.filter(conf => {
+        const confStart = new Date(conf.startTime)
+        // Il conference deve iniziare entro il range della sessione
+        if (sessionStart && confStart < sessionStart) return false
+        if (sessionEnd && confStart > sessionEnd) return false
+        return true
+      })
+
+      if (allConferences.length === 0) {
+        return NextResponse.json(
+          { error: `Nessuna conferenza trovata per il codice ${liveSession.googleMeetCode} nel giorno della sessione. Trovati ${allConferencesRaw.length} record in altre date.` },
+          { status: 404 }
+        )
       }
 
-      for (const p of participants) {
+      // Recupera i partecipanti da TUTTI i conference records e aggregali
+      const allParticipantsMap = new Map<string, MeetParticipant>()
+
+      for (const conference of allConferences) {
+        const confEnd = conference.endTime ?? liveSession.endTime?.toISOString() ?? null
+        const participants = await getConferenceParticipants(accessToken, conference.name, confEnd)
+
+        for (const p of participants) {
+          // Usa email o displayName come chiave per aggregare
+          const key = (p.email || p.displayName || p.name).toLowerCase()
+          const existing = allParticipantsMap.get(key)
+
+          if (existing) {
+            // Merge: combina le sessioni, deduplica sovrapposizioni, ricalcola durata
+            const allSessions = [...existing.sessions, ...p.sessions]
+            // Ordina per startTime e rimuovi sessioni duplicate/sovrapposte
+            allSessions.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+            const mergedSessions: typeof allSessions = []
+            for (const s of allSessions) {
+              const prev = mergedSessions[mergedSessions.length - 1]
+              if (prev && prev.endTime && new Date(s.startTime) <= new Date(prev.endTime)) {
+                // Sessione sovrapposta: estendi la precedente se necessario
+                if (s.endTime && (!prev.endTime || new Date(s.endTime) > new Date(prev.endTime))) {
+                  prev.endTime = s.endTime
+                  prev.durationMinutes = Math.round(
+                    (new Date(prev.endTime).getTime() - new Date(prev.startTime).getTime()) / (1000 * 60)
+                  )
+                }
+              } else {
+                mergedSessions.push({ ...s })
+              }
+            }
+            existing.sessions = mergedSessions
+            existing.totalDurationMinutes = mergedSessions.reduce((sum, s) => sum + s.durationMinutes, 0)
+            // Prendi il primo check-in e l'ultimo check-out
+            if (new Date(p.earliestStartTime) < new Date(existing.earliestStartTime)) {
+              existing.earliestStartTime = p.earliestStartTime
+            }
+            if (p.latestEndTime && (!existing.latestEndTime || new Date(p.latestEndTime) > new Date(existing.latestEndTime))) {
+              existing.latestEndTime = p.latestEndTime
+            }
+          } else {
+            allParticipantsMap.set(key, { ...p })
+          }
+        }
+      }
+
+      // Deduplica sessioni sovrapposte per TUTTI i partecipanti (anche quelli da singolo conference)
+      const mergedParticipants = Array.from(allParticipantsMap.values()).map(p => {
+        const sorted = [...p.sessions].sort(
+          (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        )
+        const deduped: typeof sorted = []
+        for (const s of sorted) {
+          const prev = deduped[deduped.length - 1]
+          if (prev && prev.endTime && new Date(s.startTime) <= new Date(prev.endTime)) {
+            // Sessione sovrapposta o contenuta: estendi se necessario
+            if (s.endTime && new Date(s.endTime) > new Date(prev.endTime)) {
+              prev.endTime = s.endTime
+              prev.durationMinutes = Math.round(
+                (new Date(prev.endTime).getTime() - new Date(prev.startTime).getTime()) / (1000 * 60)
+              )
+            }
+            // Altrimenti è completamente contenuta → ignora
+          } else {
+            deduped.push({ ...s })
+          }
+        }
+        return {
+          ...p,
+          sessions: deduped,
+          totalDurationMinutes: deduped.reduce((sum, s) => sum + s.durationMinutes, 0)
+        }
+      })
+
+      // Usa l'ultimo conference per il conferenceEnd globale
+      const lastConference = allConferences[allConferences.length - 1]
+      conferenceEnd = lastConference.endTime ?? liveSession.endTime?.toISOString() ?? null
+
+      for (const p of mergedParticipants) {
         const email = extractEmail(p.email)
 
         if (email) {
-          // Partecipante con email disponibile
           const checkIn = new Date(p.earliestStartTime)
-          const checkOut = p.latestEndTime ? new Date(p.latestEndTime) : new Date()
+          const checkOut = p.latestEndTime ? new Date(p.latestEndTime) : (conferenceEnd ? new Date(conferenceEnd) : new Date())
           participantEmails.push(email)
           meetParticipantsData.push({
             email,
             displayName: p.displayName,
             checkInTime: checkIn,
-            checkOutTime: checkOut > checkIn ? checkOut : new Date(),
+            checkOutTime: checkOut > checkIn ? checkOut : (conferenceEnd ? new Date(conferenceEnd) : new Date()),
             durationMinutes: p.totalDurationMinutes,
             sessionCount: p.sessions.length,
             sessions: p.sessions,
             participantType: p.participantType
           })
         } else if (p.displayName && p.displayName !== "Anonimo") {
-          // Partecipante senza email: cerca nel DB per nome
           const userByName = await db.user.findFirst({
             where: {
               OR: [
@@ -194,24 +289,23 @@ export async function POST(request: NextRequest) {
           })
           if (userByName) {
             const checkIn = new Date(p.earliestStartTime)
-            const checkOut = p.latestEndTime ? new Date(p.latestEndTime) : new Date()
+            const checkOut = p.latestEndTime ? new Date(p.latestEndTime) : (conferenceEnd ? new Date(conferenceEnd) : new Date())
             participantEmails.push(userByName.email.toLowerCase())
             meetParticipantsData.push({
               email: userByName.email.toLowerCase(),
               displayName: p.displayName,
               checkInTime: checkIn,
-              checkOutTime: checkOut > checkIn ? checkOut : new Date(),
+              checkOutTime: checkOut > checkIn ? checkOut : (conferenceEnd ? new Date(conferenceEnd) : new Date()),
               durationMinutes: p.totalDurationMinutes,
               sessionCount: p.sessions.length,
               sessions: p.sessions,
               participantType: p.participantType
             })
           } else {
-            // Non trovato neanche per nome — salva i dati completi per associazione manuale
             unmatchedParticipants.push({
               displayName: p.displayName,
               checkInTime: p.earliestStartTime,
-              checkOutTime: p.latestEndTime ?? null,
+              checkOutTime: p.latestEndTime ?? conferenceEnd ?? null,
               durationMinutes: p.totalDurationMinutes,
               sessionCount: p.sessions.length,
               sessions: p.sessions,
@@ -219,11 +313,10 @@ export async function POST(request: NextRequest) {
             })
           }
         } else {
-          // Partecipante completamente anonimo (displayName === "Anonimo" o assente)
           unmatchedParticipants.push({
             displayName: p.displayName || "Anonimo",
             checkInTime: p.earliestStartTime,
-            checkOutTime: p.latestEndTime ?? null,
+            checkOutTime: p.latestEndTime ?? conferenceEnd ?? null,
             durationMinutes: p.totalDurationMinutes,
             sessionCount: p.sessions.length,
             sessions: p.sessions,

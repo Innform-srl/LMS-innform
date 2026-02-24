@@ -105,13 +105,13 @@ export async function refreshAccessToken(refreshToken: string): Promise<{
 }
 
 /**
- * Trova il conferenceRecord da un meetingCode
+ * Trova tutti i conferenceRecord da un meetingCode
+ * Un meeting code può avere più conference records (es. se il meeting è stato riavviato)
  */
-export async function getConferenceByMeetingCode(
+export async function getAllConferencesByMeetingCode(
   accessToken: string,
   meetingCode: string
-): Promise<ConferenceRecord | null> {
-  // Il meetingCode deve mantenere i trattini (xxx-xxxx-xxx)
+): Promise<ConferenceRecord[]> {
   const filter = `space.meeting_code="${meetingCode}"`
   const url = `${MEET_API_BASE}/conferenceRecords?filter=${encodeURIComponent(filter)}`
 
@@ -127,15 +127,26 @@ export async function getConferenceByMeetingCode(
   const data = await res.json()
   const records: ConferenceRecord[] = data.conferenceRecords || []
 
-  if (records.length === 0) return null
-
   console.log(`[Google Meet] Found ${records.length} conference records for code "${meetingCode}":`,
     records.map(r => ({ name: r.name, start: r.startTime, end: r.endTime })))
 
-  // Ritorna il record più recente
+  // Ordina dal più vecchio al più recente
   return records.sort((a, b) =>
-    new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-  )[0]
+    new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+  )
+}
+
+/**
+ * Trova il conferenceRecord da un meetingCode (solo il più recente)
+ */
+export async function getConferenceByMeetingCode(
+  accessToken: string,
+  meetingCode: string
+): Promise<ConferenceRecord | null> {
+  const records = await getAllConferencesByMeetingCode(accessToken, meetingCode)
+  if (records.length === 0) return null
+  // Ritorna il record più recente
+  return records[records.length - 1]
 }
 
 interface RawMeetUser {
@@ -163,7 +174,8 @@ interface RawMeetSession {
  */
 export async function getConferenceParticipants(
   accessToken: string,
-  conferenceRecordName: string
+  conferenceRecordName: string,
+  conferenceEndTime?: string | null
 ): Promise<MeetParticipant[]> {
   // 1. Lista partecipanti (con paginazione)
   const rawParticipants: RawMeetParticipant[] = []
@@ -209,11 +221,14 @@ export async function getConferenceParticipants(
 
       sessions.push(...rawSessions.map((s: RawMeetSession) => {
         const start = new Date(s.startTime)
-        const end = s.endTime ? new Date(s.endTime) : new Date()
+        // Se la sessione non ha endTime (partecipante ancora connesso quando la conferenza è stata chiusa),
+        // usa il conferenceEndTime come fallback invece di new Date()
+        const effectiveEndTime = s.endTime || conferenceEndTime || null
+        const end = effectiveEndTime ? new Date(effectiveEndTime) : new Date()
         const durationMinutes = Math.round((end.getTime() - start.getTime()) / (1000 * 60))
         return {
           startTime: s.startTime,
-          endTime: s.endTime || null,
+          endTime: effectiveEndTime,
           durationMinutes
         }
       }))
