@@ -1,10 +1,10 @@
 /**
  * Video Utilities
- * Support per YouTube, Vimeo, e video diretti (MP4, etc.)
+ * Support per YouTube, Vimeo, Google Drive e video diretti (MP4, etc.)
  */
 
 export interface VideoInfo {
-    provider: 'youtube' | 'vimeo' | 'direct' | 'unknown'
+    provider: 'youtube' | 'vimeo' | 'googledrive' | 'direct' | 'unknown'
     embedUrl: string
     videoId?: string
 }
@@ -40,6 +40,19 @@ export function detectVideoProvider(url: string): VideoInfo {
             provider: 'vimeo',
             embedUrl: `https://player.vimeo.com/video/${videoId}`,
             videoId
+        }
+    }
+
+    // Google Drive detection
+    const gdriveRegex = /drive\.google\.com\/file\/d\/([^\/]+)/
+    const gdriveMatch = url.match(gdriveRegex)
+
+    if (gdriveMatch) {
+        const fileId = gdriveMatch[1]
+        return {
+            provider: 'googledrive',
+            embedUrl: `https://drive.google.com/file/d/${fileId}/preview`,
+            videoId: fileId
         }
     }
 

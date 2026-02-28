@@ -8,7 +8,8 @@ import { Suspense } from "react"
 import { DashboardStats } from "@/components/dashboard/dashboard-stats"
 import { UpcomingSessionsList } from "@/components/dashboard/upcoming-sessions-list"
 import { CourseLists } from "@/components/dashboard/course-lists"
-import { StatsSkeleton, SessionsSkeleton, CourseListSkeleton } from "@/components/dashboard/skeletons"
+import { CourseNews } from "@/components/dashboard/course-news"
+import { StatsSkeleton, SessionsSkeleton, CourseListSkeleton, NewsSkeleton } from "@/components/dashboard/skeletons"
 
 export default async function Home() {
   const session = await auth()
@@ -34,9 +35,15 @@ export default async function Home() {
             </div>
           </div>
 
-          <Suspense fallback={<SessionsSkeleton />}>
-            <UpcomingSessionsList />
-          </Suspense>
+          {/* Live Sessions + News - 2 columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 items-start">
+            <Suspense fallback={<SessionsSkeleton />}>
+              <UpcomingSessionsList />
+            </Suspense>
+            <Suspense fallback={<NewsSkeleton />}>
+              <CourseNews />
+            </Suspense>
+          </div>
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">

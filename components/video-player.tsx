@@ -91,39 +91,10 @@ export function VideoPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [videoInfo.provider, moduleId, initialPosition, watchedSeconds])
 
-    // For YouTube/Vimeo, we track via postMessage API (more complex, simplified here)
-    useEffect(() => {
-        if (videoInfo.provider === 'direct') return
-
-        // Set up periodic progress tracking for embedded videos
-        // Note: We track continuously since we can't detect play/pause state from iframe
-        progressIntervalRef.current = setInterval(() => {
-            setCurrentTime(prev => prev + 1)
-            setWatchedSeconds(prev => prev + 1)
-        }, 1000)
-
-        return () => {
-            if (progressIntervalRef.current) {
-                clearInterval(progressIntervalRef.current)
-            }
-        }
-    }, [videoInfo.provider])
-
-    // Separate effect to save progress (avoids calling async function during setState)
-    useEffect(() => {
-        if (videoInfo.provider === 'direct') return
-        if (watchedSeconds === 0) return
-
-        const effectiveDuration = duration > 0 ? duration : (minDuration * 60)
-
-        if (effectiveDuration > 0) {
-            saveProgress(watchedSeconds, effectiveDuration, currentTime)
-        } else {
-            // Fallback: save with current watched as duration to ensure progress is recorded
-            saveProgress(watchedSeconds, watchedSeconds, currentTime)
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [watchedSeconds, duration, currentTime, moduleId, videoInfo.provider, minDuration])
+    // For embedded videos (YouTube/Vimeo/Google Drive), we cannot detect
+    // actual playback state from iframes. Time tracking is handled by
+    // the course-player's trackModuleTime. No auto-complete for embedded videos -
+    // the user completes the module via the "Segna come completato" button.
 
     const effectiveDuration = duration > 0 ? duration : (minDuration * 60)
     const watchedPercentage = effectiveDuration > 0 ? Math.round((watchedSeconds / effectiveDuration) * 100) : 0
@@ -175,7 +146,11 @@ export function VideoPlayer({
         )
     }
 
-    // YouTube/Vimeo embedded player
+    // YouTube/Vimeo/Google Drive embedded player
+    const providerLabel = videoInfo.provider === 'youtube' ? '📺 YouTube'
+        : videoInfo.provider === 'vimeo' ? '📹 Vimeo'
+        : '📁 Google Drive'
+
     return (
         <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden">
             <iframe
@@ -185,18 +160,6 @@ export function VideoPlayer({
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
             />
-
-            {/* Progress indicator for embedded videos */}
-            <div className="absolute bottom-16 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-sm text-white pointer-events-none">
-                <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-300">
-                        {videoInfo.provider === 'youtube' ? '📺 YouTube' : '📹 Vimeo'}
-                    </span>
-                    <span className="text-primary text-xs">
-                        {watchedPercentage}% visto
-                    </span>
-                </div>
-            </div>
         </div>
     )
 }

@@ -2,27 +2,53 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Download, X } from "lucide-react"
+import { Download, X, Smartphone, Wifi, Bell, Share, Plus } from "lucide-react"
 
 interface BeforeInstallPromptEvent extends Event {
     prompt: () => Promise<void>
     userChoice: Promise<{ outcome: "accepted" | "dismissed" }>
 }
 
+function isIOS(): boolean {
+    if (typeof navigator === "undefined") return false
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.userAgent.includes("Mac") && "ontouchend" in document)
+}
+
+function isStandalone(): boolean {
+    if (typeof window === "undefined") return false
+    return window.matchMedia("(display-mode: standalone)").matches ||
+        ("standalone" in navigator && (navigator as unknown as { standalone: boolean }).standalone === true)
+}
+
 export function PWAInstallPrompt() {
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
-    const [dismissed, setDismissed] = useState(false)
+    const [showPrompt, setShowPrompt] = useState(false)
+    const [showIOSGuide, setShowIOSGuide] = useState(false)
 
     useEffect(() => {
-        // Check if already dismissed this session
-        if (sessionStorage.getItem("pwa-install-dismissed")) {
-            requestAnimationFrame(() => setDismissed(true))
-            return
+        // Don't show if already installed as PWA
+        if (isStandalone()) return
+
+        // Check if dismissed (use localStorage with 3-day expiry)
+        const dismissedAt = localStorage.getItem("pwa-install-dismissed-at")
+        if (dismissedAt) {
+            const threeDays = 3 * 24 * 60 * 60 * 1000
+            if (Date.now() - parseInt(dismissedAt) < threeDays) return
         }
 
+        if (isIOS()) {
+            // iOS: show after a short delay for better UX
+            const timer = setTimeout(() => setShowIOSGuide(true), 2000)
+            return () => clearTimeout(timer)
+        }
+
+        // Android/Desktop: listen for beforeinstallprompt
         const handler = (e: Event) => {
             e.preventDefault()
             setDeferredPrompt(e as BeforeInstallPromptEvent)
+            // Show modal after a short delay
+            setTimeout(() => setShowPrompt(true), 1500)
         }
 
         window.addEventListener("beforeinstallprompt", handler)
@@ -35,46 +61,131 @@ export function PWAInstallPrompt() {
         const { outcome } = await deferredPrompt.userChoice
         if (outcome === "accepted") {
             setDeferredPrompt(null)
+            setShowPrompt(false)
         }
     }
 
     const handleDismiss = () => {
-        setDismissed(true)
-        sessionStorage.setItem("pwa-install-dismissed", "1")
+        setShowPrompt(false)
+        setShowIOSGuide(false)
+        localStorage.setItem("pwa-install-dismissed-at", Date.now().toString())
     }
 
-    if (!deferredPrompt || dismissed) return null
+    // Nothing to show
+    if (!showPrompt && !showIOSGuide) return null
 
     return (
-        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 z-50 bg-card border border-border rounded-lg shadow-lg p-4 animate-in slide-in-from-bottom-4">
-            <div className="flex items-start gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center shrink-0">
-                    <span className="font-bold text-primary-foreground text-lg">L</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">Installa LMS Innform</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                        Accedi rapidamente dal tuo dispositivo
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                onClick={handleDismiss}
+            />
+
+            {/* Modal */}
+            <div className="relative w-full max-w-sm bg-card rounded-2xl shadow-2xl border border-border overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+                {/* Header with gradient */}
+                <div className="relative bg-gradient-to-br from-primary/90 to-primary px-6 pt-6 pb-8 text-primary-foreground">
+                    <button
+                        onClick={handleDismiss}
+                        className="absolute top-3 right-3 p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                        aria-label="Chiudi"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                            <span className="font-bold text-xl">L</span>
+                        </div>
+                        <div>
+                            <h2 className="font-bold text-lg leading-tight">LMS Innform</h2>
+                            <p className="text-sm opacity-80">Piattaforma E-learning</p>
+                        </div>
+                    </div>
+                    <p className="text-sm opacity-90">
+                        Installa l&apos;app per un&apos;esperienza migliore sul tuo dispositivo
                     </p>
-                    <div className="flex gap-2 mt-3">
-                        <Button size="sm" onClick={handleInstall} className="h-8 text-xs">
-                            <Download className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
-                            Installa
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={handleDismiss} className="h-8 text-xs">
-                            Non ora
-                        </Button>
+                </div>
+
+                {/* Features */}
+                <div className="px-6 py-5 space-y-3">
+                    <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <Smartphone className="h-4.5 w-4.5 text-primary" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium">Accesso rapido</p>
+                            <p className="text-xs text-muted-foreground">Apri direttamente dalla home del telefono</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <Wifi className="h-4.5 w-4.5 text-primary" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium">Schermo intero</p>
+                            <p className="text-xs text-muted-foreground">Nessuna barra del browser, piu spazio</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <Bell className="h-4.5 w-4.5 text-primary" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium">Notifiche</p>
+                            <p className="text-xs text-muted-foreground">Ricevi aggiornamenti sui tuoi corsi</p>
+                        </div>
                     </div>
                 </div>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 shrink-0"
-                    onClick={handleDismiss}
-                    aria-label="Chiudi"
-                >
-                    <X className="h-4 w-4" aria-hidden="true" />
-                </Button>
+
+                {/* Actions */}
+                <div className="px-6 pb-6">
+                    {showIOSGuide ? (
+                        /* iOS instructions */
+                        <div className="space-y-3">
+                            <div className="bg-muted/50 rounded-xl p-4 space-y-2.5">
+                                <p className="text-sm font-medium">Come installare su iPhone/iPad:</p>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">1</span>
+                                    <span>Tocca il pulsante <Share className="inline h-4 w-4 mx-0.5" /> Condividi</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">2</span>
+                                    <span>Scorri e tocca <Plus className="inline h-4 w-4 mx-0.5" /> &quot;Aggiungi a Home&quot;</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">3</span>
+                                    <span>Conferma toccando &quot;Aggiungi&quot;</span>
+                                </div>
+                            </div>
+                            <Button
+                                variant="outline"
+                                className="w-full"
+                                onClick={handleDismiss}
+                            >
+                                Ho capito
+                            </Button>
+                        </div>
+                    ) : (
+                        /* Android/Desktop install button */
+                        <div className="flex gap-2">
+                            <Button
+                                className="flex-1 h-11"
+                                onClick={handleInstall}
+                            >
+                                <Download className="h-4 w-4 mr-2" />
+                                Installa App
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="h-11"
+                                onClick={handleDismiss}
+                            >
+                                Non ora
+                            </Button>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     )

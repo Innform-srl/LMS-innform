@@ -118,6 +118,15 @@ export function CoursePlayer({
     const progress = modules.length > 0 ? (completedModules.size / modules.length) * 100 : 0
     const isCompleted = progress === 100
 
+    // A module is unlocked if all previous modules are completed
+    const isModuleUnlocked = (index: number) => {
+        if (index === 0) return true
+        for (let i = 0; i < index; i++) {
+            if (!completedModules.has(modules[i].id)) return false
+        }
+        return true
+    }
+
 
     useEffect(() => {
         if (progress !== enrollment.progress) {
@@ -314,6 +323,8 @@ export function CoursePlayer({
         if (youtubeMatch) return `https://www.youtube.com/embed/${youtubeMatch[1]}`
         const vimeoMatch = url.match(/vimeo\.com\/(\d+)/)
         if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`
+        const gdriveMatch = url.match(/drive\.google\.com\/file\/d\/([^\/]+)/)
+        if (gdriveMatch) return `https://drive.google.com/file/d/${gdriveMatch[1]}/preview`
         return null
     }
 
@@ -534,7 +545,7 @@ export function CoursePlayer({
                                 <h2 className="text-2xl font-bold text-foreground">{currentModule.title}</h2>
                             </div>
                             <div className="flex items-center gap-2">
-                                {currentModule.contentType === 'PDF' && !completedModules.has(currentModule.id) && (
+                                {currentModule.contentType !== 'LIVE' && !completedModules.has(currentModule.id) && (
                                     <Button
                                         onClick={handleMarkComplete}
                                         variant="outline"
@@ -582,9 +593,19 @@ export function CoursePlayer({
                                     router.push('/courses')
                                 }
                             }}
+                            disabled={currentModuleIndex < modules.length - 1 && !completedModules.has(currentModule.id)}
                             className="flex-1 py-6 bg-primary text-primary-foreground hover:bg-primary/90"
                         >
-                            {currentModuleIndex < modules.length - 1 ? "Prossimo Modulo →" : "Torna ai Corsi"}
+                            {currentModuleIndex < modules.length - 1 ? (
+                                completedModules.has(currentModule.id) ? "Prossimo Modulo →" : (
+                                    <span className="flex items-center gap-2">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                        </svg>
+                                        Completa questo modulo per continuare
+                                    </span>
+                                )
+                            ) : "Torna ai Corsi"}
                         </Button>
                     </div>
 
@@ -603,32 +624,45 @@ export function CoursePlayer({
                     <div className="glass border-border rounded-xl p-6">
                         <h3 className="font-bold mb-4 text-lg border-b border-border pb-4">Contenuto del Corso</h3>
                         <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-                            {modules.map((module, index) => (
+                            {modules.map((module, index) => {
+                                const unlocked = isModuleUnlocked(index)
+                                return (
                                 <div
                                     key={module.id}
-                                    onClick={() => setCurrentModuleIndex(index)}
-                                    className={`p-4 rounded-xl cursor-pointer transition-all duration-200 border ${currentModuleIndex === index
-                                        ? 'bg-primary/10 border-primary/50 shadow-lg shadow-primary/10'
-                                        : 'bg-muted/50 border-border hover:bg-muted hover:border-border'
-                                        }`}
+                                    onClick={() => unlocked && setCurrentModuleIndex(index)}
+                                    className={`p-4 rounded-xl transition-all duration-200 border ${
+                                        !unlocked
+                                            ? 'bg-muted/30 border-border opacity-60 cursor-not-allowed'
+                                            : currentModuleIndex === index
+                                                ? 'bg-primary/10 border-primary/50 shadow-lg shadow-primary/10 cursor-pointer'
+                                                : 'bg-muted/50 border-border hover:bg-muted hover:border-border cursor-pointer'
+                                    }`}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${completedModules.has(module.id)
-                                            ? 'bg-green-500 text-white'
-                                            : currentModuleIndex === index
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'bg-muted text-muted-foreground'
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                                            completedModules.has(module.id)
+                                                ? 'bg-green-500 text-white'
+                                                : !unlocked
+                                                    ? 'bg-muted text-muted-foreground'
+                                                    : currentModuleIndex === index
+                                                        ? 'bg-primary text-primary-foreground'
+                                                        : 'bg-muted text-muted-foreground'
                                             }`}>
                                             {completedModules.has(module.id) ? (
                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            ) : !unlocked ? (
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                                 </svg>
                                             ) : (
                                                 <span className="text-sm font-bold">{index + 1}</span>
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className={`text-sm font-medium truncate ${currentModuleIndex === index ? 'text-foreground' : 'text-muted-foreground'
+                                            <p className={`text-sm font-medium truncate ${
+                                                !unlocked ? 'text-muted-foreground' : currentModuleIndex === index ? 'text-foreground' : 'text-muted-foreground'
                                                 }`}>
                                                 {module.title}
                                             </p>
@@ -655,7 +689,8 @@ export function CoursePlayer({
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                                )
+                            })}
                         </div>
                     </div>
 

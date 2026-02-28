@@ -352,6 +352,28 @@ export async function updateModule(
     }
 }
 
+export async function reorderModules(courseId: string, moduleIds: string[]) {
+    const session = await auth()
+    if (!session?.user) return { success: false, message: "Non autorizzato" }
+
+    try {
+        await db.$transaction(
+            moduleIds.map((id, index) =>
+                db.module.update({
+                    where: { id },
+                    data: { position: index }
+                })
+            )
+        )
+
+        revalidatePath(`/admin/courses/${courseId}`)
+        return { success: true }
+    } catch (error) {
+        console.error("Error reordering modules:", error)
+        return { success: false, message: "Errore durante il riordino dei moduli" }
+    }
+}
+
 export async function getModulesFromOtherCourses(currentCourseId: string) {
     const session = await auth()
     if (session?.user?.role !== "ADMIN") return []
