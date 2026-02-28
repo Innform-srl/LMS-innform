@@ -1,6 +1,7 @@
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
+import { effectivelyPublishedModuleWhere } from "@/lib/module-utils"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -36,7 +37,7 @@ export default async function CourseCatalogPage({
         },
         include: {
             modules: {
-                where: { published: true },
+                where: effectivelyPublishedModuleWhere(),
                 select: { id: true }
             },
             enrollments: {

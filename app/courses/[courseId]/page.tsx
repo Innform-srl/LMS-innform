@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
+import { effectivelyPublishedModuleWhere } from "@/lib/module-utils"
 import { CoursePlayer } from "./course-player"
 import { CourseRating } from "@/components/course-rating"
 
@@ -14,7 +15,7 @@ export default async function CoursePlayerPage({ params }: { params: Promise<{ c
         where: { id: courseId },
         include: {
             modules: {
-                where: { published: true },
+                where: effectivelyPublishedModuleWhere(),
                 orderBy: { position: "asc" },
                 include: {
                     quiz: true,

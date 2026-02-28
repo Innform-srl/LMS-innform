@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { z } from "zod"
+import { effectivelyPublishedModuleWhere } from "@/lib/module-utils"
 
 function extractGoogleMeetCode(url: string): string | null {
     const match = url.match(/meet\.google\.com\/([a-z]{3}-[a-z]{4}-[a-z]{3})/i)
@@ -34,7 +35,7 @@ async function resetCourseCompletions(courseId: string) {
 
     // Get total published modules count (including the new one that was just created)
     const totalModules = await db.module.count({
-        where: { courseId, published: true }
+        where: { courseId, ...effectivelyPublishedModuleWhere() }
     })
 
     // Reset enrollment completion and recalculate progress for each enrollment
@@ -43,7 +44,7 @@ async function resetCourseCompletions(courseId: string) {
         const completedModules = await db.moduleProgress.count({
             where: {
                 completed: true,
-                module: { courseId, published: true },
+                module: { courseId, ...effectivelyPublishedModuleWhere() },
                 userId: enrollment.userId
             }
         })
@@ -92,6 +93,7 @@ export async function createModule(courseId: string, prevState: { message?: stri
     const endTime = formData.get("endTime") as string
     const meetingUrl = formData.get("meetingUrl") as string
     const selectedSessionId = formData.get("selectedSessionId") as string
+    const publishedUntil = formData.get("publishedUntil") as string
 
     const validatedFields = moduleSchema.safeParse({
         title,
@@ -165,7 +167,8 @@ export async function createModule(courseId: string, prevState: { message?: stri
                 minimumDuration: minimumDuration ? Number(minimumDuration) : 0,
                 courseId,
                 position: (maxPosition?.position ?? -1) + 1,
-                liveSessionId
+                liveSessionId,
+                publishedUntil: publishedUntil ? new Date(publishedUntil) : null
             }
         })
 
@@ -260,6 +263,7 @@ export async function updateModule(
         startTime?: string
         endTime?: string
         meetingUrl?: string
+        publishedUntil?: string | null
     }
 ) {
     const session = await auth()
@@ -340,7 +344,10 @@ export async function updateModule(
                 pdfUrl: data.pdfUrl,
                 totalPages: data.totalPages,
                 minimumDuration: data.minimumDuration || 0,
-                liveSessionId
+                liveSessionId,
+                publishedUntil: data.publishedUntil !== undefined
+                    ? (data.publishedUntil ? new Date(data.publishedUntil) : null)
+                    : undefined
             }
         })
 

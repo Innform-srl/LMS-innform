@@ -276,6 +276,19 @@ export function CreateModuleForm({ courseId, availableSessions = [] }: { courseI
                             </div>
                         </div>
                     )}
+
+                    <div className="space-y-2 border-t border-border pt-4">
+                        <Label htmlFor="publishedUntil">Pubblicato Fino Al (opzionale)</Label>
+                        <Input
+                            id="publishedUntil"
+                            name="publishedUntil"
+                            type="datetime-local"
+                            className="mt-2"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            Se impostato, il modulo non sarà più visibile agli studenti dopo questa data.
+                        </p>
+                    </div>
                 </div>
 
                 {state?.message && (

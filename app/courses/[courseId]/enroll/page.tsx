@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
+import { effectivelyPublishedModuleWhere } from "@/lib/module-utils"
 import { Clock, Calendar, CheckCircle } from "lucide-react"
 
 export default async function EnrollPage({ params }: { params: Promise<{ courseId: string }> }) {
@@ -13,7 +14,7 @@ export default async function EnrollPage({ params }: { params: Promise<{ courseI
         where: { id: courseId },
         include: {
             modules: {
-                where: { published: true },
+                where: effectivelyPublishedModuleWhere(),
                 orderBy: { position: "asc" }
             }
         }

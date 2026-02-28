@@ -3,6 +3,7 @@
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { Prisma } from "@prisma/client"
+import { effectivelyPublishedModuleWhere } from "@/lib/module-utils"
 
 export async function getTimeTrackingReport(options?: {
     page?: number
@@ -559,7 +560,7 @@ export async function getUserModuleTimeAnalytics() {
                         title: true,
                         minimumDuration: true,
                         modules: {
-                            where: { published: true },
+                            where: effectivelyPublishedModuleWhere(),
                             select: {
                                 id: true,
                                 title: true,

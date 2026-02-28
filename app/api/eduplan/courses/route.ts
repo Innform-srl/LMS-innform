@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { effectivelyPublishedModuleWhere } from "@/lib/module-utils";
 
 // Validate API key from request
 function validateApiKey(request: NextRequest): boolean {
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
       where: publishedOnly ? { published: true, archived: false } : { archived: false },
       include: {
         modules: includeModules ? {
-          where: publishedOnly ? { published: true } : {},
+          where: publishedOnly ? effectivelyPublishedModuleWhere() : {},
           orderBy: { position: "asc" },
           select: {
             id: true,

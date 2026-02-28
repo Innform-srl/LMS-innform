@@ -40,6 +40,7 @@ type Module = {
     contentType?: string | null
     pdfUrl?: string | null
     minimumDuration?: number | null
+    publishedUntil?: string | Date | null
     position: number
     liveSession?: { id: string; title: string; startTime: string | null; endTime: string | null; meetingUrl: string | null } | null
 }
@@ -60,7 +61,8 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
         selectedSessionId: module.liveSessionId || "",
         startTime: module.liveSession?.startTime ? toLocalDatetimeString(module.liveSession.startTime) : "",
         endTime: module.liveSession?.endTime ? toLocalDatetimeString(module.liveSession.endTime) : "",
-        meetingUrl: module.liveSession?.meetingUrl || ""
+        meetingUrl: module.liveSession?.meetingUrl || "",
+        publishedUntil: module.publishedUntil ? toLocalDatetimeString(module.publishedUntil) : ""
     })
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,7 +107,8 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
             selectedSessionId: form.selectedSessionId || undefined,
             startTime: form.startTime,
             endTime: form.endTime,
-            meetingUrl: form.meetingUrl
+            meetingUrl: form.meetingUrl,
+            publishedUntil: form.publishedUntil || null
         })
 
         if (result.success) {
@@ -322,6 +325,33 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                         </div>
                     </div>
                 )}
+
+                <div className="space-y-2 border-t border-border pt-4">
+                    <Label htmlFor="publishedUntil">Pubblicato Fino Al (opzionale)</Label>
+                    <div className="flex items-center gap-2">
+                        <Input
+                            id="publishedUntil"
+                            type="datetime-local"
+                            value={form.publishedUntil}
+                            onChange={(e) => setForm({ ...form, publishedUntil: e.target.value })}
+                            className="mt-2 flex-1"
+                        />
+                        {form.publishedUntil && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-muted-foreground hover:text-destructive mt-2"
+                                onClick={() => setForm({ ...form, publishedUntil: "" })}
+                            >
+                                Rimuovi
+                            </Button>
+                        )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        Se impostato, il modulo non sarà più visibile agli studenti dopo questa data.
+                    </p>
+                </div>
             </div>
 
             <div className="flex gap-4">

@@ -129,7 +129,8 @@ model Module {
   description     String?
   videoUrl        String?
   position        Int
-  published       Boolean  @default(false)
+  published       Boolean   @default(false)
+  publishedUntil  DateTime? // Data scadenza opzionale
   courseId        String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

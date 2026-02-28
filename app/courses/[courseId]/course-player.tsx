@@ -157,6 +157,28 @@ export function CoursePlayer({
         loadModuleProgress()
     }, [currentModule.id])
 
+    // Auto-complete LIVE modules whose session has ended
+    useEffect(() => {
+        if (
+            currentModule.contentType === 'LIVE' &&
+            currentModule.liveSession?.endTime &&
+            new Date(currentModule.liveSession.endTime) < new Date() &&
+            !completedModules.has(currentModule.id)
+        ) {
+            markModuleComplete(currentModule.id).then(result => {
+                if (result.success) {
+                    setCompletedModules(prev => new Set(prev).add(currentModule.id))
+                    router.refresh()
+                    if (currentModuleIndex < modules.length - 1) {
+                        setTimeout(() => {
+                            setCurrentModuleIndex(currentModuleIndex + 1)
+                        }, 500)
+                    }
+                }
+            })
+        }
+    }, [currentModule.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
     // Track time for ALL modules
     const unsavedSecondsRef = useRef(0)
     const uiUpdateCounterRef = useRef(0)
@@ -545,7 +567,7 @@ export function CoursePlayer({
                                 <h2 className="text-2xl font-bold text-foreground">{currentModule.title}</h2>
                             </div>
                             <div className="flex items-center gap-2">
-                                {currentModule.contentType !== 'LIVE' && !completedModules.has(currentModule.id) && (
+                                {!completedModules.has(currentModule.id) && (
                                     <Button
                                         onClick={handleMarkComplete}
                                         variant="outline"

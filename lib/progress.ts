@@ -1,6 +1,7 @@
 import { db } from "@/lib/db"
 import { sendCertificateEmail } from "@/lib/email"
 import { generateCertificateNumber } from "@/lib/certificate-utils"
+import { effectivelyPublishedModuleWhere } from "@/lib/module-utils"
 import {
     notifyTMSCourseCompleted,
     notifyTMSCertificateIssued
@@ -14,7 +15,7 @@ export async function checkAndCompleteCourse(courseId: string, userId: string) {
         where: { id: courseId },
         include: {
             modules: {
-                where: { published: true },
+                where: effectivelyPublishedModuleWhere(),
                 include: { quiz: true }
             }
         }

@@ -1,5 +1,6 @@
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { effectivelyPublishedModuleWhere } from "@/lib/module-utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 
@@ -57,7 +58,7 @@ export async function CourseNews() {
 
     const recentModules = await db.module.findMany({
         where: {
-            published: true,
+            ...effectivelyPublishedModuleWhere(),
             updatedAt: { gte: thirtyDaysAgo },
             course: {
                 published: true,
@@ -75,7 +76,7 @@ export async function CourseNews() {
                 select: {
                     id: true,
                     title: true,
-                    _count: { select: { modules: { where: { published: true } } } },
+                    _count: { select: { modules: { where: effectivelyPublishedModuleWhere() } } },
                     enrollments: {
                         where: { userId },
                         select: { progress: true, completed: true }

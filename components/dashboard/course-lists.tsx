@@ -1,6 +1,7 @@
 
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { effectivelyPublishedModuleWhere } from "@/lib/module-utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { DeadlineBadge } from "@/components/deadline-badge"
 import { getTimeElapsed } from "@/lib/time-utils"
@@ -32,7 +33,7 @@ export async function CourseLists() {
                     isRequired: true,
                     minimumDuration: true,
                     _count: {
-                        select: { modules: { where: { published: true } } }
+                        select: { modules: { where: effectivelyPublishedModuleWhere() } }
                     }
                 }
             },
@@ -51,7 +52,7 @@ export async function CourseLists() {
         by: ['courseId'],
         where: {
             courseId: { in: inProgressCourseIds },
-            published: true
+            ...effectivelyPublishedModuleWhere()
         },
         _sum: { videoDuration: true }
     }) : []

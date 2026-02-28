@@ -24,6 +24,7 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { getExpirationStatus } from "@/lib/module-utils"
 
 function formatDate(date: Date | string) {
     const d = new Date(date)
@@ -48,6 +49,7 @@ type Module = {
     videoUrl: string | null
     position: number
     published: boolean
+    publishedUntil?: Date | string | null
     contentType?: string | null
     quiz?: {
         id: string
@@ -84,9 +86,14 @@ function ModuleItemContent({
     dragHandleProps?: Record<string, unknown>
     isDragging?: boolean
 }) {
+    const expStatus = getExpirationStatus(module.publishedUntil ? new Date(module.publishedUntil) : null)
+    const isExpired = expStatus === "expired"
+
     return (
-        <div className={`flex items-center gap-3 p-4 bg-card border border-border rounded-lg transition-colors ${
-            isDragging ? "opacity-50 ring-2 ring-primary/30" : "hover:bg-accent"
+        <div className={`flex items-center gap-3 p-4 bg-card border rounded-lg transition-colors ${
+            isDragging ? "opacity-50 ring-2 ring-primary/30 border-border" :
+            isExpired ? "opacity-60 border-red-500/30" :
+            "border-border hover:bg-accent"
         }`}>
             <div
                 className="flex-shrink-0 cursor-grab active:cursor-grabbing touch-none p-1 -ml-1 rounded hover:bg-accent"
@@ -131,6 +138,30 @@ function ModuleItemContent({
                         </div>
                     ) : (
                         <div className="text-xs text-muted-foreground">Nessun quiz</div>
+                    )}
+                    {expStatus === "expired" && (
+                        <div className="text-xs text-red-500 flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Scaduto il <ClientDate date={module.publishedUntil!} />
+                        </div>
+                    )}
+                    {expStatus === "expiring" && (
+                        <div className="text-xs text-amber-500 flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Scade il <ClientDate date={module.publishedUntil!} />
+                        </div>
+                    )}
+                    {expStatus === "active" && (
+                        <div className="text-xs text-muted-foreground flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Fino al <ClientDate date={module.publishedUntil!} />
+                        </div>
                     )}
                 </div>
             </div>

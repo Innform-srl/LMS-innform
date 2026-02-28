@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { notifyTMSProgressUpdate } from "@/lib/tms-webhook-service"
+import { effectivelyPublishedModuleWhere } from "@/lib/module-utils"
 
 /**
  * Update video progress for a module
@@ -135,7 +136,7 @@ async function updateCourseProgress(courseId: string, userId: string) {
         const totalModules = await db.module.count({
             where: {
                 courseId,
-                published: true
+                ...effectivelyPublishedModuleWhere()
             }
         })
 
@@ -148,7 +149,7 @@ async function updateCourseProgress(courseId: string, userId: string) {
                 completed: true,
                 module: {
                     courseId,
-                    published: true
+                    ...effectivelyPublishedModuleWhere()
                 }
             }
         })

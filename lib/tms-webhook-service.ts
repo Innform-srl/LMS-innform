@@ -13,6 +13,7 @@
  */
 
 import { db } from '@/lib/db'
+import { effectivelyPublishedModuleWhere } from '@/lib/module-utils'
 import {
   sendWebhookToTMS,
   type LMSProgressPayload,
@@ -117,7 +118,7 @@ export async function notifyTMSProgressUpdate(
         include: { course: true },
       }),
       db.module.findMany({
-        where: { courseId, published: true },
+        where: { courseId, ...effectivelyPublishedModuleWhere() },
         include: {
           moduleProgress: {
             where: { userId },
@@ -303,7 +304,7 @@ export async function notifyTMSCourseCompleted(
         include: { course: true },
       }),
       db.module.findMany({
-        where: { courseId, published: true },
+        where: { courseId, ...effectivelyPublishedModuleWhere() },
         include: {
           moduleProgress: { where: { userId } },
         },
@@ -381,7 +382,7 @@ export async function notifyTMSCertificateIssued(
             course: {
               include: {
                 modules: {
-                  where: { published: true },
+                  where: effectivelyPublishedModuleWhere(),
                   include: {
                     moduleProgress: {
                       where: { completed: true },
