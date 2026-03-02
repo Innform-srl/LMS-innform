@@ -1,9 +1,11 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
-import { revalidatePath } from "next/cache"
+import { requirePermission } from "@/lib/permissions"
+import { bulkEnrollUsers } from "@/lib/enrollment-utils"
+import { revalidatePath, revalidateTag } from "next/cache"
 import { z } from "zod"
+import { reportError } from "@/lib/error-reporting"
 
 const courseSchema = z.object({
     title: z.string().min(1, { message: "Il titolo è obbligatorio" }),
@@ -11,8 +13,8 @@ const courseSchema = z.object({
 })
 
 export async function createCourse(prevState: { success?: boolean; message?: string } | null, formData: FormData) {
-    const session = await auth()
-    if (!session?.user) return { success: false, message: "Non autorizzato" }
+    const check = await requirePermission("course:create")
+    if (!check.authorized) return { success: false, message: check.error }
 
     const title = formData.get("title") as string
     const description = formData.get("description") as string
@@ -37,38 +39,20 @@ export async function createCourse(prevState: { success?: boolean; message?: str
 
         // Trigger bulk enrollment if assigned to group
         if (companyId) {
-            const users = await db.user.findMany({ where: { companyId } })
-            if (users.length > 0) {
-                await db.enrollment.createMany({
-                    data: users.map(user => ({
-                        userId: user.id,
-                        courseId: course.id,
-                        progress: 0,
-                        completed: false
-                    })),
-                    skipDuplicates: true
-                })
-            }
+            const users = await db.user.findMany({ where: { companyId }, select: { id: true } })
+            await bulkEnrollUsers(users.map(u => u.id), course.id)
         } else if (departmentId) {
-            const users = await db.user.findMany({ where: { departmentId } })
-            if (users.length > 0) {
-                await db.enrollment.createMany({
-                    data: users.map(user => ({
-                        userId: user.id,
-                        courseId: course.id,
-                        progress: 0,
-                        completed: false
-                    })),
-                    skipDuplicates: true
-                })
-            }
+            const users = await db.user.findMany({ where: { departmentId }, select: { id: true } })
+            await bulkEnrollUsers(users.map(u => u.id), course.id)
         }
 
         revalidatePath("/admin/courses")
+        revalidateTag("admin-overview")
         return { success: true, message: "Corso creato con successo!", courseId: course.id }
 
     } catch (error) {
         console.error("Error creating course:", error)
+        reportError(error, { action: "createCourse" })
         return { success: false, message: "Errore durante la creazione del corso: " + (error as Error).message }
     }
 }
@@ -81,10 +65,8 @@ export async function updateCourseSettings(
         minimumDuration: number
     }
 ) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, message: "Non autorizzato" }
-    }
+    const check = await requirePermission("course:edit")
+    if (!check.authorized) return { success: false, message: check.error }
 
     try {
         await db.course.update({
@@ -115,15 +97,14 @@ export async function updateCourseSettings(
         return { success: true, message: "Impostazioni aggiornate con successo" }
     } catch (error) {
         console.error("Error updating course settings:", error)
+        reportError(error, { action: "updateCourseSettings" })
         return { success: false, message: "Errore durante l'aggiornamento" }
     }
 }
 
 export async function renameCourse(courseId: string, newTitle: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, message: "Non autorizzato" }
-    }
+    const check = await requirePermission("course:edit")
+    if (!check.authorized) return { success: false, message: check.error }
 
     if (!newTitle || newTitle.trim().length === 0) {
         return { success: false, message: "Il titolo non può essere vuoto" }
@@ -136,18 +117,18 @@ export async function renameCourse(courseId: string, newTitle: string) {
         })
 
         revalidatePath("/admin/courses")
+        revalidateTag("admin-overview")
         return { success: true, message: "Corso rinominato con successo" }
     } catch (error) {
         console.error("Error renaming course:", error)
+        reportError(error, { action: "renameCourse" })
         return { success: false, message: "Errore durante la rinomina" }
     }
 }
 
 export async function archiveCourse(courseId: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, message: "Non autorizzato" }
-    }
+    const check = await requirePermission("course:archive")
+    if (!check.authorized) return { success: false, message: check.error }
 
     try {
         await db.course.update({
@@ -160,18 +141,18 @@ export async function archiveCourse(courseId: string) {
         })
 
         revalidatePath("/admin/courses")
+        revalidateTag("admin-overview")
         return { success: true, message: "Corso archiviato con successo" }
     } catch (error) {
         console.error("Error archiving course:", error)
+        reportError(error, { action: "archiveCourse" })
         return { success: false, message: "Errore durante l'archiviazione" }
     }
 }
 
 export async function restoreCourse(courseId: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, message: "Non autorizzato" }
-    }
+    const check = await requirePermission("course:archive")
+    if (!check.authorized) return { success: false, message: check.error }
 
     try {
         await db.course.update({
@@ -183,18 +164,18 @@ export async function restoreCourse(courseId: string) {
         })
 
         revalidatePath("/admin/courses")
+        revalidateTag("admin-overview")
         return { success: true, message: "Corso ripristinato con successo" }
     } catch (error) {
         console.error("Error restoring course:", error)
+        reportError(error, { action: "restoreCourse" })
         return { success: false, message: "Errore durante il ripristino" }
     }
 }
 
 export async function deleteCourse(courseId: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, message: "Non autorizzato" }
-    }
+    const check = await requirePermission("course:delete")
+    if (!check.authorized) return { success: false, message: check.error }
 
     try {
         // Check if course has enrollments
@@ -258,9 +239,11 @@ export async function deleteCourse(courseId: string) {
         await db.course.delete({ where: { id: courseId } })
 
         revalidatePath("/admin/courses")
+        revalidateTag("admin-overview")
         return { success: true, message: "Corso eliminato definitivamente" }
     } catch (error) {
         console.error("Error deleting course:", error)
+        reportError(error, { action: "deleteCourse" })
         return { success: false, message: "Errore durante l'eliminazione: " + (error as Error).message }
     }
 }

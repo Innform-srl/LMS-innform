@@ -55,7 +55,7 @@ export default async function LiveSessionsPage() {
                                                 </div>
                                             </div>
 
-                                            <h3 className="text-xl font-bold mb-2 line-clamp-2">{session.title}</h3>
+                                            <h3 className="text-xl font-bold mb-2 line-clamp-2">{session.title.replace(/(\d{4})-(\d{2})-(\d{2})/, (_m, y, mo, d) => `${d}/${mo}/${y}`)}</h3>
                                             <p className="text-muted-foreground text-sm mb-4 line-clamp-3 flex-1">
                                                 {session.description || "Nessuna descrizione disponibile."}
                                             </p>
@@ -98,7 +98,7 @@ export default async function LiveSessionsPage() {
                                     <Card key={session.id} className="bg-muted/30 border-border h-full">
                                         <CardContent className="p-6">
                                             <div className="flex justify-between items-start mb-2">
-                                                <h4 className="font-semibold text-muted-foreground line-clamp-1">{session.title}</h4>
+                                                <h4 className="font-semibold text-muted-foreground line-clamp-1">{session.title.replace(/(\d{4})-(\d{2})-(\d{2})/, (_m, y, mo, d) => `${d}/${mo}/${y}`)}</h4>
                                                 <span className="text-xs text-muted-foreground shrink-0 ml-2">
                                                     {session.startTime ? formatDate(session.startTime) : ""}
                                                 </span>

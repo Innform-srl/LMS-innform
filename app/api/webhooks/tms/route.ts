@@ -20,6 +20,7 @@ import {
   type TMSUserPayload,
 } from '@/lib/webhook-utils'
 import { checkRateLimit } from '@/lib/security'
+import { reportError } from '@/lib/error-reporting'
 
 // Rate limit: 30 requests per minute for webhooks
 const RATE_LIMIT_REQUESTS = 30
@@ -187,6 +188,7 @@ export async function POST(req: Request) {
     return NextResponse.json(createWebhookSuccessResponse(result.data))
   } catch (error) {
     console.error('[WEBHOOK_ERROR]', error)
+    reportError(error, { route: "webhooks/tms" })
 
     await logWebhookEvent({
       eventType: 'unknown',
@@ -378,6 +380,7 @@ async function handleEnrollmentCreated(
     }
   } catch (error) {
     console.error('[ENROLLMENT_CREATED_ERROR]', error)
+    reportError(error, { route: "webhooks/tms", event: "enrollment_created" })
     return {
       success: false,
       error: {
@@ -473,6 +476,7 @@ async function handleEnrollmentUpdated(
     }
   } catch (error) {
     console.error('[ENROLLMENT_UPDATED_ERROR]', error)
+    reportError(error, { route: "webhooks/tms", event: "enrollment_updated" })
     return {
       success: false,
       error: {
@@ -614,6 +618,7 @@ async function handleEnrollmentCancelled(
     }
   } catch (error) {
     console.error('[ENROLLMENT_CANCELLED_ERROR]', error)
+    reportError(error, { route: "webhooks/tms", event: "enrollment_cancelled" })
     return {
       success: false,
       error: {
@@ -672,6 +677,7 @@ async function handleUserCreated(payload: TMSUserPayload): Promise<WebhookHandle
     }
   } catch (error) {
     console.error('[USER_CREATED_ERROR]', error)
+    reportError(error, { route: "webhooks/tms", event: "user_created" })
     return {
       success: false,
       error: {
@@ -734,6 +740,7 @@ async function handleUserUpdated(payload: TMSUserPayload): Promise<WebhookHandle
     }
   } catch (error) {
     console.error('[USER_UPDATED_ERROR]', error)
+    reportError(error, { route: "webhooks/tms", event: "user_updated" })
     return {
       success: false,
       error: {

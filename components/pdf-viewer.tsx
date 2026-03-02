@@ -138,16 +138,10 @@ export function PDFViewer({ pdfUrl, totalPages: _initialTotalPages, onComplete }
 
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
         setNumPages(numPages)
-        if (numPages === 1 && onComplete) {
-            onComplete()
-        }
     }
 
     const handlePageChange = (newPage: number) => {
         setPageNumber(newPage)
-        if (newPage === numPages && onComplete) {
-            onComplete()
-        }
         // Stop playing if we reach the end
         if (newPage === numPages && isPlaying) {
             setIsPlaying(false)

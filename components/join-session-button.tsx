@@ -29,9 +29,10 @@ export function JoinSessionButton({
     return (
         <Button
             onClick={handleJoin}
-            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-6 shadow-lg shadow-primary/20 transition-all hover:scale-[1.02]"
+            size="sm"
+            className="bg-primary hover:bg-primary/90 text-white text-xs px-3 py-1 h-auto whitespace-nowrap"
         >
-            <Video className="w-5 h-5 mr-2" />
+            <Video className="w-3.5 h-3.5 mr-1.5" />
             Accedi alla Sessione
         </Button>
     )

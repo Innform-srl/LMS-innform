@@ -6,6 +6,27 @@ import { db } from "@/lib/db"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { UpcomingDeadlinesCard } from "@/components/deadline-badge"
 import { Webhook, BarChart3 } from "lucide-react"
+import { unstable_cache } from "next/cache"
+
+const getAdminOverview = unstable_cache(
+    async () => {
+        const [totalCourses, publishedCourses, totalEnrollments, totalUsers, completedEnrollments] = await Promise.all([
+            db.course.count(),
+            db.course.count({ where: { published: true } }),
+            db.enrollment.count(),
+            db.user.count(),
+            db.enrollment.count({ where: { completed: true } }),
+        ])
+
+        const completionRate = totalEnrollments > 0
+            ? (completedEnrollments / totalEnrollments) * 100
+            : 0
+
+        return { totalCourses, publishedCourses, totalEnrollments, totalUsers, completionRate }
+    },
+    ["admin-overview"],
+    { revalidate: 60, tags: ["admin-overview"] }
+)
 
 export default async function AdminPage() {
     const session = await auth()
@@ -14,12 +35,7 @@ export default async function AdminPage() {
         redirect("/login")
     }
 
-    const [totalCourses, publishedCourses, totalEnrollments, totalUsers] = await Promise.all([
-        db.course.count(),
-        db.course.count({ where: { published: true } }),
-        db.enrollment.count(),
-        db.user.count()
-    ])
+    const { totalCourses, publishedCourses, totalEnrollments, totalUsers, completionRate } = await getAdminOverview()
 
     const recentEnrollments = await db.enrollment.findMany({
         take: 5,
@@ -29,10 +45,6 @@ export default async function AdminPage() {
             course: { select: { title: true } }
         }
     })
-
-    const completionRate = totalEnrollments > 0
-        ? await db.enrollment.count({ where: { completed: true } }) / totalEnrollments * 100
-        : 0
 
     // Get upcoming deadlines (next 7 days)
     const futureDate = new Date()

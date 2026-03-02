@@ -1,10 +1,11 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import { requirePermission, requireAuth } from "@/lib/permissions"
 import { revalidatePath } from "next/cache"
 import { awardPoints } from "@/lib/gamification"
 import { AttendanceStatus } from "@prisma/client"
+import { reportError } from "@/lib/error-reporting"
 
 // ============ USER ACTIONS ============
 
@@ -12,10 +13,11 @@ import { AttendanceStatus } from "@prisma/client"
  * Register current user for a session
  */
 export async function registerForSession(sessionId: string) {
-    const session = await auth()
-    if (!session?.user?.id) {
-        return { success: false, error: "Non autenticato" }
+    const check = await requireAuth()
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
+    const session = check.session
 
     try {
         const liveSession = await db.liveSession.findUnique({
@@ -63,6 +65,7 @@ export async function registerForSession(sessionId: string) {
         return { success: true }
     } catch (error) {
         console.error("Error registering for session:", error)
+        reportError(error, { action: "registerForSession" })
         return { success: false, error: "Errore durante la registrazione" }
     }
 }
@@ -71,10 +74,11 @@ export async function registerForSession(sessionId: string) {
  * User self check-in (allowed 15 min before session start)
  */
 export async function selfCheckIn(sessionId: string) {
-    const session = await auth()
-    if (!session?.user?.id) {
-        return { success: false, error: "Non autenticato" }
+    const check = await requireAuth()
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
+    const session = check.session
 
     try {
         const liveSession = await db.liveSession.findUnique({
@@ -133,6 +137,7 @@ export async function selfCheckIn(sessionId: string) {
         return { success: true, attendance, isLate }
     } catch (error) {
         console.error("Error checking in:", error)
+        reportError(error, { action: "checkIn" })
         return { success: false, error: "Errore durante il check-in" }
     }
 }
@@ -141,10 +146,11 @@ export async function selfCheckIn(sessionId: string) {
  * User self check-out with duration calculation
  */
 export async function selfCheckOut(sessionId: string) {
-    const session = await auth()
-    if (!session?.user?.id) {
-        return { success: false, error: "Non autenticato" }
+    const check = await requireAuth()
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
+    const session = check.session
 
     try {
         const attendance = await db.sessionAttendance.findUnique({
@@ -189,6 +195,7 @@ export async function selfCheckOut(sessionId: string) {
         return { success: true, attendance: updated, durationMinutes }
     } catch (error) {
         console.error("Error checking out:", error)
+        reportError(error, { action: "checkOut" })
         return { success: false, error: "Errore durante il check-out" }
     }
 }
@@ -197,8 +204,9 @@ export async function selfCheckOut(sessionId: string) {
  * Get user's attendance for a session
  */
 export async function getMyAttendance(sessionId: string) {
-    const session = await auth()
-    if (!session?.user?.id) return null
+    const check = await requireAuth()
+    if (!check.authorized) return null
+    const session = check.session
 
     return db.sessionAttendance.findUnique({
         where: {
@@ -216,9 +224,9 @@ export async function getMyAttendance(sessionId: string) {
  * Admin check-in for a user
  */
 export async function adminCheckIn(sessionId: string, userId: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("register:manage")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     try {
@@ -245,6 +253,7 @@ export async function adminCheckIn(sessionId: string, userId: string) {
         return { success: true, attendance }
     } catch (error) {
         console.error("Error admin check-in:", error)
+        reportError(error, { action: "adminCheckIn" })
         return { success: false, error: "Errore durante il check-in" }
     }
 }
@@ -253,9 +262,9 @@ export async function adminCheckIn(sessionId: string, userId: string) {
  * Admin check-out for a user
  */
 export async function adminCheckOut(sessionId: string, userId: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("register:manage")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     try {
@@ -288,6 +297,7 @@ export async function adminCheckOut(sessionId: string, userId: string) {
         return { success: true, attendance: updated }
     } catch (error) {
         console.error("Error admin check-out:", error)
+        reportError(error, { action: "adminCheckOut" })
         return { success: false, error: "Errore durante il check-out" }
     }
 }
@@ -300,9 +310,9 @@ export async function bulkUpdateAttendance(
     userIds: string[],
     status: AttendanceStatus
 ) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("register:manage")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     try {
@@ -319,6 +329,7 @@ export async function bulkUpdateAttendance(
         return { success: true, updated: userIds.length }
     } catch (error) {
         console.error("Error bulk update:", error)
+        reportError(error, { action: "bulkUpdateAttendance" })
         return { success: false, error: "Errore durante l'aggiornamento" }
     }
 }
@@ -327,9 +338,9 @@ export async function bulkUpdateAttendance(
  * Mark absent users after session ends (30 min grace period)
  */
 export async function markAbsentUsers(sessionId: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("register:manage")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     try {
@@ -365,6 +376,7 @@ export async function markAbsentUsers(sessionId: string) {
         return { success: true, marked: result.count }
     } catch (error) {
         console.error("Error marking absent:", error)
+        reportError(error, { action: "markAbsent" })
         return { success: false, error: "Errore durante l'aggiornamento" }
     }
 }
@@ -377,9 +389,9 @@ export async function updateAttendanceStatus(
     status: AttendanceStatus,
     notes?: string
 ) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("register:manage")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     try {
@@ -393,6 +405,7 @@ export async function updateAttendanceStatus(
         return { success: true, attendance }
     } catch (error) {
         console.error("Error updating attendance:", error)
+        reportError(error, { action: "updateAttendance" })
         return { success: false, error: "Errore durante l'aggiornamento" }
     }
 }
@@ -401,8 +414,8 @@ export async function updateAttendanceStatus(
  * Get session attendance with stats
  */
 export async function getSessionAttendance(sessionId: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
+    const check = await requirePermission("register:manage")
+    if (!check.authorized) {
         return null
     }
 
@@ -465,9 +478,9 @@ export async function getSessionAttendance(sessionId: string) {
  * Export attendance to CSV
  */
 export async function exportAttendanceCSV(sessionId: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("register:manage")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     try {
@@ -506,6 +519,7 @@ export async function exportAttendanceCSV(sessionId: string) {
         return { success: true, csv, filename: `presenze-${sessionId}.csv` }
     } catch (error) {
         console.error("Error exporting CSV:", error)
+        reportError(error, { action: "exportAttendanceCSV" })
         return { success: false, error: "Errore durante l'export" }
     }
 }
@@ -517,9 +531,9 @@ export async function syncGoogleMeetAttendance(
     sessionId: string,
     participantEmails: string[]
 ) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("register:manage")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     try {
@@ -564,6 +578,7 @@ export async function syncGoogleMeetAttendance(
         }
     } catch (error) {
         console.error("Error syncing from Google Meet:", error)
+        reportError(error, { action: "syncGoogleMeetAttendance" })
         return { success: false, error: "Errore durante la sincronizzazione" }
     }
 }

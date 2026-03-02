@@ -1,9 +1,10 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import { requirePermission, requireAuth } from "@/lib/permissions"
 import { Prisma } from "@prisma/client"
 import { effectivelyPublishedModuleWhere } from "@/lib/module-utils"
+import { reportError } from "@/lib/error-reporting"
 
 export async function getTimeTrackingReport(options?: {
     page?: number
@@ -12,9 +13,9 @@ export async function getTimeTrackingReport(options?: {
     courseId?: string
     status?: string
 }) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("reports:view")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     try {
@@ -91,14 +92,15 @@ export async function getTimeTrackingReport(options?: {
         }
     } catch (error) {
         console.error("Error fetching time tracking report:", error)
+        reportError(error, { action: "getTimeTrackingReport" })
         return { success: false, error: "Errore durante il recupero dei dati" }
     }
 }
 
 export async function getEngagementReport() {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("reports:view")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     try {
@@ -269,14 +271,15 @@ export async function getEngagementReport() {
         }
     } catch (error) {
         console.error("Error fetching engagement report:", error)
+        reportError(error, { action: "getEngagementReport" })
         return { success: false, error: "Errore durante il recupero dei dati" }
     }
 }
 
 export async function exportTimeTrackingCSV() {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("reports:view")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     const result = await getTimeTrackingReport()
@@ -324,9 +327,9 @@ export async function exportTimeTrackingCSV() {
 }
 
 export async function exportEngagementCSV() {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("reports:view")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     const result = await getEngagementReport()
@@ -395,9 +398,9 @@ export async function getModuleTimeTrackingReport(filters?: {
     userId?: string
     courseId?: string
 }) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("reports:view")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     try {
@@ -480,6 +483,7 @@ export async function getModuleTimeTrackingReport(filters?: {
         return { success: true, data: reportData }
     } catch (error) {
         console.error("Error fetching module time tracking report:", error)
+        reportError(error, { action: "getModuleTimeTrackingReport" })
         return { success: false, error: "Errore durante il recupero dei dati" }
     }
 }
@@ -488,9 +492,9 @@ export async function exportModuleTimeTrackingCSV(filters?: {
     userId?: string
     courseId?: string
 }) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("reports:view")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     const result = await getModuleTimeTrackingReport(filters)
@@ -542,13 +546,13 @@ export async function exportModuleTimeTrackingCSV(filters?: {
 
 // User's personal module time analytics
 export async function getUserModuleTimeAnalytics() {
-    const session = await auth()
-    if (!session?.user?.id) {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requireAuth()
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     try {
-        const userId = session.user.id
+        const userId = check.session.user.id
 
         // Get user's enrollments with courses
         const enrollments = await db.enrollment.findMany({
@@ -657,6 +661,7 @@ export async function getUserModuleTimeAnalytics() {
         }
     } catch (error) {
         console.error("Error fetching user module time analytics:", error)
+        reportError(error, { action: "getUserModuleTimeAnalytics" })
         return { success: false, error: "Errore durante il recupero dei dati" }
     }
 }

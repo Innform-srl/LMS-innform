@@ -11,6 +11,7 @@
 
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { reportError } from '@/lib/error-reporting'
 import {
   retryFailedWebhooks,
   notifyTMSInactivityAlert,
@@ -133,6 +134,7 @@ export async function GET(req: Request) {
     })
   } catch (error) {
     console.error('[TMS_SYNC_ERROR]', error)
+    reportError(error, { route: "cron/tms-sync" })
 
     // Send alert for critical cron errors
     await alertCronError(

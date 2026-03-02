@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { detectVideoProvider, formatTime, isVideoComplete } from "@/lib/video-utils"
+import { detectVideoProvider, formatTime } from "@/lib/video-utils"
 import { updateVideoProgress } from "@/app/actions/video-progress"
 
 interface VideoPlayerProps {
@@ -19,7 +19,6 @@ export function VideoPlayer({
     initialPosition = 0,
     minDuration = 0,
     onProgress,
-    onComplete
 }: VideoPlayerProps) {
     const [_isPlaying, setIsPlaying] = useState(false)
     const [currentTime, setCurrentTime] = useState(0)
@@ -44,10 +43,8 @@ export function VideoPlayer({
             onProgress(watched, total)
         }
 
-        // Check for auto-complete
-        if (isVideoComplete(watched, total) && onComplete) {
-            onComplete()
-        }
+        // Video completion is tracked but does NOT auto-advance.
+        // The user completes the module manually via "Segna come completato" button.
     }
 
     // Handle direct video (HTML5)

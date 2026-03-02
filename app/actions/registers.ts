@@ -1,9 +1,10 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions"
 import { revalidatePath } from "next/cache"
 import { AttendanceStatus, DeliveryMode, InstructorRole, RegisterStatus, RegisterType } from "@prisma/client"
+import { reportError } from "@/lib/error-reporting"
 
 // ============ CLASS REGISTER CRUD ============
 
@@ -12,8 +13,8 @@ export async function getRegisters(filters?: {
   registerType?: RegisterType
   courseId?: string
 }) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") return []
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) return []
 
   return db.classRegister.findMany({
     where: {
@@ -36,8 +37,8 @@ export async function getRegisters(filters?: {
 }
 
 export async function getRegister(id: string) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") return null
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) return null
 
   return db.classRegister.findUnique({
     where: { id },
@@ -77,9 +78,9 @@ export async function createRegister(data: {
   trainingLocation?: string
   notes?: string
 }) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -102,6 +103,7 @@ export async function createRegister(data: {
     return { success: true, registerId: register.id }
   } catch (error) {
     console.error("Error creating register:", error)
+    reportError(error, { action: "createRegister" })
     return { success: false, error: "Errore durante la creazione del registro" }
   }
 }
@@ -120,9 +122,9 @@ export async function updateRegister(
     notes?: string
   }
 ) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -141,14 +143,15 @@ export async function updateRegister(
     return { success: true }
   } catch (error) {
     console.error("Error updating register:", error)
+    reportError(error, { action: "updateRegister" })
     return { success: false, error: "Errore durante l'aggiornamento" }
   }
 }
 
 export async function deleteRegister(id: string) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -166,6 +169,7 @@ export async function deleteRegister(id: string) {
     return { success: true }
   } catch (error) {
     console.error("Error deleting register:", error)
+    reportError(error, { action: "deleteRegister" })
     return { success: false, error: "Errore durante l'eliminazione" }
   }
 }
@@ -183,9 +187,9 @@ export async function createEntry(data: {
   liveSessionId?: string
   notes?: string
 }) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -222,6 +226,7 @@ export async function createEntry(data: {
     return { success: true, entryId: entry.id }
   } catch (error) {
     console.error("Error creating entry:", error)
+    reportError(error, { action: "createRegisterEntry" })
     return { success: false, error: "Errore durante la creazione della giornata" }
   }
 }
@@ -238,9 +243,9 @@ export async function updateEntry(
     notes?: string
   }
 ) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -271,14 +276,15 @@ export async function updateEntry(
     return { success: true }
   } catch (error) {
     console.error("Error updating entry:", error)
+    reportError(error, { action: "updateRegisterEntry" })
     return { success: false, error: "Errore durante l'aggiornamento" }
   }
 }
 
 export async function deleteEntry(entryId: string) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -297,13 +303,14 @@ export async function deleteEntry(entryId: string) {
     return { success: true }
   } catch (error) {
     console.error("Error deleting entry:", error)
+    reportError(error, { action: "deleteRegisterEntry" })
     return { success: false, error: "Errore durante l'eliminazione" }
   }
 }
 
 export async function getEntry(entryId: string) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") return null
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) return null
 
   return db.registerEntry.findUnique({
     where: { id: entryId },
@@ -348,9 +355,9 @@ export async function addParticipants(
     jobTitle?: string
   }[]
 ) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -372,14 +379,15 @@ export async function addParticipants(
     return { success: true }
   } catch (error) {
     console.error("Error adding participants:", error)
+    reportError(error, { action: "addParticipants" })
     return { success: false, error: "Errore durante l'aggiunta dei partecipanti" }
   }
 }
 
 export async function importParticipantsFromCourse(registerId: string) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -411,14 +419,15 @@ export async function importParticipantsFromCourse(registerId: string) {
     return { success: true, imported: enrollments.length }
   } catch (error) {
     console.error("Error importing participants:", error)
+    reportError(error, { action: "importParticipants" })
     return { success: false, error: "Errore durante l'import" }
   }
 }
 
 export async function removeParticipant(participantId: string) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -433,6 +442,7 @@ export async function removeParticipant(participantId: string) {
     return { success: true }
   } catch (error) {
     console.error("Error removing participant:", error)
+    reportError(error, { action: "removeParticipant" })
     return { success: false, error: "Errore durante la rimozione" }
   }
 }
@@ -441,9 +451,9 @@ export async function updateParticipant(
   participantId: string,
   data: { fiscalCode?: string; companyName?: string; jobTitle?: string; notes?: string }
 ) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -458,6 +468,7 @@ export async function updateParticipant(
     return { success: true }
   } catch (error) {
     console.error("Error updating participant:", error)
+    reportError(error, { action: "updateParticipant" })
     return { success: false, error: "Errore durante l'aggiornamento" }
   }
 }
@@ -473,9 +484,9 @@ export async function saveEntryAttendance(
     notes?: string
   }[]
 ) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -519,14 +530,15 @@ export async function saveEntryAttendance(
     return { success: true }
   } catch (error) {
     console.error("Error saving attendance:", error)
+    reportError(error, { action: "saveRegisterAttendance" })
     return { success: false, error: "Errore durante il salvataggio presenze" }
   }
 }
 
 export async function autoFillFromLiveSession(entryId: string) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -581,6 +593,7 @@ export async function autoFillFromLiveSession(entryId: string) {
     return { success: true, filled }
   } catch (error) {
     console.error("Error auto-filling:", error)
+    reportError(error, { action: "autoFillAttendance" })
     return { success: false, error: "Errore durante l'auto-compilazione" }
   }
 }
@@ -595,9 +608,9 @@ export async function addInstructor(data: {
   specialization?: string
   userId?: string
 }) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -607,14 +620,15 @@ export async function addInstructor(data: {
     return { success: true }
   } catch (error) {
     console.error("Error adding instructor:", error)
+    reportError(error, { action: "addInstructor" })
     return { success: false, error: "Errore durante l'aggiunta del docente" }
   }
 }
 
 export async function removeInstructor(instructorId: string) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -629,6 +643,7 @@ export async function removeInstructor(instructorId: string) {
     return { success: true }
   } catch (error) {
     console.error("Error removing instructor:", error)
+    reportError(error, { action: "removeInstructor" })
     return { success: false, error: "Errore durante la rimozione" }
   }
 }
@@ -637,9 +652,9 @@ export async function saveInstructorEntries(
   entryId: string,
   entries: { instructorId: string; hoursDelivered: number; topics?: string }[]
 ) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -685,6 +700,7 @@ export async function saveInstructorEntries(
     return { success: true }
   } catch (error) {
     console.error("Error saving instructor entries:", error)
+    reportError(error, { action: "saveInstructorEntries" })
     return { success: false, error: "Errore durante il salvataggio" }
   }
 }
@@ -732,8 +748,8 @@ async function recalculateParticipantHours(registerId: string) {
 // ============ UTILITY QUERIES ============
 
 export async function getCoursesForRegister() {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") return []
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) return []
 
   return db.course.findMany({
     where: { published: true, archived: false },
@@ -743,8 +759,8 @@ export async function getCoursesForRegister() {
 }
 
 export async function getAvailableUsersForRegister(registerId: string) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") return []
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) return []
 
   const existingParticipants = await db.registerParticipant.findMany({
     where: { registerId },
@@ -764,8 +780,8 @@ export async function getAvailableUsersForRegister(registerId: string) {
 }
 
 export async function getTeachersForRegister(registerId: string) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") return []
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) return []
 
   const existingInstructors = await db.registerInstructor.findMany({
     where: { registerId },
@@ -790,9 +806,9 @@ export async function getTeachersForRegister(registerId: string) {
 // ============ SYNC ATTENDANCE FROM LIVE SESSIONS ============
 
 export async function syncAttendanceFromLiveSessions(registerId: string) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -1043,13 +1059,14 @@ export async function syncAttendanceFromLiveSessions(registerId: string) {
     }
   } catch (error) {
     console.error("Error syncing from live sessions:", error)
+    reportError(error, { action: "syncFromLiveSessions" })
     return { success: false, error: "Errore durante la sincronizzazione" }
   }
 }
 
 export async function getLiveSessionsForRegister(registerId: string) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") return []
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) return []
 
   const register = await db.classRegister.findUnique({
     where: { id: registerId },
@@ -1086,9 +1103,9 @@ export async function getLiveSessionsForRegister(registerId: string) {
 // ============ E-LEARNING SYNC ============
 
 export async function syncElearningHours(registerId: string) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -1138,6 +1155,7 @@ export async function syncElearningHours(registerId: string) {
     return { success: true, synced }
   } catch (error) {
     console.error("Error syncing e-learning hours:", error)
+    reportError(error, { action: "syncElearningHours" })
     return { success: false, error: "Errore durante la sincronizzazione" }
   }
 }
@@ -1145,9 +1163,9 @@ export async function syncElearningHours(registerId: string) {
 // ============ EXPORT CSV ============
 
 export async function exportRegisterCSV(registerId: string) {
-  const session = await auth()
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-    return { success: false, error: "Non autorizzato" }
+  const check = await requirePermission("register:manage")
+  if (!check.authorized) {
+    return { success: false, error: check.error }
   }
 
   try {
@@ -1211,6 +1229,7 @@ export async function exportRegisterCSV(registerId: string) {
     }
   } catch (error) {
     console.error("Error exporting CSV:", error)
+    reportError(error, { action: "exportRegisterCSV" })
     return { success: false, error: "Errore durante l'export" }
   }
 }

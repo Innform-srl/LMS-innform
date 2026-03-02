@@ -92,7 +92,7 @@ function AuthPageContent() {
                                                 <Mail className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                             </div>
                                             <FormControl>
-                                                <Input placeholder="nome@azienda.com" className="pl-11 h-12 bg-background/50" {...field} />
+                                                <Input placeholder="nome@azienda.com" autoComplete="email" className="pl-11 h-12 bg-background/50" {...field} />
                                             </FormControl>
                                         </div>
                                         <FormMessage />
@@ -110,23 +110,13 @@ function AuthPageContent() {
                                                 <Lock className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                             </div>
                                             <FormControl>
-                                                <Input type="password" placeholder="••••••••" className="pl-11 h-12 bg-background/50" {...field} />
+                                                <Input type="password" placeholder="••••••••" autoComplete="current-password" className="pl-11 h-12 bg-background/50" {...field} />
                                             </FormControl>
                                         </div>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
-
-                            <div className="flex items-center justify-between text-sm">
-                                <label className="flex items-center gap-2 cursor-pointer group">
-                                    <input type="checkbox" className="rounded border-border text-primary focus:ring-primary bg-background/50" />
-                                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">Ricordami</span>
-                                </label>
-                                <a href="#" className="text-primary hover:text-primary/80 font-medium transition-colors">
-                                    Password dimenticata?
-                                </a>
-                            </div>
 
                             {error && (
                                 <div className="text-destructive text-sm bg-destructive/10 border border-destructive/20 rounded-lg p-3">

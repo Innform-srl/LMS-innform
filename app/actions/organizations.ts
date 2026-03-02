@@ -1,11 +1,12 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions"
+import { reportError } from "@/lib/error-reporting"
 
 export async function getCompanies() {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") return []
+    const check = await requirePermission("company:manage")
+    if (!check.authorized) return []
 
     try {
         return await db.company.findMany({
@@ -13,13 +14,14 @@ export async function getCompanies() {
         })
     } catch (error) {
         console.error("Error fetching companies:", error)
+        reportError(error, { action: "getCompanies" })
         return []
     }
 }
 
 export async function getDepartments() {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") return []
+    const check = await requirePermission("company:manage")
+    if (!check.authorized) return []
 
     try {
         return await db.department.findMany({
@@ -27,13 +29,14 @@ export async function getDepartments() {
         })
     } catch (error) {
         console.error("Error fetching departments:", error)
+        reportError(error, { action: "getDepartments" })
         return []
     }
 }
 
 export async function searchUsers(query: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") return []
+    const check = await requirePermission("company:manage")
+    if (!check.authorized) return []
 
     if (!query || query.length < 2) return []
 
@@ -57,6 +60,7 @@ export async function searchUsers(query: string) {
         })
     } catch (error) {
         console.error("Error searching users:", error)
+        reportError(error, { action: "searchUsers" })
         return []
     }
 }

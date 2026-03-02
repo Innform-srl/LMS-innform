@@ -2,7 +2,9 @@
 
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions"
 import { Prisma } from "@prisma/client"
+import { reportError } from "@/lib/error-reporting"
 
 export interface AuditLogParams {
     action: string
@@ -32,6 +34,7 @@ export async function logAuditEvent(params: AuditLogParams) {
     } catch (error) {
         // Don't throw - logging should not break the application
         console.error("Failed to log audit event:", error)
+        reportError(error, { action: "logAuditEvent" })
     }
 }
 
@@ -60,6 +63,7 @@ export async function logAuditEventWithContext(
         })
     } catch (error) {
         console.error("Failed to log audit event:", error)
+        reportError(error, { action: "logAuditEventWithContext" })
     }
 }
 
@@ -73,9 +77,9 @@ export async function getAuditLogs(options?: {
     page?: number
     limit?: number
 }) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("audit:view")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     try {
@@ -118,6 +122,7 @@ export async function getAuditLogs(options?: {
         }
     } catch (error) {
         console.error("Error getting audit logs:", error)
+        reportError(error, { action: "getAuditLogs" })
         return { success: false, error: "Errore durante il recupero dei log" }
     }
 }

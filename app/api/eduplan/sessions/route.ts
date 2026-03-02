@@ -13,9 +13,10 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import crypto from 'crypto'
+import { reportError } from '@/lib/error-reporting'
 import { checkRateLimit } from '@/lib/security'
 
-const LMS_WEBHOOK_SECRET = process.env.LMS_WEBHOOK_SECRET || 'innform-lms-tms-integration-2025-secret'
+const LMS_WEBHOOK_SECRET = process.env.LMS_WEBHOOK_SECRET
 
 const RATE_LIMIT_REQUESTS = 30
 const RATE_LIMIT_WINDOW_MS = 60 * 1000
@@ -289,6 +290,7 @@ export async function POST(req: Request) {
     )
   } catch (error) {
     console.error('[EDUPLAN SESSIONS] Error:', error)
+    reportError(error, { route: "eduplan/sessions", action: "post" })
 
     try {
       await db.webhookEvent.create({
@@ -406,6 +408,7 @@ export async function DELETE(req: Request) {
     }, { headers: corsHeaders })
   } catch (error) {
     console.error('[EDUPLAN SESSIONS] Error deleting session:', error)
+    reportError(error, { route: "eduplan/sessions", action: "delete" })
 
     return NextResponse.json(
       {

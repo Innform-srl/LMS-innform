@@ -4,6 +4,10 @@ import bcrypt from "bcryptjs"
 import { NextResponse } from "next/server"
 
 export async function GET() {
+    if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json({ error: 'Not available' }, { status: 404 })
+    }
+
     try {
         const password = await bcrypt.hash("admin123", 10)
 

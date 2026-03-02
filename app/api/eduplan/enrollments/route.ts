@@ -13,12 +13,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { reportError } from '@/lib/error-reporting'
 import { db } from '@/lib/db'
 import crypto from 'crypto'
 import { checkRateLimit } from '@/lib/security'
 
-// Secret for HMAC verification - use env var or fallback
-const LMS_WEBHOOK_SECRET = process.env.LMS_WEBHOOK_SECRET || 'innform-lms-tms-integration-2025-secret'
+// Secret for HMAC verification - requires env var to be set
+const LMS_WEBHOOK_SECRET = process.env.LMS_WEBHOOK_SECRET
 
 // Rate limit: 30 requests per minute
 const RATE_LIMIT_REQUESTS = 30
@@ -324,6 +325,7 @@ export async function GET(request: NextRequest) {
     }, { headers: corsHeaders })
   } catch (error) {
     console.error('[EDUPLAN ENROLLMENTS] GET Error:', error)
+    reportError(error, { route: "eduplan/enrollments", action: "get" })
 
     return NextResponse.json(
       {
@@ -656,6 +658,7 @@ export async function POST(req: Request) {
     )
   } catch (error) {
     console.error('[EDUPLAN ENROLLMENT] Error:', error)
+    reportError(error, { route: "eduplan/enrollments", action: "post" })
 
     // Log the error
     try {
@@ -794,6 +797,7 @@ export async function DELETE(req: Request) {
     })
   } catch (error) {
     console.error('[EDUPLAN ENROLLMENT] Error deleting enrollment:', error)
+    reportError(error, { route: "eduplan/enrollments", action: "delete" })
 
     return NextResponse.json(
       {

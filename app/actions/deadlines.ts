@@ -1,8 +1,9 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions"
 import { revalidatePath } from "next/cache"
+import { reportError } from "@/lib/error-reporting"
 
 /**
  * Imposta un corso come obbligatorio con scadenza
@@ -12,9 +13,9 @@ export async function setCourseRequired(
     isRequired: boolean,
     dueInDays: number | null
 ) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("enrollment:manage")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     try {
@@ -59,6 +60,7 @@ export async function setCourseRequired(
         }
     } catch (error) {
         console.error("Error setting course required:", error)
+        reportError(error, { action: "setCourseRequired" })
         return {
             success: false,
             error: "Errore durante l'aggiornamento",
@@ -88,6 +90,7 @@ export async function calculateDueDateOnEnrollment(courseId: string, enrollmentI
         }
     } catch (error) {
         console.error("Error calculating due date:", error)
+        reportError(error, { action: "calculateDueDateOnEnrollment" })
     }
 }
 
@@ -95,9 +98,9 @@ export async function calculateDueDateOnEnrollment(courseId: string, enrollmentI
  * Ottieni enrollment con scadenze imminenti per dashboard admin
  */
 export async function getUpcomingDeadlines(daysAhead: number = 7) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("enrollment:manage")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     try {
@@ -135,6 +138,7 @@ export async function getUpcomingDeadlines(daysAhead: number = 7) {
         return { success: true, enrollments }
     } catch (error) {
         console.error("Error getting upcoming deadlines:", error)
+        reportError(error, { action: "getUpcomingDeadlines" })
         return { success: false, error: "Errore durante il recupero delle scadenze" }
     }
 }
@@ -143,9 +147,9 @@ export async function getUpcomingDeadlines(daysAhead: number = 7) {
  * Ottieni enrollment scaduti
  */
 export async function getOverdueEnrollments() {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("enrollment:manage")
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
 
     try {
@@ -179,6 +183,7 @@ export async function getOverdueEnrollments() {
         return { success: true, enrollments }
     } catch (error) {
         console.error("Error getting overdue enrollments:", error)
+        reportError(error, { action: "getOverdueEnrollments" })
         return { success: false, error: "Errore durante il recupero dei corsi scaduti" }
     }
 }

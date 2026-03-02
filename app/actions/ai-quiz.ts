@@ -2,6 +2,7 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { z } from "zod"
+import { reportError } from "@/lib/error-reporting"
 
 const questionSchema = z.object({
     question: z.string(),
@@ -59,6 +60,7 @@ export async function generateQuizQuestions(topic: string, count: number = 5) {
 
         if (!validated.success) {
             console.error("Validation error:", validated.error)
+            reportError(validated.error, { action: "generateQuizQuestions.validation" })
             return { success: false, error: "Formato risposta non valido" }
         }
 
@@ -66,6 +68,7 @@ export async function generateQuizQuestions(topic: string, count: number = 5) {
 
     } catch (error: unknown) {
         console.error("Gemini API Error:", error)
+        reportError(error, { action: "generateQuizQuestions" })
         return {
             success: false,
             error: `Errore: ${error instanceof Error ? error.message : "Errore sconosciuto durante la generazione"}`

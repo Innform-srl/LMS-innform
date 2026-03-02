@@ -20,17 +20,6 @@ export function sanitizeHtml(input: string): string {
 }
 
 /**
- * Sanitize string for use in SQL/database queries
- * Note: Prisma already handles this, but this is extra safety
- */
-export function sanitizeDbInput(input: string): string {
-    if (!input) return ''
-
-    // Remove potentially dangerous characters
-    return input.replace(/[;\-\-\/\*]/g, '')
-}
-
-/**
  * Validate email format
  */
 export function isValidEmail(email: string): boolean {
@@ -58,21 +47,6 @@ export function sanitizeFilename(filename: string): string {
         .replace(/\.\./g, '') // Remove parent directory references
         .replace(/[\/\\]/g, '') // Remove path separators
         .replace(/[^a-zA-Z0-9._-]/g, '_') // Replace special chars with underscore
-}
-
-/**
- * Check if string contains potential SQL injection
- */
-export function hasSqlInjection(input: string): boolean {
-    const sqlPatterns = [
-        /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE)\b)/i,
-        /(--|#|\/\*|\*\/)/,
-        /(\bOR\b.*=.*)/i,
-        /(\bAND\b.*=.*)/i,
-        /(;.*--)/
-    ]
-
-    return sqlPatterns.some(pattern => pattern.test(input))
 }
 
 /**
@@ -117,15 +91,6 @@ export function sanitizeTextInput(input: string, options?: {
             valid: false,
             sanitized: sanitizeHtml(input),
             error: 'Input contiene codice potenzialmente pericoloso'
-        }
-    }
-
-    // Check for SQL injection
-    if (hasSqlInjection(input)) {
-        return {
-            valid: false,
-            sanitized: sanitizeDbInput(input),
-            error: 'Input contiene pattern SQL non consentiti'
         }
     }
 

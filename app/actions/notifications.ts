@@ -1,12 +1,14 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import { requireAuth } from "@/lib/permissions"
 import { revalidatePath } from "next/cache"
+import { reportError } from "@/lib/error-reporting"
 
 export async function getNotifications() {
-    const session = await auth()
-    if (!session?.user) return []
+    const check = await requireAuth()
+    if (!check.authorized) return []
+    const session = check.session
 
     try {
         const notifications = await db.notification.findMany({
@@ -17,13 +19,15 @@ export async function getNotifications() {
         return notifications
     } catch (error) {
         console.error("Error fetching notifications:", error)
+        reportError(error, { action: "getNotifications" })
         return []
     }
 }
 
 export async function getUnreadNotificationCount() {
-    const session = await auth()
-    if (!session?.user) return 0
+    const check = await requireAuth()
+    if (!check.authorized) return 0
+    const session = check.session
 
     try {
         const count = await db.notification.count({
@@ -39,8 +43,9 @@ export async function getUnreadNotificationCount() {
 }
 
 export async function markNotificationAsRead(notificationId: string) {
-    const session = await auth()
-    if (!session?.user) return { success: false }
+    const check = await requireAuth()
+    if (!check.authorized) return { success: false }
+    const session = check.session
 
     try {
         await db.notification.update({
@@ -58,8 +63,9 @@ export async function markNotificationAsRead(notificationId: string) {
 }
 
 export async function markAllNotificationsAsRead() {
-    const session = await auth()
-    if (!session?.user) return { success: false }
+    const check = await requireAuth()
+    if (!check.authorized) return { success: false }
+    const session = check.session
 
     try {
         await db.notification.updateMany({
@@ -99,6 +105,7 @@ export async function createNotification(
         return { success: true }
     } catch (error) {
         console.error("Error creating notification:", error)
+        reportError(error, { action: "createNotification" })
         return { success: false }
     }
 }

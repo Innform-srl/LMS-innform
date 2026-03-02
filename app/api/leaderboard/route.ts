@@ -1,7 +1,13 @@
 import { db } from "@/lib/db"
+import { auth } from "@/lib/auth"
 import { NextResponse } from "next/server"
 
 export async function GET(req: Request) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: "Non autenticato" }, { status: 401 })
+    }
+
     try {
         const { searchParams } = new URL(req.url)
         const period = searchParams.get('period') || 'all-time' // week, month, all-time
@@ -28,8 +34,7 @@ export async function GET(req: Request) {
                 user: {
                     select: {
                         id: true,
-                        name: true,
-                        email: true
+                        name: true
                     }
                 }
             }
@@ -38,7 +43,7 @@ export async function GET(req: Request) {
         const leaderboard = topUsers.map((stats, index) => ({
             rank: index + 1,
             userId: stats.userId,
-            userName: stats.user.name || stats.user.email?.split('@')[0] || 'Unknown',
+            userName: stats.user.name || 'Unknown',
             totalPoints: stats.totalPoints,
             level: stats.level,
             coursesCompleted: stats.coursesCompleted,

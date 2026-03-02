@@ -2,7 +2,7 @@
  * Email Templates per Reminder Scadenze
  */
 
-const BASE_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://innform.com/lms'
 
 export interface ReminderEmailData {
     userName: string

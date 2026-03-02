@@ -160,7 +160,7 @@ export function Sidebar({ user }: SidebarProps) {
             )}
 
             {/* Sidebar Container */}
-            <div className={cn(
+            <nav aria-label="Navigazione principale" className={cn(
                 "fixed inset-y-0 left-0 z-40 w-72 bg-card border-r border-border transform transition-transform duration-300 ease-in-out md:translate-x-0",
                 isOpen ? "translate-x-0" : "-translate-x-full"
             )}>
@@ -263,7 +263,7 @@ export function Sidebar({ user }: SidebarProps) {
                         </div>
                     </div>
                 </div>
-            </div >
+            </nav>
         </>
     )
 }

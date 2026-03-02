@@ -1,10 +1,11 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import { requireAuth } from "@/lib/permissions"
 import { revalidatePath } from "next/cache"
 import { notifyTMSProgressUpdate } from "@/lib/tms-webhook-service"
 import { effectivelyPublishedModuleWhere } from "@/lib/module-utils"
+import { reportError } from "@/lib/error-reporting"
 
 /**
  * Update video progress for a module
@@ -17,10 +18,11 @@ export async function updateVideoProgress(
     totalSeconds: number,
     currentPosition: number
 ) {
-    const session = await auth()
-    if (!session?.user?.id) {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requireAuth()
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
+    const session = check.session
 
     try {
         // Get module to check minimum duration
@@ -92,6 +94,7 @@ export async function updateVideoProgress(
         return { success: true, progress }
     } catch (error) {
         console.error("Error updating video progress:", error)
+        reportError(error, { action: "updateVideoProgress" })
         return { success: false, error: "Errore durante il salvataggio del progresso" }
     }
 }
@@ -100,10 +103,11 @@ export async function updateVideoProgress(
  * Get video progress for a module
  */
 export async function getVideoProgress(moduleId: string) {
-    const session = await auth()
-    if (!session?.user?.id) {
+    const check = await requireAuth()
+    if (!check.authorized) {
         return null
     }
+    const session = check.session
 
     try {
         const progress = await db.moduleProgress.findUnique({
@@ -118,6 +122,7 @@ export async function getVideoProgress(moduleId: string) {
         return progress
     } catch (error) {
         console.error("Error getting video progress:", error)
+        reportError(error, { action: "getVideoProgress" })
         return null
     }
 }
@@ -185,9 +190,10 @@ async function updateCourseProgress(courseId: string, userId: string) {
 
         // Notify TMS if progress increased by 10% or more
         if (progressPercentage >= previousProgress + 10 || progressPercentage === 100) {
-            notifyTMSProgressUpdate(userId, courseId, currentEnrollment?.tmsEnrollmentId || undefined).catch(err =>
+            notifyTMSProgressUpdate(userId, courseId, currentEnrollment?.tmsEnrollmentId || undefined).catch(err => {
                 console.error("[TMS_WEBHOOK] Progress update notification failed:", err)
-            )
+                reportError(err, { action: "updateCourseProgress.tmsWebhook" })
+            })
         }
 
         // Check for strict completion (Certificates, etc.)
@@ -197,6 +203,7 @@ async function updateCourseProgress(courseId: string, userId: string) {
         revalidatePath('/')
     } catch (error) {
         console.error("Error updating course progress:", error)
+        reportError(error, { action: "updateCourseProgress" })
     }
 }
 
@@ -205,10 +212,11 @@ async function updateCourseProgress(courseId: string, userId: string) {
  * This updates the 'timeSpent' field which tracks wall-clock time
  */
 export async function trackModuleTime(moduleId: string, seconds: number) {
-    const session = await auth()
-    if (!session?.user?.id) {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requireAuth()
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
+    const session = check.session
 
     try {
         // Get module to find courseId
@@ -257,6 +265,7 @@ export async function trackModuleTime(moduleId: string, seconds: number) {
         return { success: true, timeSpent: progress.timeSpent }
     } catch (error) {
         console.error("Error tracking module time:", error)
+        reportError(error, { action: "trackModuleTime" })
         return { success: false, error: "Errore durante il tracciamento del tempo" }
     }
 }
@@ -266,10 +275,11 @@ export async function trackModuleTime(moduleId: string, seconds: number) {
  * Also performs the final check for minimum duration
  */
 export async function markModuleComplete(moduleId: string) {
-    const session = await auth()
-    if (!session?.user?.id) {
-        return { success: false, error: "Non autorizzato" }
+    const check = await requireAuth()
+    if (!check.authorized) {
+        return { success: false, error: check.error }
     }
+    const session = check.session
 
     try {
         // Check minimum duration requirement
@@ -328,6 +338,7 @@ export async function markModuleComplete(moduleId: string) {
         return { success: true }
     } catch (error) {
         console.error("Error marking module complete:", error)
+        reportError(error, { action: "markModuleComplete" })
         return { success: false, error: "Errore durante il completamento del modulo" }
     }
 }

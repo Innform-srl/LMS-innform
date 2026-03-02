@@ -1,12 +1,13 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import { requirePermission, requireAuth } from "@/lib/permissions"
 import { revalidatePath } from "next/cache"
 
 export async function getLiveSessions() {
-    const session = await auth()
-    if (!session?.user) return []
+    const check = await requireAuth()
+    if (!check.authorized) return []
+    const session = check.session
 
     const liveSessions = await db.liveSession.findMany({
         where: {
@@ -37,8 +38,8 @@ export async function getLiveSessions() {
 }
 
 export async function getAllLiveSessions() {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") return []
+    const check = await requirePermission("live-session:manage")
+    if (!check.authorized) return []
 
     const liveSessions = await db.liveSession.findMany({
         orderBy: { startTime: 'asc' },
@@ -59,8 +60,9 @@ export async function getAllLiveSessions() {
 }
 
 export async function getUpcomingSessions() {
-    const session = await auth()
-    if (!session?.user) return []
+    const check = await requireAuth()
+    if (!check.authorized) return []
+    const session = check.session
 
     const now = new Date()
 
@@ -109,10 +111,11 @@ export async function createLiveSession(data: {
     meetingUrl?: string
     courseId?: string
 }) {
-    const session = await auth()
-    if (!session?.user?.id || (session.user.role !== "ADMIN" && session.user.role !== "TEACHER")) {
-        throw new Error("Unauthorized")
+    const check = await requirePermission("live-session:manage")
+    if (!check.authorized) {
+        throw new Error(check.error)
     }
+    const session = check.session
 
     const googleMeetCode = data.meetingUrl ? extractGoogleMeetCode(data.meetingUrl) : null
 
@@ -135,8 +138,8 @@ export async function createLiveSession(data: {
 }
 
 export async function getLiveSessionById(id: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") return null
+    const check = await requirePermission("live-session:manage")
+    if (!check.authorized) return null
 
     return db.liveSession.findUnique({
         where: { id },
@@ -155,9 +158,9 @@ export async function updateLiveSession(id: string, data: {
     meetingUrl?: string
     courseId?: string
 }) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-        throw new Error("Unauthorized")
+    const check = await requirePermission("live-session:manage")
+    if (!check.authorized) {
+        throw new Error(check.error)
     }
 
     const googleMeetCode = data.meetingUrl ? extractGoogleMeetCode(data.meetingUrl) : null
@@ -181,9 +184,9 @@ export async function updateLiveSession(id: string, data: {
 }
 
 export async function toggleSessionVisibility(id: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-        throw new Error("Unauthorized")
+    const check = await requirePermission("live-session:manage")
+    if (!check.authorized) {
+        throw new Error(check.error)
     }
 
     const liveSession = await db.liveSession.findUnique({
@@ -204,9 +207,9 @@ export async function toggleSessionVisibility(id: string) {
 }
 
 export async function deleteLiveSession(id: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "TEACHER") {
-        throw new Error("Unauthorized")
+    const check = await requirePermission("live-session:manage")
+    if (!check.authorized) {
+        throw new Error(check.error)
     }
 
     await db.liveSession.delete({

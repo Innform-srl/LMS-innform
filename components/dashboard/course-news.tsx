@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { effectivelyPublishedModuleWhere } from "@/lib/module-utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
+import { NewModuleSpotlight } from "@/components/new-module-spotlight"
 
 function timeAgo(date: Date): string {
     const now = new Date()
@@ -141,6 +142,19 @@ export async function CourseNews() {
         courseMap.get(mod.courseId)!.modules.push(mod)
     }
 
+    // Find the newest "new" module (created within last 7 days)
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    let newestNew: typeof recentModules[0] | null = null
+    for (const mod of recentModules) {
+        const isNew = mod.createdAt.getTime() === mod.updatedAt.getTime()
+        if (isNew && mod.createdAt > sevenDaysAgo) {
+            if (!newestNew || mod.createdAt > newestNew.createdAt) {
+                newestNew = mod
+            }
+        }
+    }
+
     return (
         <Card className="glass border-border h-full">
             <CardHeader>
@@ -180,11 +194,13 @@ export async function CourseNews() {
                                 {course.modules.map((mod) => {
                                     const isNew = mod.createdAt.getTime() === mod.updatedAt.getTime()
                                     const moduleCompleted = mod.moduleProgress[0]?.completed ?? false
+                                    const isNewest = newestNew?.id === mod.id
 
                                     return (
                                         <div
                                             key={mod.id}
                                             className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg"
+                                            data-new-module={isNewest ? mod.id : undefined}
                                         >
                                             <ContentTypeIcon type={mod.contentType ?? null} />
                                             <div className="flex-1 min-w-0">
@@ -221,6 +237,15 @@ export async function CourseNews() {
                     ))}
                 </div>
             </CardContent>
+            {newestNew && (
+                <NewModuleSpotlight
+                    moduleId={newestNew.id}
+                    moduleTitle={newestNew.title}
+                    contentType={newestNew.contentType ?? null}
+                    targetSelector={`[data-new-module="${newestNew.id}"]`}
+                    href={`/courses/${newestNew.courseId}`}
+                />
+            )}
         </Card>
     )
 }

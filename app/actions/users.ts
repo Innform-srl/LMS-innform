@@ -1,16 +1,16 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions"
+import { bulkEnrollUsers } from "@/lib/enrollment-utils"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
 import { Role } from "@prisma/client"
+import { reportError } from "@/lib/error-reporting"
 
 export async function approveUser(userId: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, error: "Unauthorized" }
-    }
+    const check = await requirePermission("user:manage")
+    if (!check.authorized) return { success: false, error: check.error }
 
     try {
         await db.user.update({
@@ -25,15 +25,14 @@ export async function approveUser(userId: string) {
         return { success: true }
     } catch (error) {
         console.error("Error approving user:", error)
+        reportError(error, { action: "approveUser" })
         return { success: false, error: "Failed to approve user" }
     }
 }
 
 export async function createUser(formData: FormData) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, error: "Unauthorized" }
-    }
+    const check = await requirePermission("user:manage")
+    if (!check.authorized) return { success: false, error: check.error }
 
     const name = formData.get("name") as string
     const email = formData.get("email") as string
@@ -73,27 +72,17 @@ export async function createUser(formData: FormData) {
 
         // Batch enroll user in learning path courses - optimized query
         if (learningPathIds.length > 0) {
-            // Get all courses from selected learning paths in one query
             const learningPaths = await db.learningPath.findMany({
                 where: { id: { in: learningPathIds } },
                 include: { courses: { select: { courseId: true } } }
             })
 
-            // Collect unique course IDs
             const courseIds = [...new Set(
                 learningPaths.flatMap(path => path.courses.map(c => c.courseId))
             )]
 
-            if (courseIds.length > 0) {
-                // Create enrollments in batch, skip duplicates
-                await db.enrollment.createMany({
-                    data: courseIds.map(courseId => ({
-                        userId: user.id,
-                        courseId,
-                        progress: 0
-                    })),
-                    skipDuplicates: true
-                })
+            for (const courseId of courseIds) {
+                await bulkEnrollUsers([user.id], courseId)
             }
         }
 
@@ -101,15 +90,14 @@ export async function createUser(formData: FormData) {
         return { success: true }
     } catch (error) {
         console.error("Error creating user:", error)
+        reportError(error, { action: "createUser" })
         return { success: false, error: "Failed to create user" }
     }
 }
 
 export async function resetUserPassword(userId: string, newPassword: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, error: "Unauthorized" }
-    }
+    const check = await requirePermission("user:manage")
+    if (!check.authorized) return { success: false, error: check.error }
 
     try {
         const hashedPassword = await bcrypt.hash(newPassword, 10)
@@ -124,6 +112,29 @@ export async function resetUserPassword(userId: string, newPassword: string) {
         return { success: true }
     } catch (error) {
         console.error("Error resetting password:", error)
+        reportError(error, { action: "resetUserPassword" })
         return { success: false, error: "Failed to reset password" }
+    }
+}
+
+/**
+ * Restore a soft-deleted user.
+ */
+export async function restoreUser(userId: string) {
+    const check = await requirePermission("user:manage")
+    if (!check.authorized) return { success: false, error: check.error }
+
+    try {
+        await db.user.update({
+            where: { id: userId, deletedAt: { not: null } },
+            data: { deletedAt: null },
+        })
+
+        revalidatePath("/admin/users")
+        return { success: true }
+    } catch (error) {
+        console.error("Error restoring user:", error)
+        reportError(error, { action: "restoreUser" })
+        return { success: false, error: "Failed to restore user" }
     }
 }

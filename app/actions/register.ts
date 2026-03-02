@@ -3,6 +3,7 @@
 import { db } from "@/lib/db"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
+import { reportError } from "@/lib/error-reporting"
 
 const registerSchema = z.object({
     name: z.string().min(2),
@@ -43,6 +44,7 @@ export async function registerUser(values: z.infer<typeof registerSchema>) {
         return { success: true }
     } catch (error) {
         console.error("Registration error:", error)
+        reportError(error, { action: "registerUser" })
         return { success: false, error: "Errore durante la registrazione" }
     }
 }

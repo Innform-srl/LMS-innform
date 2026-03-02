@@ -27,9 +27,12 @@ export function ClientLayout({ children, user }: ClientLayoutProps) {
 
     return (
         <div className="flex min-h-screen bg-background">
+            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:m-2">
+                Vai al contenuto principale
+            </a>
             <GlobalActivityTracker />
             <Sidebar user={user} />
-            <main className="flex-1 md:pl-72 transition-all duration-300 flex flex-col">
+            <main id="main-content" className="flex-1 md:pl-72 transition-all duration-300 flex flex-col">
                 <Header />
                 <div className="flex-1">
                     {children}

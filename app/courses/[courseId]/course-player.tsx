@@ -24,6 +24,7 @@ import {
 
 import { Calendar } from "lucide-react"
 import { apiUrl } from "@/lib/api"
+import { NewModuleSpotlight } from "@/components/new-module-spotlight"
 
 // Dynamic import to avoid SSR issues with PDF.js
 const PDFViewer = dynamic(() => import("@/components/pdf-viewer").then(mod => ({ default: mod.PDFViewer })), {
@@ -41,6 +42,7 @@ type Module = {
     totalPages?: number | null
     minimumDuration?: number | null
     position: number
+    createdAt?: Date | string
     quiz?: {
         id: string
         title: string
@@ -98,6 +100,21 @@ export function CoursePlayer({
     const [userName, setUserName] = useState(initialUserName)
     const [showTimePopup, setShowTimePopup] = useState(false)
     const [hasShownTimePopup, setHasShownTimePopup] = useState(false)
+
+    // Detect newest module (created within last 7 days)
+    const newestModule = (() => {
+        const sevenDaysAgo = new Date()
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+        let newest: Module | null = null
+        for (const mod of modules) {
+            if (mod.createdAt && new Date(mod.createdAt) > sevenDaysAgo) {
+                if (!newest || !newest.createdAt || new Date(mod.createdAt) > new Date(newest.createdAt)) {
+                    newest = mod
+                }
+            }
+        }
+        return newest
+    })()
 
     // Track time locally for real-time UI updates (Course total)
     const [localTimeSpent, setLocalTimeSpent] = useState(enrollment.timeSpent)
@@ -169,11 +186,6 @@ export function CoursePlayer({
                 if (result.success) {
                     setCompletedModules(prev => new Set(prev).add(currentModule.id))
                     router.refresh()
-                    if (currentModuleIndex < modules.length - 1) {
-                        setTimeout(() => {
-                            setCurrentModuleIndex(currentModuleIndex + 1)
-                        }, 500)
-                    }
                 }
             })
         }
@@ -331,12 +343,6 @@ export function CoursePlayer({
         })
 
         router.refresh()
-
-        if (currentModuleIndex < modules.length - 1) {
-            setTimeout(() => {
-                setCurrentModuleIndex(currentModuleIndex + 1)
-            }, 500)
-        }
     }
 
     const getVideoEmbedUrl = (url: string | null) => {
@@ -508,7 +514,7 @@ export function CoursePlayer({
                                     <Calendar className="w-12 h-12 text-primary" />
                                 </div>
                                 <div>
-                                    <h2 className="text-3xl font-bold mb-2">{currentModule.liveSession.title}</h2>
+                                    <h2 className="text-3xl font-bold mb-2">{currentModule.liveSession.title.replace(/(\d{4})-(\d{2})-(\d{2})/, (_m, y, mo, d) => `${d}/${mo}/${y}`)}</h2>
                                     <p className="text-muted-foreground max-w-lg mx-auto">
                                         {currentModule.liveSession.description || "Partecipa alla sessione live per completare questo modulo."}
                                     </p>
@@ -648,68 +654,81 @@ export function CoursePlayer({
                         <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                             {modules.map((module, index) => {
                                 const unlocked = isModuleUnlocked(index)
+                                const isNewest = newestModule?.id === module.id
                                 return (
-                                <div
-                                    key={module.id}
-                                    onClick={() => unlocked && setCurrentModuleIndex(index)}
-                                    className={`p-4 rounded-xl transition-all duration-200 border ${
-                                        !unlocked
-                                            ? 'bg-muted/30 border-border opacity-60 cursor-not-allowed'
-                                            : currentModuleIndex === index
-                                                ? 'bg-primary/10 border-primary/50 shadow-lg shadow-primary/10 cursor-pointer'
-                                                : 'bg-muted/50 border-border hover:bg-muted hover:border-border cursor-pointer'
-                                    }`}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                                            completedModules.has(module.id)
-                                                ? 'bg-green-500 text-white'
-                                                : !unlocked
-                                                    ? 'bg-muted text-muted-foreground'
-                                                    : currentModuleIndex === index
-                                                        ? 'bg-primary text-primary-foreground'
-                                                        : 'bg-muted text-muted-foreground'
-                                            }`}>
-                                            {completedModules.has(module.id) ? (
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            ) : !unlocked ? (
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                                </svg>
-                                            ) : (
-                                                <span className="text-sm font-bold">{index + 1}</span>
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className={`text-sm font-medium truncate ${
-                                                !unlocked ? 'text-muted-foreground' : currentModuleIndex === index ? 'text-foreground' : 'text-muted-foreground'
+                                <div key={module.id} className="relative" data-new-module={isNewest ? module.id : undefined}>
+                                    <div
+                                        onClick={() => unlocked && setCurrentModuleIndex(index)}
+                                        className={`p-4 rounded-xl transition-all duration-200 border ${
+                                            !unlocked
+                                                ? 'bg-muted/30 border-border opacity-60 cursor-not-allowed'
+                                                : currentModuleIndex === index
+                                                    ? 'bg-primary/10 border-primary/50 shadow-lg shadow-primary/10 cursor-pointer'
+                                                    : 'bg-muted/50 border-border hover:bg-muted hover:border-border cursor-pointer'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                                                completedModules.has(module.id)
+                                                    ? 'bg-green-500 text-white'
+                                                    : !unlocked
+                                                        ? 'bg-muted text-muted-foreground'
+                                                        : currentModuleIndex === index
+                                                            ? 'bg-primary text-primary-foreground'
+                                                            : 'bg-muted text-muted-foreground'
                                                 }`}>
-                                                {module.title}
-                                            </p>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                                    {module.contentType === 'PDF' ? (
-                                                        <>
-                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                            </svg>
-                                                            PDF
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                            </svg>
-                                                            Video
-                                                        </>
-                                                    )}
-                                                </span>
+                                                {completedModules.has(module.id) ? (
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                ) : !unlocked ? (
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                    </svg>
+                                                ) : (
+                                                    <span className="text-sm font-bold">{index + 1}</span>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`text-sm font-medium truncate ${
+                                                    !unlocked ? 'text-muted-foreground' : currentModuleIndex === index ? 'text-foreground' : 'text-muted-foreground'
+                                                    }`}>
+                                                    {module.title}
+                                                </p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                        {module.contentType === 'PDF' ? (
+                                                            <>
+                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                </svg>
+                                                                PDF
+                                                            </>
+                                                        ) : module.contentType === 'LIVE' ? (
+                                                            <>
+                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                                </svg>
+                                                                Live
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                                Video
+                                                            </>
+                                                        )}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                    {/* New module badge */}
+                                    {isNewest && (
+                                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full ring-2 ring-background animate-pulse" />
+                                    )}
                                 </div>
                                 )
                             })}
@@ -756,6 +775,20 @@ export function CoursePlayer({
                     />
                 )
             }
+
+            {/* New module spotlight */}
+            {newestModule && (
+                <NewModuleSpotlight
+                    moduleId={newestModule.id}
+                    moduleTitle={newestModule.title}
+                    contentType={newestModule.contentType ?? null}
+                    targetSelector={`[data-new-module="${newestModule.id}"]`}
+                    onAction={() => {
+                        const idx = modules.findIndex(m => m.id === newestModule.id)
+                        if (idx !== -1 && isModuleUnlocked(idx)) setCurrentModuleIndex(idx)
+                    }}
+                />
+            )}
 
             <Dialog open={showTimePopup} onOpenChange={setShowTimePopup}>
                 <DialogContent>

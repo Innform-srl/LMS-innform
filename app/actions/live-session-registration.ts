@@ -1,12 +1,17 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import { requireAuth } from "@/lib/permissions"
 import { markModuleComplete } from "./video-progress"
+import { reportError } from "@/lib/error-reporting"
 
 export async function registerForLiveSession(sessionId: string, userId: string) {
-    const session = await auth()
-    if (!session?.user?.id || session.user.id !== userId) {
+    const check = await requireAuth()
+    if (!check.authorized) {
+        return { success: false, error: check.error }
+    }
+    const session = check.session
+    if (session.user.id !== userId) {
         return { success: false, error: "Unauthorized" }
     }
 
@@ -28,6 +33,7 @@ export async function registerForLiveSession(sessionId: string, userId: string) 
         return result
     } catch (error) {
         console.error("Error registering for live session:", error)
+        reportError(error, { action: "registerForLiveSession" })
         return { success: false, error: "Failed to register" }
     }
 }

@@ -21,13 +21,23 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "LMS Innform",
-  description: "Corporate E-learning Platform",
+  title: {
+    default: "LMS Innform",
+    template: "%s | LMS Innform",
+  },
+  description: "Piattaforma e-learning aziendale per la formazione professionale",
   manifest: "/lms/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "LMS Innform",
+  },
+  openGraph: {
+    title: "LMS Innform",
+    description: "Piattaforma e-learning aziendale per la formazione professionale",
+    type: "website",
+    locale: "it_IT",
+    siteName: "LMS Innform",
   },
 };
 

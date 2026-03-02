@@ -18,6 +18,7 @@ model User {
   approvedAt     DateTime?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+  deletedAt      DateTime?
   departmentId   String?
   comments       Comment[]
   courseRatings  CourseRating[]
@@ -52,6 +53,7 @@ model User {
   @@index([departmentId])
   @@index([createdAt])
   @@index([isApproved, createdAt])
+  @@index([deletedAt])
 }
 
 model Department {
@@ -173,6 +175,7 @@ model Enrollment {
   tmsEnrollmentId String?     // ID iscrizione nel TMS
   tmsUserId       String?     // ID utente nel TMS
   tmsSyncedAt     DateTime?   // Ultimo sync con TMS
+  deletedAt       DateTime?
   certificate    Certificate?
   course         Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -187,6 +190,7 @@ model Enrollment {
   @@index([completed])
   @@index([userId, completed])
   @@index([createdAt])
+  @@index([deletedAt])
 }
 
 model Quiz {

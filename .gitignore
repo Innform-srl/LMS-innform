@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/test-results
+/playwright-report
 
 # next.js
 /.next/
@@ -44,11 +46,18 @@ next-env.d.ts
 
 # Temporary/debug files
 *.backup
-*_output.txt
+*_output*.txt
 auth-debug.txt
 test-write.txt
+tsc_output.txt
 nul
 .emails_ignore/
+
+# Debug and check scripts (root only)
+/debug-*.js
+/debug-*.ts
+/check-*.ts
+/read-models.js
 
 .vercel
 .env*.local

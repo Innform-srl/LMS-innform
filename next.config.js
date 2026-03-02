@@ -1,3 +1,5 @@
+const { withSentryConfig } = require("@sentry/nextjs")
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     // Serve the app under /lms path
@@ -36,6 +38,22 @@ const nextConfig = {
                     {
                         key: 'Permissions-Policy',
                         value: 'camera=(), microphone=(), geolocation=()'
+                    },
+                    {
+                        key: 'Content-Security-Policy',
+                        value: [
+                            "default-src 'self'",
+                            "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+                            "style-src 'self' 'unsafe-inline'",
+                            "img-src 'self' data: blob: https:",
+                            "font-src 'self' data:",
+                            "connect-src 'self' https://*.supabase.co https://*.upstash.io https://*.sentry.io https://*.ingest.sentry.io https://*.googleapis.com https://oauth2.googleapis.com",
+                            "frame-src 'self' https://www.youtube.com https://player.vimeo.com https://drive.google.com https://accounts.google.com",
+                            "media-src 'self' blob:",
+                            "object-src 'none'",
+                            "base-uri 'self'",
+                            "form-action 'self'",
+                        ].join('; ')
                     }
                 ]
             }
@@ -47,7 +65,12 @@ const nextConfig = {
 
     // Configure image domains for Next/Image optimization
     images: {
-        remotePatterns: [],
+        remotePatterns: [
+            {
+                protocol: 'https',
+                hostname: '**',
+            },
+        ],
         // Enable image optimization
         unoptimized: false,
         // Optimize image formats
@@ -75,4 +98,9 @@ const nextConfig = {
     },
 }
 
-module.exports = nextConfig;
+module.exports = withSentryConfig(nextConfig, {
+    // Only upload source maps if SENTRY_AUTH_TOKEN is set
+    silent: true,
+    disableServerWebpackPlugin: !process.env.SENTRY_AUTH_TOKEN,
+    disableClientWebpackPlugin: !process.env.SENTRY_AUTH_TOKEN,
+});

@@ -1,14 +1,11 @@
 'use server'
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions"
 
 export async function getAnalyticsData() {
-    const session = await auth()
-
-    if (session?.user?.role !== "ADMIN") {
-        throw new Error("Unauthorized")
-    }
+    const check = await requirePermission("analytics:view")
+    if (!check.authorized) throw new Error(check.error)
 
     const [
         totalUsers,

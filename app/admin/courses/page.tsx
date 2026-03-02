@@ -11,44 +11,50 @@ export default async function CoursesPage() {
     const session = await auth()
     if (!session?.user) redirect("/login")
 
-    const courses = await db.course.findMany({
-        orderBy: { createdAt: "desc" },
-        include: {
-            _count: { select: { modules: true, enrollments: true } },
-            enrollments: {
-                where: {
-                    completed: false,
-                    dueDate: { not: null }
-                },
-                select: {
-                    dueDate: true
-                }
+    const now = new Date()
+    const in7Days = new Date()
+    in7Days.setDate(in7Days.getDate() + 7)
+
+    // Single query for courses with counts only (no N+1)
+    const [courses, expiringCounts, expiredCounts] = await Promise.all([
+        db.course.findMany({
+            orderBy: { createdAt: "desc" },
+            include: {
+                _count: { select: { modules: true, enrollments: true } },
             }
-        }
-    })
+        }),
+        // Count expiring enrollments (due within 7 days) grouped by course
+        db.enrollment.groupBy({
+            by: ["courseId"],
+            where: {
+                completed: false,
+                dueDate: { not: null, lte: in7Days, gte: now },
+            },
+            _count: true,
+        }),
+        // Count expired enrollments (past due) grouped by course
+        db.enrollment.groupBy({
+            by: ["courseId"],
+            where: {
+                completed: false,
+                dueDate: { not: null, lt: now },
+            },
+            _count: true,
+        }),
+    ])
+
+    const expiringMap = new Map(expiringCounts.map(e => [e.courseId, e._count]))
+    const expiredMap = new Map(expiredCounts.map(e => [e.courseId, e._count]))
 
     // Separate active and archived courses
     const activeCourses = courses.filter(c => !c.archived)
     const archivedCourses = courses.filter(c => c.archived)
 
-    // Calculate expiring/expired enrollments per course
-    const now = new Date()
-    const in7Days = new Date()
-    in7Days.setDate(in7Days.getDate() + 7)
-
-    const activeCoursesWithDeadlines = activeCourses.map(course => {
-        const expiring = course.enrollments.filter(e =>
-            e.dueDate && e.dueDate <= in7Days && e.dueDate >= now
-        )
-        const expired = course.enrollments.filter(e =>
-            e.dueDate && e.dueDate < now
-        )
-        return {
-            ...course,
-            expiringCount: expiring.length,
-            expiredCount: expired.length
-        }
-    })
+    const activeCoursesWithDeadlines = activeCourses.map(course => ({
+        ...course,
+        expiringCount: expiringMap.get(course.id) || 0,
+        expiredCount: expiredMap.get(course.id) || 0,
+    }))
 
     const archivedCoursesWithData = archivedCourses.map(course => ({
         ...course,

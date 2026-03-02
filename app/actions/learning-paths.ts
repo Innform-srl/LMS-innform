@@ -1,9 +1,10 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import { reportError } from "@/lib/error-reporting"
 
 const createLearningPathSchema = z.object({
     title: z.string().min(3, "Il titolo deve avere almeno 3 caratteri"),
@@ -13,10 +14,8 @@ const createLearningPathSchema = z.object({
 })
 
 export async function createLearningPath(formData: FormData) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, error: "Non autorizzato" }
-    }
+    const check = await requirePermission("learning-path:manage")
+    if (!check.authorized) return { success: false, error: check.error }
 
     const rawData = {
         title: formData.get("title"),
@@ -45,15 +44,14 @@ export async function createLearningPath(formData: FormData) {
         return { success: true }
     } catch (error) {
         console.error("Error creating learning path:", error)
+        reportError(error, { action: "createLearningPath" })
         return { success: false, error: "Errore durante la creazione del percorso" }
     }
 }
 
 export async function deleteLearningPath(id: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, message: "Non autorizzato" }
-    }
+    const check = await requirePermission("learning-path:manage")
+    if (!check.authorized) return { success: false, message: check.error }
 
     try {
         await db.learningPath.delete({
@@ -68,10 +66,8 @@ export async function deleteLearningPath(id: string) {
 }
 
 export async function addCourseToPath(pathId: string, courseId: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, message: "Non autorizzato" }
-    }
+    const check = await requirePermission("learning-path:manage")
+    if (!check.authorized) return { success: false, message: check.error }
 
     try {
         const count = await db.learningPathCourse.count({
@@ -93,10 +89,8 @@ export async function addCourseToPath(pathId: string, courseId: string) {
 }
 
 export async function removeCourseFromPath(pathId: string, courseId: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, message: "Non autorizzato" }
-    }
+    const check = await requirePermission("learning-path:manage")
+    if (!check.authorized) return { success: false, message: check.error }
 
     try {
         // Find the relation first
@@ -118,10 +112,8 @@ export async function removeCourseFromPath(pathId: string, courseId: string) {
 }
 
 export async function getSuggestedLearningPaths(companyId?: string, departmentId?: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return []
-    }
+    const check = await requirePermission("learning-path:manage")
+    if (!check.authorized) return []
 
     try {
         const orConditions: Array<{ companyId: string } | { departmentId: string }> = []
@@ -152,6 +144,7 @@ export async function getSuggestedLearningPaths(companyId?: string, departmentId
         })
     } catch (error) {
         console.error("Error fetching suggested learning paths:", error)
+        reportError(error, { action: "getSuggestedLearningPaths" })
         return []
     }
 }

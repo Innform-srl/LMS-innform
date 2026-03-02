@@ -29,6 +29,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                         const passwordsMatch = await bcrypt.compare(password, user.password)
                         if (passwordsMatch) {
+                            // Block soft-deleted users (defense-in-depth, middleware also filters)
+                            if ((user as unknown as { deletedAt: Date | null }).deletedAt) {
+                                return null
+                            }
                             if (!(user as unknown as { isApproved: boolean }).isApproved) {
                                 return null
                             }

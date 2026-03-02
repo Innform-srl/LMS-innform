@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 import { generateCertificateNumber } from "@/lib/utils"
 import { sendCertificateEmail } from "@/lib/email"
+import { reportError } from "@/lib/error-reporting"
 
 export async function POST(req: Request) {
     try {
@@ -82,6 +83,7 @@ export async function POST(req: Request) {
         })
     } catch (error) {
         console.error("[CERTIFICATE_GENERATE]", error)
+        reportError(error, { route: "certificates/generate" })
         return new NextResponse("Internal Error", { status: 500 })
     }
 }

@@ -1,12 +1,13 @@
 'use server'
 
-import { auth } from "@/lib/auth"
+import { requireAuth } from "@/lib/permissions"
 import { db } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
 export async function submitRating(courseId: string, rating: number, comment: string) {
-    const session = await auth()
-    if (!session?.user?.id) throw new Error("Unauthorized")
+    const check = await requireAuth()
+    if (!check.authorized) throw new Error(check.error)
+    const session = check.session
 
     await db.courseRating.upsert({
         where: {

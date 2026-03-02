@@ -1,10 +1,11 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { z } from "zod"
+import { reportError } from "@/lib/error-reporting"
 
 const quizSchema = z.object({
     title: z.string().min(1, { message: "Il titolo è obbligatorio" }),
@@ -25,10 +26,8 @@ const _questionSchema = z.object({
 
 
 export async function createQuiz(moduleId: string, formData: FormData) {
-    const session = await auth()
-    if (!session?.user) {
-        throw new Error("Non autorizzato")
-    }
+    const check = await requirePermission("quiz:create")
+    if (!check.authorized) throw new Error(check.error)
 
     const title = formData.get("title") as string
     const description = formData.get("description") as string
@@ -44,6 +43,7 @@ export async function createQuiz(moduleId: string, formData: FormData) {
             aiQuestions = JSON.parse(aiQuestionsJson)
         } catch (e) {
             console.error("Error parsing AI questions:", e)
+            reportError(e, { action: "createQuiz.parseAIQuestions" })
         }
     }
 
@@ -87,15 +87,14 @@ export async function createQuiz(moduleId: string, formData: FormData) {
         redirect(`/admin/quiz/${quiz.id}`)
     } catch (error) {
         console.error("Error creating quiz:", error)
+        reportError(error, { action: "createQuiz" })
         throw new Error("Errore durante la creazione del quiz")
     }
 }
 
 export async function addQuestion(quizId: string, prevState: { message: string; success?: boolean } | null, formData: FormData) {
-    const session = await auth()
-    if (!session?.user) {
-        return { message: "Non autorizzato" }
-    }
+    const check = await requirePermission("quiz:edit")
+    if (!check.authorized) return { message: check.error }
 
     const question = formData.get("question") as string
     const type = formData.get("type") as string || "MULTIPLE_CHOICE"
@@ -170,6 +169,7 @@ export async function addQuestion(quizId: string, prevState: { message: string; 
         return { success: true, message: "" }
     } catch (error) {
         console.error("Error adding question:", error)
+        reportError(error, { action: "addQuestion" })
         if (error instanceof Error) {
             console.error("Stack trace:", error.stack)
             return { message: `Errore: ${error.message}` }
@@ -179,8 +179,8 @@ export async function addQuestion(quizId: string, prevState: { message: string; 
 }
 
 export async function deleteQuestion(questionId: string, quizId: string) {
-    const session = await auth()
-    if (!session?.user) return { success: false, message: "Non autorizzato" }
+    const check = await requirePermission("quiz:delete")
+    if (!check.authorized) return { success: false, message: check.error }
 
     try {
         await db.question.delete({
@@ -194,10 +194,8 @@ export async function deleteQuestion(questionId: string, quizId: string) {
 }
 
 export async function updateQuiz(quizId: string, formData: FormData) {
-    const session = await auth()
-    if (!session?.user) {
-        throw new Error("Non autorizzato")
-    }
+    const check = await requirePermission("quiz:edit")
+    if (!check.authorized) throw new Error(check.error)
 
     const title = formData.get("title") as string
     const description = formData.get("description") as string
@@ -220,6 +218,7 @@ export async function updateQuiz(quizId: string, formData: FormData) {
         revalidatePath(`/admin/quiz/${quizId}`)
     } catch (error) {
         console.error("Error updating quiz:", error)
+        reportError(error, { action: "updateQuiz" })
         throw new Error("Errore durante l'aggiornamento")
     }
 }

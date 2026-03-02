@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -7,6 +8,7 @@ interface CourseCardProps {
         id: string
         title: string
         description: string | null
+        imageUrl?: string | null
         modules?: { id: string }[] // Optional modules array
         _count?: {
             modules: number
@@ -23,7 +25,19 @@ export function CourseCard({ course, progress }: CourseCardProps) {
 
     return (
         <Card className="glass border-border card-hover group overflow-hidden h-full flex flex-col">
-            <div className="h-2 bg-primary" />
+            {course.imageUrl ? (
+                <div className="relative h-40 w-full">
+                    <Image
+                        src={course.imageUrl}
+                        alt={course.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                </div>
+            ) : (
+                <div className="h-2 bg-primary" />
+            )}
             <CardHeader>
                 <CardTitle className="text-xl transition-all">{course.title}</CardTitle>
                 <CardDescription className="text-muted-foreground line-clamp-2 min-h-[40px]">

@@ -1,11 +1,12 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { z } from "zod"
 import { effectivelyPublishedModuleWhere } from "@/lib/module-utils"
+import { reportError } from "@/lib/error-reporting"
 
 function extractGoogleMeetCode(url: string): string | null {
     const match = url.match(/meet\.google\.com\/([a-z]{3}-[a-z]{4}-[a-z]{3})/i)
@@ -78,8 +79,9 @@ const moduleSchema = z.object({
 })
 
 export async function createModule(courseId: string, prevState: { message?: string } | null, formData: FormData) {
-    const session = await auth()
-    if (!session?.user) return { message: "Non autorizzato" }
+    const check = await requirePermission("module:create")
+    if (!check.authorized) return { message: check.error }
+    const session = check.session
 
     const title = formData.get("title") as string
     const description = formData.get("description") as string
@@ -178,6 +180,7 @@ export async function createModule(courseId: string, prevState: { message?: stri
         }
     } catch (error) {
         console.error(error)
+        reportError(error, { action: "createModule" })
         return { message: "Errore durante la creazione del modulo" }
     }
 
@@ -186,8 +189,8 @@ export async function createModule(courseId: string, prevState: { message?: stri
 }
 
 export async function deleteModule(moduleId: string, courseId: string) {
-    const session = await auth()
-    if (!session?.user) return { success: false, message: "Non autorizzato" }
+    const check = await requirePermission("module:delete")
+    if (!check.authorized) return { success: false, message: check.error }
 
     try {
         await db.module.delete({
@@ -201,8 +204,8 @@ export async function deleteModule(moduleId: string, courseId: string) {
 }
 
 export async function toggleModulePublished(moduleId: string, courseId: string) {
-    const session = await auth()
-    if (!session?.user) return { success: false, message: "Non autorizzato" }
+    const check = await requirePermission("module:publish")
+    if (!check.authorized) return { success: false, message: check.error }
 
     try {
         const courseModule = await db.module.findUnique({ where: { id: moduleId } })
@@ -228,8 +231,8 @@ export async function toggleModulePublished(moduleId: string, courseId: string) 
 }
 
 export async function toggleCoursePublished(courseId: string) {
-    const session = await auth()
-    if (!session?.user) return { success: false, message: "Non autorizzato" }
+    const check = await requirePermission("course:publish")
+    if (!check.authorized) return { success: false, message: check.error }
 
     try {
         const course = await db.course.findUnique({ where: { id: courseId } })
@@ -266,8 +269,9 @@ export async function updateModule(
         publishedUntil?: string | null
     }
 ) {
-    const session = await auth()
-    if (!session?.user) return { success: false, error: "Non autorizzato" }
+    const check = await requirePermission("module:edit")
+    if (!check.authorized) return { success: false, error: check.error }
+    const session = check.session
 
     try {
         const courseModule = await db.module.findUnique({
@@ -355,13 +359,14 @@ export async function updateModule(
         return { success: true }
     } catch (error) {
         console.error("Error updating module:", error)
+        reportError(error, { action: "updateModule" })
         return { success: false, error: "Errore durante l'aggiornamento del modulo" }
     }
 }
 
 export async function reorderModules(courseId: string, moduleIds: string[]) {
-    const session = await auth()
-    if (!session?.user) return { success: false, message: "Non autorizzato" }
+    const check = await requirePermission("module:reorder")
+    if (!check.authorized) return { success: false, message: check.error }
 
     try {
         await db.$transaction(
@@ -377,13 +382,14 @@ export async function reorderModules(courseId: string, moduleIds: string[]) {
         return { success: true }
     } catch (error) {
         console.error("Error reordering modules:", error)
+        reportError(error, { action: "reorderModules" })
         return { success: false, message: "Errore durante il riordino dei moduli" }
     }
 }
 
 export async function getModulesFromOtherCourses(currentCourseId: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") return []
+    const check = await requirePermission("module:duplicate")
+    if (!check.authorized) return []
 
     try {
         const courses = await db.course.findMany({
@@ -407,13 +413,14 @@ export async function getModulesFromOtherCourses(currentCourseId: string) {
         return courses
     } catch (error) {
         console.error("Error fetching other courses:", error)
+        reportError(error, { action: "getModulesFromOtherCourses" })
         return []
     }
 }
 
 export async function duplicateModule(moduleId: string, targetCourseId: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") return { success: false, message: "Non autorizzato" }
+    const check = await requirePermission("module:duplicate")
+    if (!check.authorized) return { success: false, message: check.error }
 
     try {
         const sourceModule = await db.module.findUnique({
@@ -454,6 +461,7 @@ export async function duplicateModule(moduleId: string, targetCourseId: string) 
         return { success: true, message: "Modulo importato con successo" }
     } catch (error) {
         console.error("Error duplicating module:", error)
+        reportError(error, { action: "duplicateModule" })
         return { success: false, message: "Errore durante l'importazione del modulo" }
     }
 }

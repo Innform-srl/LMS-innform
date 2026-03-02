@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { resend } from "@/lib/email"
+import { reportError } from "@/lib/error-reporting"
 import { NotificationType } from "@prisma/client"
 
 /**
@@ -230,6 +231,7 @@ export async function GET(request: Request) {
 
     } catch (error: unknown) {
         console.error('Session reminders cron error:', error)
+        reportError(error, { route: "cron/session-reminders" })
         return NextResponse.json(
             {
                 success: false,

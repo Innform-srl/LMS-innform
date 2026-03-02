@@ -1,19 +1,18 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import { reportError } from "@/lib/error-reporting"
 
 const companySchema = z.object({
     name: z.string().min(2, "Il nome deve avere almeno 2 caratteri"),
 })
 
 export async function createCompany(formData: FormData) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, error: "Non autorizzato" }
-    }
+    const check = await requirePermission("company:manage")
+    if (!check.authorized) return { success: false, error: check.error }
 
     const name = formData.get("name") as string
     const validatedFields = companySchema.safeParse({ name })
@@ -41,15 +40,14 @@ export async function createCompany(formData: FormData) {
         return { success: true }
     } catch (error) {
         console.error("Error creating company:", error)
+        reportError(error, { action: "createCompany" })
         return { success: false, error: "Errore durante la creazione dell'azienda" }
     }
 }
 
 export async function deleteCompany(companyId: string) {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return { success: false, error: "Non autorizzato" }
-    }
+    const check = await requirePermission("company:manage")
+    if (!check.authorized) return { success: false, error: check.error }
 
     try {
         await db.company.delete({
@@ -60,15 +58,14 @@ export async function deleteCompany(companyId: string) {
         return { success: true }
     } catch (error) {
         console.error("Error deleting company:", error)
+        reportError(error, { action: "deleteCompany" })
         return { success: false, error: "Errore durante l'eliminazione dell'azienda" }
     }
 }
 
 export async function getCompanies() {
-    const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
-        return []
-    }
+    const check = await requirePermission("company:manage")
+    if (!check.authorized) return []
 
     try {
         return await db.company.findMany({
@@ -81,6 +78,7 @@ export async function getCompanies() {
         })
     } catch (error) {
         console.error("Error fetching companies:", error)
+        reportError(error, { action: "getCompanies" })
         return []
     }
 }

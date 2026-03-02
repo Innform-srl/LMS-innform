@@ -13,9 +13,10 @@ import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { checkRateLimit } from '@/lib/security'
+import { reportError } from '@/lib/error-reporting'
 
-// Secret for HMAC verification - use env var or fallback
-const LMS_WEBHOOK_SECRET = process.env.LMS_WEBHOOK_SECRET || 'innform-lms-tms-integration-2025-secret'
+// Secret for HMAC verification - requires env var to be set
+const LMS_WEBHOOK_SECRET = process.env.LMS_WEBHOOK_SECRET
 
 // Rate limit: 30 requests per minute
 const RATE_LIMIT_REQUESTS = 30
@@ -215,6 +216,7 @@ export async function POST(req: Request) {
     })
   } catch (error) {
     console.error('[EDUPLAN] Error creating user:', error)
+    reportError(error, { route: "eduplan/users", action: "create" })
 
     // Log the error
     try {
@@ -343,6 +345,7 @@ export async function DELETE(req: Request) {
     })
   } catch (error) {
     console.error('[EDUPLAN] Error deleting user:', error)
+    reportError(error, { route: "eduplan/users", action: "delete" })
 
     return NextResponse.json(
       {
@@ -465,6 +468,7 @@ export async function PATCH(req: Request) {
     })
   } catch (error) {
     console.error('[EDUPLAN] Error updating password:', error)
+    reportError(error, { route: "eduplan/users", action: "patch" })
 
     return NextResponse.json(
       {

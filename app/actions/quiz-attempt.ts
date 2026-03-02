@@ -1,16 +1,18 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import { requireAuth } from "@/lib/permissions"
 import { revalidatePath } from "next/cache"
 import { Prisma } from "@prisma/client"
 import { sendQuizResultEmail } from "@/lib/email"
 import { trackQuizCompletion } from "@/lib/gamification"
+import { reportError } from "@/lib/error-reporting"
 import { notifyTMSQuizCompleted } from "@/lib/tms-webhook-service"
 
 export async function submitQuizAttempt(quizId: string, answers: Record<string, unknown>) {
-    const session = await auth()
-    if (!session?.user?.id) return { success: false, message: "Non autorizzato" }
+    const check = await requireAuth()
+    if (!check.authorized) return { success: false, message: check.error }
+    const session = check.session
 
     try {
         // Get quiz with questions
@@ -120,9 +122,10 @@ export async function submitQuizAttempt(quizId: string, answers: Record<string, 
         }
 
         // Notify TMS about quiz completion
-        notifyTMSQuizCompleted(session.user.id, attempt.id).catch(err =>
+        notifyTMSQuizCompleted(session.user.id, attempt.id).catch(err => {
             console.error("[TMS_WEBHOOK] Quiz completion notification failed:", err)
-        )
+            reportError(err, { action: "submitQuizAttempt.tmsWebhook" })
+        })
 
         revalidatePath(`/courses`)
         return {
@@ -135,13 +138,15 @@ export async function submitQuizAttempt(quizId: string, answers: Record<string, 
         }
     } catch (error) {
         console.error("Quiz submission error:", error)
+        reportError(error, { action: "submitQuizAttempt" })
         return { success: false, message: "Errore durante l'invio del quiz" }
     }
 }
 
 export async function getQuizResults(attemptId: string) {
-    const session = await auth()
-    if (!session?.user?.id) return null
+    const check = await requireAuth()
+    if (!check.authorized) return null
+    const session = check.session
 
     try {
         const attempt = await db.quizAttempt.findUnique({
@@ -178,8 +183,9 @@ export async function getQuizResults(attemptId: string) {
 }
 
 export async function canTakeQuiz(quizId: string) {
-    const session = await auth()
-    if (!session?.user?.id) return { canTake: false, message: "Non autorizzato" }
+    const check = await requireAuth()
+    if (!check.authorized) return { canTake: false, message: check.error }
+    const session = check.session
 
     try {
         const quiz = await db.quiz.findUnique({

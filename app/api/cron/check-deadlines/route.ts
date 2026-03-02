@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { resend } from "@/lib/email"
 import { deadlineReminder3Days, deadlineReminder1Day, deadlineOverdue } from "@/lib/email-templates-deadlines"
+import { reportError } from "@/lib/error-reporting"
 
 /**
  * Cron endpoint per controllare scadenze e inviare reminder
@@ -213,6 +214,7 @@ export async function GET(request: Request) {
 
     } catch (error: unknown) {
         console.error('Cron job error:', error)
+        reportError(error, { route: "cron/check-deadlines" })
         return NextResponse.json(
             {
                 success: false,

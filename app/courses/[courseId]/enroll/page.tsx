@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
 import { effectivelyPublishedModuleWhere } from "@/lib/module-utils"
 import { Clock, Calendar, CheckCircle } from "lucide-react"
+import Image from "next/image"
 
 export default async function EnrollPage({ params }: { params: Promise<{ courseId: string }> }) {
     const session = await auth()
@@ -43,10 +44,12 @@ export default async function EnrollPage({ params }: { params: Promise<{ courseI
                     {/* Course Image */}
                     {course.imageUrl && (
                         <div className="h-64 w-full relative">
-                            <img
+                            <Image
                                 src={course.imageUrl}
                                 alt={course.title}
-                                className="w-full h-full object-cover"
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 100vw, 768px"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
                         </div>

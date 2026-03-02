@@ -53,7 +53,7 @@ export async function UpcomingSessionsList() {
                                     </svg>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-foreground truncate">{liveSession.title}</p>
+                                    <p className="text-sm font-medium text-foreground truncate">{liveSession.title.replace(/(\d{4})-(\d{2})-(\d{2})/, (_m, y, mo, d) => `${d}/${mo}/${y}`)}</p>
                                     <div className="flex items-center gap-2">
                                         {liveSession.course && (
                                             <span className="text-xs text-muted-foreground truncate">{liveSession.course.title}</span>
