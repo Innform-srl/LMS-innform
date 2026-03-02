@@ -163,6 +163,7 @@ export function GoogleMeetSync({ sessionId, googleMeetCode, onSync }: GoogleMeet
                     body: JSON.stringify({ sessionId, method: "auto" })
                 })
                 const data = await res.json()
+                console.log("[Google Meet Sync] API response:", JSON.stringify(data, null, 2))
 
                 if (data.requiresAuth && data.authUrl) {
                     // Redirect per autenticazione OAuth

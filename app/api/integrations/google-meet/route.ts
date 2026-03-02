@@ -150,6 +150,14 @@ export async function POST(request: NextRequest) {
     try {
       // Trova TUTTI i conferenceRecord dal meetingCode (possono essere più di uno se il meeting è stato riavviato)
       const allConferencesRaw = await getAllConferencesByMeetingCode(accessToken, liveSession.googleMeetCode)
+
+      console.log(`[Google Meet Sync] Session "${liveSession.title}" (${sessionId})`)
+      console.log(`[Google Meet Sync] Session startTime: ${liveSession.startTime?.toISOString()}, endTime: ${liveSession.endTime?.toISOString()}`)
+      console.log(`[Google Meet Sync] Found ${allConferencesRaw.length} total conference records for code "${liveSession.googleMeetCode}"`)
+      allConferencesRaw.forEach((conf, i) => {
+        console.log(`[Google Meet Sync]   Conference ${i + 1}: name=${conf.name}, start=${conf.startTime}, end=${conf.endTime}`)
+      })
+
       if (allConferencesRaw.length === 0) {
         return NextResponse.json(
           { error: `Nessuna conferenza trovata per il codice ${liveSession.googleMeetCode}. La sessione è già terminata?` },
@@ -158,25 +166,40 @@ export async function POST(request: NextRequest) {
       }
 
       // Filtra solo i conference records che si sovrappongono con il giorno della sessione
-      // Usa un range con margine di 2 ore prima/dopo per gestire anticipi e ritardi
-      const sessionStart = liveSession.startTime
-        ? new Date(liveSession.startTime.getTime() - 2 * 60 * 60 * 1000)
-        : null
-      const sessionEnd = liveSession.endTime
-        ? new Date(liveSession.endTime.getTime() + 2 * 60 * 60 * 1000)
-        : null
+      // Strategia: confronta per giorno della sessione con margine di 2 ore prima/dopo
+      // Se startTime/endTime sono null, usa il giorno corrente come fallback
+      let sessionStart: Date | null = null
+      let sessionEnd: Date | null = null
+
+      if (liveSession.startTime && liveSession.endTime) {
+        sessionStart = new Date(liveSession.startTime.getTime() - 2 * 60 * 60 * 1000)
+        sessionEnd = new Date(liveSession.endTime.getTime() + 2 * 60 * 60 * 1000)
+      } else {
+        // Fallback: usa il giorno corrente (inizio e fine giornata) per filtrare
+        const today = new Date()
+        sessionStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0)
+        sessionEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
+      }
 
       const allConferences = allConferencesRaw.filter(conf => {
         const confStart = new Date(conf.startTime)
-        // Il conference deve iniziare entro il range della sessione
-        if (sessionStart && confStart < sessionStart) return false
-        if (sessionEnd && confStart > sessionEnd) return false
-        return true
+        const included = confStart >= sessionStart! && confStart <= sessionEnd!
+        console.log(`[Google Meet Sync]   Filtering conference start=${conf.startTime}: ${included ? 'INCLUDED' : 'EXCLUDED'} (range: ${sessionStart!.toISOString()} - ${sessionEnd!.toISOString()})`)
+        return included
       })
+
+      console.log(`[Google Meet Sync] After filtering: ${allConferences.length} conferences match session date`)
 
       if (allConferences.length === 0) {
         return NextResponse.json(
-          { error: `Nessuna conferenza trovata per il codice ${liveSession.googleMeetCode} nel giorno della sessione. Trovati ${allConferencesRaw.length} record in altre date.` },
+          {
+            error: `Nessuna conferenza trovata per il codice ${liveSession.googleMeetCode} nel giorno della sessione. Trovati ${allConferencesRaw.length} record in altre date.`,
+            debug: {
+              sessionStart: sessionStart.toISOString(),
+              sessionEnd: sessionEnd.toISOString(),
+              conferences: allConferencesRaw.map(c => ({ name: c.name, start: c.startTime, end: c.endTime }))
+            }
+          },
           { status: 404 }
         )
       }
@@ -185,7 +208,8 @@ export async function POST(request: NextRequest) {
       const allParticipantsMap = new Map<string, MeetParticipant>()
 
       for (const conference of allConferences) {
-        const confEnd = conference.endTime ?? liveSession.endTime?.toISOString() ?? null
+        // Se la conferenza è in corso (endTime null), usa l'ora attuale come fallback
+        const confEnd = conference.endTime ?? new Date().toISOString()
         const participants = await getConferenceParticipants(accessToken, conference.name, confEnd)
 
         for (const p of participants) {
@@ -228,9 +252,25 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Filtra le sessioni individuali dei partecipanti per includere solo quelle del giorno della sessione LMS
+      // Questo è necessario perché Google Meet può restituire partecipanti da conferenze precedenti
+      // quando lo stesso meeting code viene riutilizzato in giorni diversi
+      const sessionDayStart = liveSession.startTime
+        ? new Date(liveSession.startTime.getTime() - 2 * 60 * 60 * 1000)
+        : sessionStart!
+      const sessionDayEnd = liveSession.endTime
+        ? new Date(liveSession.endTime.getTime() + 2 * 60 * 60 * 1000)
+        : sessionEnd!
+
       // Deduplica sessioni sovrapposte per TUTTI i partecipanti (anche quelli da singolo conference)
       const mergedParticipants = Array.from(allParticipantsMap.values()).map(p => {
-        const sorted = [...p.sessions].sort(
+        // Prima filtra: tieni solo le sessioni che cadono nel giorno della sessione LMS
+        const dayFiltered = p.sessions.filter(s => {
+          const sStart = new Date(s.startTime)
+          return sStart >= sessionDayStart && sStart <= sessionDayEnd
+        })
+
+        const sorted = [...dayFiltered].sort(
           (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
         )
         const deduped: typeof sorted = []
@@ -249,16 +289,28 @@ export async function POST(request: NextRequest) {
             deduped.push({ ...s })
           }
         }
+
+        // Ricalcola earliestStartTime e latestEndTime dalle sessioni filtrate
+        const newEarliestStart = deduped.length > 0 ? deduped[0].startTime : p.earliestStartTime
+        const lastSess = deduped.length > 0 ? deduped[deduped.length - 1] : null
+        const newLatestEnd = lastSess?.endTime ?? p.latestEndTime
+
         return {
           ...p,
           sessions: deduped,
-          totalDurationMinutes: deduped.reduce((sum, s) => sum + s.durationMinutes, 0)
+          totalDurationMinutes: deduped.reduce((sum, s) => sum + s.durationMinutes, 0),
+          earliestStartTime: newEarliestStart,
+          latestEndTime: newLatestEnd
         }
-      })
+      }).filter(p => p.sessions.length > 0) // Rimuovi partecipanti senza sessioni nel giorno
+
+      console.log(`[Google Meet Sync] After participant session filtering: ${mergedParticipants.length} participants with sessions on session day`)
 
       // Usa l'ultimo conference per il conferenceEnd globale
+      // Se la conferenza è ancora in corso (endTime null), usa l'ora attuale come fallback
+      // invece dell'endTime programmato della sessione LMS
       const lastConference = allConferences[allConferences.length - 1]
-      conferenceEnd = lastConference.endTime ?? liveSession.endTime?.toISOString() ?? null
+      conferenceEnd = lastConference.endTime ?? new Date().toISOString()
 
       for (const p of mergedParticipants) {
         const email = extractEmail(p.email)
@@ -460,7 +512,24 @@ export async function POST(request: NextRequest) {
     unmatchedParticipants: unmatchedParticipants.length > 0 ? unmatchedParticipants : undefined,
     totalProcessed: participantEmails.length,
     totalFromMeet: method === "auto" ? participantEmails.length + unmatchedParticipants.length : undefined,
-    method
+    method,
+    // Debug: include conference and participant session info for troubleshooting
+    _debug: method === "auto" ? {
+      sessionTimes: {
+        startTime: liveSession.startTime?.toISOString(),
+        endTime: liveSession.endTime?.toISOString()
+      },
+      participantFirstCheckIn: meetParticipantsData.length > 0
+        ? meetParticipantsData[0].sessions[0]?.startTime ?? "no sessions"
+        : "no participants",
+      participantSessions: meetParticipantsData.slice(0, 2).map(p => ({
+        email: p.email,
+        checkIn: p.checkInTime.toISOString(),
+        checkOut: p.checkOutTime.toISOString(),
+        sessionCount: p.sessions.length,
+        firstSession: p.sessions[0] ? { start: p.sessions[0].startTime, end: p.sessions[0].endTime } : null
+      }))
+    } : undefined
   })
 }
 
