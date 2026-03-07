@@ -1,10 +1,10 @@
-import * as Sentry from "@sentry/nextjs";
-
 export async function register() {
-    Sentry.init({
-        dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-        enabled: !!process.env.NEXT_PUBLIC_SENTRY_DSN,
-        tracesSampleRate: 0.1,
-        debug: false,
-    });
+    if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+        const Sentry = await import("@sentry/nextjs");
+        Sentry.init({
+            dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+            tracesSampleRate: 0.1,
+            debug: false,
+        });
+    }
 }

@@ -1,4 +1,5 @@
-const { withSentryConfig } = require("@sentry/nextjs")
+const isDev = process.env.NODE_ENV === 'development';
+const { withSentryConfig } = isDev ? {} : require("@sentry/nextjs");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -85,22 +86,21 @@ const nextConfig = {
         optimizePackageImports: ['lucide-react', 'recharts', '@radix-ui/react-icons'],
     },
 
-    // Fix: webpack file watcher on Windows triggers spurious Fast Refresh rebuilds
+    // webpack watchOptions only needed when NOT using Turbopack
     webpack: (config, { dev }) => {
         if (dev) {
             config.watchOptions = {
-                ignored: ['**/node_modules/**', '**/.next/**', '**/.git/**', '**/.claude/**', '**/public/**'],
-                poll: 5000, // Poll every 5s instead of native fs.watch (fixes Windows spurious rebuilds)
-                aggregateTimeout: 3000,
+                ignored: ['**/node_modules/**', '**/.next/**', '**/.git/**', '**/.claude/**', '**/public/**', '**/prisma/**'],
             }
         }
         return config
     },
 }
 
-module.exports = withSentryConfig(nextConfig, {
-    // Only upload source maps if SENTRY_AUTH_TOKEN is set
-    silent: true,
-    disableServerWebpackPlugin: !process.env.SENTRY_AUTH_TOKEN,
-    disableClientWebpackPlugin: !process.env.SENTRY_AUTH_TOKEN,
-});
+module.exports = isDev
+    ? nextConfig
+    : withSentryConfig(nextConfig, {
+          silent: true,
+          disableServerWebpackPlugin: !process.env.SENTRY_AUTH_TOKEN,
+          disableClientWebpackPlugin: !process.env.SENTRY_AUTH_TOKEN,
+      });
