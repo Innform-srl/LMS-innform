@@ -1,54 +1,72 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { updateModule } from "@/app/actions/modules"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FileText, Video, Calendar } from "lucide-react"
-import { apiUrl } from "@/lib/api"
-import { formatDate } from "@/lib/utils"
-import dynamic from "next/dynamic"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { updateModule } from "@/app/actions/modules";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FileText, Video, Calendar } from "lucide-react";
+import { apiUrl } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
+import dynamic from "next/dynamic";
 
 const RichTextEditor = dynamic(
-    () => import("@/components/rich-text-editor").then(mod => ({ default: mod.RichTextEditor })),
+    () => import("@/components/rich-text-editor").then((mod) => ({ default: mod.RichTextEditor })),
     { ssr: false }
-)
+);
 
 function toLocalDatetimeString(date: Date | string): string {
-    const d = new Date(date)
-    const pad = (n: number) => n.toString().padStart(2, "0")
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+    const d = new Date(date);
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 type AvailableSession = {
-    id: string
-    title: string
-    startTime: string | null
-    endTime: string | null
-    meetingUrl: string | null
-}
+    id: string;
+    title: string;
+    startTime: string | null;
+    endTime: string | null;
+    meetingUrl: string | null;
+};
 
 type Module = {
-    id: string
-    title: string
-    description: string | null
-    videoUrl: string | null
-    videoDuration: number | null
-    contentType?: string | null
-    pdfUrl?: string | null
-    minimumDuration?: number | null
-    publishedUntil?: string | Date | null
-    position: number
-    liveSession?: { id: string; title: string; startTime: string | null; endTime: string | null; meetingUrl: string | null } | null
-}
+    id: string;
+    title: string;
+    description: string | null;
+    videoUrl: string | null;
+    videoDuration: number | null;
+    contentType?: string | null;
+    pdfUrl?: string | null;
+    minimumDuration?: number | null;
+    publishedUntil?: string | Date | null;
+    position: number;
+    liveSession?: {
+        id: string;
+        title: string;
+        startTime: string | null;
+        endTime: string | null;
+        meetingUrl: string | null;
+    } | null;
+};
 
-export function EditModuleForm({ module, courseId, availableSessions = [] }: { module: Module & { liveSessionId?: string | null; totalPages?: number | null; course: { id: string; title: string } }, courseId: string, availableSessions?: AvailableSession[] }) {
-    const router = useRouter()
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const [isUploading, setIsUploading] = useState(false)
+export function EditModuleForm({
+    module,
+    courseId,
+    availableSessions = [],
+}: {
+    module: Module & {
+        liveSessionId?: string | null;
+        totalPages?: number | null;
+        course: { id: string; title: string };
+    };
+    courseId: string;
+    availableSessions?: AvailableSession[];
+}) {
+    const router = useRouter();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [form, setForm] = useState({
         title: module.title,
         description: module.description || "",
@@ -62,38 +80,38 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
         startTime: module.liveSession?.startTime ? toLocalDatetimeString(module.liveSession.startTime) : "",
         endTime: module.liveSession?.endTime ? toLocalDatetimeString(module.liveSession.endTime) : "",
         meetingUrl: module.liveSession?.meetingUrl || "",
-        publishedUntil: module.publishedUntil ? toLocalDatetimeString(module.publishedUntil) : ""
-    })
+        publishedUntil: module.publishedUntil ? toLocalDatetimeString(module.publishedUntil) : "",
+    });
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        if (!file) return
+        const file = e.target.files?.[0];
+        if (!file) return;
 
-        setIsUploading(true)
-        const formData = new FormData()
-        formData.append('file', file)
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append("file", file);
 
         try {
-            const res = await fetch(apiUrl('/api/upload'), {
-                method: 'POST',
-                body: formData
-            })
-            const data = await res.json()
+            const res = await fetch(apiUrl("/api/upload"), {
+                method: "POST",
+                body: formData,
+            });
+            const data = await res.json();
             if (data.success) {
-                setForm(prev => ({ ...prev, pdfUrl: data.url }))
+                setForm((prev) => ({ ...prev, pdfUrl: data.url }));
             } else {
-                alert("Errore upload: " + data.message)
+                alert("Errore upload: " + data.message);
             }
         } catch (_err) {
-            alert("Errore durante l'upload")
+            alert("Errore durante l'upload");
         } finally {
-            setIsUploading(false)
+            setIsUploading(false);
         }
-    }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsSubmitting(true)
+        e.preventDefault();
+        setIsSubmitting(true);
 
         const result = await updateModule(module.id, {
             title: form.title,
@@ -108,18 +126,18 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
             startTime: form.startTime,
             endTime: form.endTime,
             meetingUrl: form.meetingUrl,
-            publishedUntil: form.publishedUntil || null
-        })
+            publishedUntil: form.publishedUntil || null,
+        });
 
         if (result.success) {
-            router.push(`/admin/courses/${courseId}`)
-            router.refresh()
+            router.push(`/admin/courses/${courseId}`);
+            router.refresh();
         } else {
-            alert(result.error || "Errore durante l'aggiornamento")
+            alert(result.error || "Errore durante l'aggiornamento");
         }
 
-        setIsSubmitting(false)
-    }
+        setIsSubmitting(false);
+    };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -156,29 +174,31 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                         placeholder="0 per nessuna durata minima"
                         className="mt-2"
                     />
-                    <p className="text-xs text-muted-foreground">Tempo minimo che l&apos;utente deve passare su questo modulo per completarlo.</p>
+                    <p className="text-xs text-muted-foreground">
+                        Tempo minimo che l&apos;utente deve passare su questo modulo per completarlo.
+                    </p>
                 </div>
 
                 <div className="space-y-4">
                     <Label>Tipo di Contenuto</Label>
                     <div className="flex gap-4">
                         <div
-                            className={`flex items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${form.contentType === 'VIDEO' ? 'border-primary bg-primary/10' : 'border-border hover:bg-accent'}`}
-                            onClick={() => setForm({ ...form, contentType: 'VIDEO' })}
+                            className={`flex items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${form.contentType === "VIDEO" ? "border-primary bg-primary/10" : "border-border hover:bg-accent"}`}
+                            onClick={() => setForm({ ...form, contentType: "VIDEO" })}
                         >
                             <Video className="w-5 h-5" />
                             <span className="font-semibold">Video</span>
                         </div>
                         <div
-                            className={`flex items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${form.contentType === 'PDF' ? 'border-primary bg-primary/10' : 'border-border hover:bg-accent'}`}
-                            onClick={() => setForm({ ...form, contentType: 'PDF' })}
+                            className={`flex items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${form.contentType === "PDF" ? "border-primary bg-primary/10" : "border-border hover:bg-accent"}`}
+                            onClick={() => setForm({ ...form, contentType: "PDF" })}
                         >
                             <FileText className="w-5 h-5" />
                             <span className="font-semibold">PDF / Slide</span>
                         </div>
                         <div
-                            className={`flex items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${form.contentType === 'LIVE' ? 'border-primary bg-primary/10' : 'border-border hover:bg-accent'}`}
-                            onClick={() => setForm({ ...form, contentType: 'LIVE' })}
+                            className={`flex items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${form.contentType === "LIVE" ? "border-primary bg-primary/10" : "border-border hover:bg-accent"}`}
+                            onClick={() => setForm({ ...form, contentType: "LIVE" })}
                         >
                             <Calendar className="w-5 h-5" />
                             <span className="font-semibold">Live Session</span>
@@ -186,7 +206,7 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                     </div>
                 </div>
 
-                {form.contentType === 'VIDEO' && (
+                {form.contentType === "VIDEO" && (
                     <>
                         <div>
                             <Label htmlFor="videoUrl">URL Video</Label>
@@ -214,7 +234,7 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                     </>
                 )}
 
-                {form.contentType === 'PDF' && (
+                {form.contentType === "PDF" && (
                     <div className="space-y-4">
                         <Label>Carica PDF</Label>
                         <div className="flex items-center gap-4">
@@ -225,7 +245,9 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                                 disabled={isUploading}
                                 className="cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                             />
-                            {isUploading && <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>}
+                            {isUploading && (
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                            )}
                         </div>
 
                         <div>
@@ -235,14 +257,13 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                                 value={form.pdfUrl}
                                 onChange={(e) => setForm({ ...form, pdfUrl: e.target.value })}
                                 placeholder="https://..."
-                                required
                                 className="mt-2"
                             />
                         </div>
                     </div>
                 )}
 
-                {form.contentType === 'LIVE' && (
+                {form.contentType === "LIVE" && (
                     <div className="space-y-4 border border-primary/30 p-4 rounded-lg bg-primary/5">
                         {availableSessions.length > 0 && (
                             <div className="space-y-2">
@@ -251,17 +272,27 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                                     value={form.selectedSessionId || "new"}
                                     onValueChange={(value) => {
                                         if (value === "new") {
-                                            setForm({ ...form, selectedSessionId: "", startTime: "", endTime: "", meetingUrl: "" })
+                                            setForm({
+                                                ...form,
+                                                selectedSessionId: "",
+                                                startTime: "",
+                                                endTime: "",
+                                                meetingUrl: "",
+                                            });
                                         } else {
-                                            const session = availableSessions.find(s => s.id === value)
+                                            const session = availableSessions.find((s) => s.id === value);
                                             if (session) {
                                                 setForm({
                                                     ...form,
                                                     selectedSessionId: session.id,
-                                                    startTime: session.startTime ? toLocalDatetimeString(session.startTime) : "",
-                                                    endTime: session.endTime ? toLocalDatetimeString(session.endTime) : "",
-                                                    meetingUrl: session.meetingUrl || ""
-                                                })
+                                                    startTime: session.startTime
+                                                        ? toLocalDatetimeString(session.startTime)
+                                                        : "",
+                                                    endTime: session.endTime
+                                                        ? toLocalDatetimeString(session.endTime)
+                                                        : "",
+                                                    meetingUrl: session.meetingUrl || "",
+                                                });
                                             }
                                         }
                                     }}
@@ -272,20 +303,29 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                                     <SelectContent>
                                         <SelectItem value="new">Crea nuova sessione</SelectItem>
                                         {[...availableSessions]
-                                            .filter(s => !s.startTime || new Date(s.startTime) >= new Date(new Date().toDateString()))
+                                            .filter(
+                                                (s) =>
+                                                    !s.startTime ||
+                                                    new Date(s.startTime) >= new Date(new Date().toDateString())
+                                            )
                                             .sort((a, b) => {
-                                                if (!a.startTime) return 1
-                                                if (!b.startTime) return -1
-                                                return new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+                                                if (!a.startTime) return 1;
+                                                if (!b.startTime) return -1;
+                                                return (
+                                                    new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+                                                );
                                             })
                                             .map((s, i) => (
-                                            <SelectItem key={s.id} value={s.id}>
-                                                {i + 2}. {s.title}{s.startTime ? ` - ${formatDate(new Date(s.startTime))}` : ""}
-                                            </SelectItem>
-                                        ))}
+                                                <SelectItem key={s.id} value={s.id}>
+                                                    {i + 2}. {s.title}
+                                                    {s.startTime ? ` - ${formatDate(new Date(s.startTime))}` : ""}
+                                                </SelectItem>
+                                            ))}
                                     </SelectContent>
                                 </Select>
-                                <p className="text-xs text-muted-foreground">Seleziona un&apos;aula virtuale esistente o creane una nuova.</p>
+                                <p className="text-xs text-muted-foreground">
+                                    Seleziona un&apos;aula virtuale esistente o creane una nuova.
+                                </p>
                             </div>
                         )}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -372,5 +412,5 @@ export function EditModuleForm({ module, courseId, availableSessions = [] }: { m
                 </Button>
             </div>
         </form>
-    )
+    );
 }
