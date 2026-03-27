@@ -614,19 +614,29 @@ export async function POST(req: Request) {
     })
 
     if (existingEnrollment) {
-      // Update existing enrollment with EduPlan ID if not set
+      // Update existing enrollment: set EduPlan ID and/or edition
+      const updateData: Record<string, unknown> = {}
+
       if (!existingEnrollment.tmsEnrollmentId) {
+        updateData.tmsEnrollmentId = payload.eduplan_enrollment_id
+        updateData.tmsSyncedAt = new Date()
+      }
+
+      // If edition_id provided and enrollment has no edition (or different), update it
+      if (editionId && existingEnrollment.editionId !== editionId) {
+        updateData.editionId = editionId
+      }
+
+      if (Object.keys(updateData).length > 0) {
         await db.enrollment.update({
           where: { id: existingEnrollment.id },
-          data: {
-            tmsEnrollmentId: payload.eduplan_enrollment_id,
-            tmsSyncedAt: new Date(),
-          },
+          data: updateData,
         })
-        console.log('[EDUPLAN ENROLLMENT] Updated existing enrollment with EduPlan ID:', {
+        console.log('[EDUPLAN ENROLLMENT] Updated existing enrollment:', {
           requestId,
           enrollmentId: existingEnrollment.id,
-          tmsEnrollmentId: payload.eduplan_enrollment_id,
+          updates: Object.keys(updateData),
+          editionId: editionId,
         })
       }
 
@@ -636,11 +646,13 @@ export async function POST(req: Request) {
         courseId: course.id,
         courseTitle: course.title,
         existingEnrollmentId: existingEnrollment.id,
+        editionUpdated: !!editionId && existingEnrollment.editionId !== editionId,
       })
       return NextResponse.json({
         success: true,
         enrollment_id: existingEnrollment.id,
         existing: true,
+        edition_updated: !!editionId && existingEnrollment.editionId !== editionId,
         message: 'User already enrolled in this course',
         debug: {
           user_id: user.id,
