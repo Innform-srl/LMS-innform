@@ -62,7 +62,7 @@ export async function assignCourseToDepartment(courseId: string, departmentId: s
     }
 }
 
-export async function enrollUser(courseId: string, userId: string) {
+export async function enrollUser(courseId: string, userId: string, editionId?: string) {
     const check = await requirePermission("enrollment:manage")
     if (!check.authorized) return { success: false, message: check.error }
 
@@ -71,6 +71,7 @@ export async function enrollUser(courseId: string, userId: string) {
             data: {
                 courseId,
                 userId,
+                editionId: editionId || null,
                 progress: 0,
                 completed: false
             }

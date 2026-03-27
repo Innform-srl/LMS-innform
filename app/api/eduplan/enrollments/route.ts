@@ -43,6 +43,7 @@ export async function OPTIONS() {
 interface EduPlanEnrollmentPayload {
   user_email: string
   course_id: string
+  edition_id?: string
   eduplan_enrollment_id: string
   due_date?: string
 }
@@ -104,6 +105,8 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') // 'completed', 'in_progress', 'all' (default)
     const includeCertificate = searchParams.get('include_certificate') !== 'false' // default true
     const eduCourseIds = searchParams.get('eduCourseIds') // comma-separated list of EDU course IDs
+    const editionIdFilter = searchParams.get('edition_id') // filter by specific edition
+    const includeEdition = searchParams.get('include_edition') === 'true' // include edition data
 
     // Validate email parameter
     if (!email) {
@@ -209,7 +212,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause for enrollments
-    const whereClause: { userId: string; completed?: boolean; courseId?: { in: string[] } } = { userId: user.id }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const whereClause: any = { userId: user.id }
 
     if (status === 'completed') {
       whereClause.completed = true
@@ -221,6 +225,11 @@ export async function GET(request: NextRequest) {
     // Filter by mapped LMS courses if eduCourseIds was provided
     if (allowedLmsCourseIds) {
       whereClause.courseId = { in: allowedLmsCourseIds }
+    }
+
+    // Filter by edition if provided
+    if (editionIdFilter) {
+      whereClause.editionId = editionIdFilter
     }
 
     // Fetch enrollments with course and certificate data
@@ -252,6 +261,18 @@ export async function GET(request: NextRequest) {
               certificateNumber: true,
               verificationCode: true,
               issuedAt: true,
+            },
+          },
+        }),
+        ...(includeEdition && {
+          edition: {
+            select: {
+              id: true,
+              code: true,
+              title: true,
+              status: true,
+              startDate: true,
+              endDate: true,
             },
           },
         }),
@@ -296,6 +317,14 @@ export async function GET(request: NextRequest) {
             downloadUrl: `/api/certificates/${enrollment.certificate.id}/download`,
           }
         : null,
+      edition_id: enrollment.editionId || null,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...((includeEdition && (enrollment as any).edition) ? {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        edition_code: (enrollment as any).edition.code,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        edition_title: (enrollment as any).edition.title,
+      } : {}),
     }))
 
     console.log('[EDUPLAN ENROLLMENTS] Returning enrollments:', {
@@ -524,6 +553,35 @@ export async function POST(req: Request) {
       courseTitle: course.title,
     })
 
+    // Validate edition_id if provided
+    let editionId: string | null = null
+    if (payload.edition_id) {
+      const edition = await db.edition.findUnique({
+        where: { id: payload.edition_id },
+        select: { id: true, courseId: true },
+      })
+
+      if (!edition) {
+        return NextResponse.json(
+          { success: false, error: 'Edition not found', code: 'EDITION_NOT_FOUND' },
+          { status: 404 }
+        )
+      }
+
+      if (edition.courseId !== course.id) {
+        return NextResponse.json(
+          { success: false, error: 'Edition does not belong to the specified course', code: 'EDITION_COURSE_MISMATCH' },
+          { status: 400 }
+        )
+      }
+
+      editionId = edition.id
+      console.log('[EDUPLAN ENROLLMENT] Edition validated:', {
+        requestId,
+        editionId: edition.id,
+      })
+    }
+
     // Check if enrollment already exists
     const existingEnrollment = await db.enrollment.findUnique({
       where: {
@@ -599,6 +657,7 @@ export async function POST(req: Request) {
       data: {
         userId: user.id,
         courseId: course.id,
+        editionId: editionId,
         progress: 0,
         completed: false,
         timeSpent: 0,
@@ -619,6 +678,7 @@ export async function POST(req: Request) {
           requestPayload: {
             user_email: payload.user_email,
             course_id: payload.course_id,
+            edition_id: payload.edition_id || null,
             eduplan_enrollment_id: payload.eduplan_enrollment_id,
             due_date: payload.due_date,
           },

@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card"
 import { CourseAssignments } from "./course-assignments"
 import { CollapsibleSection } from "@/components/ui/collapsible-section"
 import { ImportModuleDialog } from "./import-module-dialog"
+import { EditionsSection } from "./editions-section"
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ courseId: string }> }) {
     const session = await auth()
@@ -34,6 +35,12 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
                     },
                     liveSession: true
                 }
+            },
+            editions: {
+                orderBy: { createdAt: "desc" },
+                include: {
+                    _count: { select: { enrollments: true } },
+                },
             },
             _count: {
                 select: { enrollments: true }
@@ -189,6 +196,25 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
                         courseId={course.id}
                         initialCompanyId={course.companyId}
                         initialDepartmentId={course.departmentId}
+                        editions={course.editions.map(e => ({
+                            id: e.id,
+                            code: e.code,
+                            title: e.title,
+                            status: e.status,
+                        }))}
+                    />
+                </div>
+
+                {/* Editions Section */}
+                <div className="mb-8">
+                    <EditionsSection
+                        courseId={course.id}
+                        courseTitle={course.title}
+                        editions={course.editions.map(e => ({
+                            ...e,
+                            startDate: e.startDate?.toISOString() || null,
+                            endDate: e.endDate?.toISOString() || null,
+                        }))}
                     />
                 </div>
 

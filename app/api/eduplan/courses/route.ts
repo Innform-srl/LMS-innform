@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const includeModules = searchParams.get("include_modules") === "true";
+        const includeEditions = searchParams.get("include_editions") === "true";
         const publishedOnly = searchParams.get("published_only") !== "false"; // default true
         const limit = parseInt(searchParams.get("limit") || "100");
         const offset = parseInt(searchParams.get("offset") || "0");
@@ -69,6 +70,21 @@ export async function GET(request: NextRequest) {
                         tmsCourseCode: true,
                     },
                 },
+                editions: includeEditions
+                    ? {
+                          orderBy: { createdAt: "desc" as const },
+                          select: {
+                              id: true,
+                              code: true,
+                              title: true,
+                              status: true,
+                              startDate: true,
+                              endDate: true,
+                              maxParticipants: true,
+                              _count: { select: { enrollments: true } },
+                          },
+                      }
+                    : false,
                 _count: {
                     select: {
                         enrollments: true,
@@ -104,6 +120,22 @@ export async function GET(request: NextRequest) {
             tmsCourseCode: course.tmsMappings[0]?.tmsCourseCode ?? null,
             tmsCourseId: course.tmsMappings[0]?.tmsCourseId ?? null,
             ...(includeModules && course.modules ? { modules: course.modules } : {}),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ...(includeEditions && (course as any).editions
+                ? {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      editions: (course as any).editions.map((ed: any) => ({
+                          id: ed.id,
+                          code: ed.code,
+                          title: ed.title,
+                          status: ed.status,
+                          startDate: ed.startDate?.toISOString() || null,
+                          endDate: ed.endDate?.toISOString() || null,
+                          maxParticipants: ed.maxParticipants,
+                          totalEnrollments: ed._count?.enrollments ?? 0,
+                      })),
+                  }
+                : {}),
         }));
 
         return NextResponse.json(
