@@ -9,16 +9,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { getCompanies, getDepartments, searchUsers } from "@/app/actions/organizations"
 import { assignCourseToCompany, assignCourseToDepartment, enrollUser, unenrollUser, getCourseEnrollments, getUnenrolledUsers } from "@/app/actions/enrollments"
 import { toast } from "sonner"
-import { Loader2, Search, Trash2, UserPlus, Users, Building, Briefcase } from "lucide-react"
+import { Loader2, Search, Trash2, UserPlus, Users, Building, Briefcase, BookOpen } from "lucide-react"
 import { formatDateOnly } from "@/lib/utils"
+
+interface EditionOption {
+    id: string
+    code: string
+    title: string
+    status: string
+}
 
 interface CourseAssignmentsProps {
     courseId: string
     initialCompanyId?: string | null
     initialDepartmentId?: string | null
+    editions?: EditionOption[]
 }
 
-export function CourseAssignments({ courseId, initialCompanyId, initialDepartmentId }: CourseAssignmentsProps) {
+export function CourseAssignments({ courseId, initialCompanyId, initialDepartmentId, editions = [] }: CourseAssignmentsProps) {
     const [companies, setCompanies] = useState<{ id: string, name: string }[]>([])
     const [departments, setDepartments] = useState<{ id: string, name: string }[]>([])
     const [selectedCompany, setSelectedCompany] = useState<string>(initialCompanyId || "")
@@ -32,6 +40,8 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
     const [enrollments, setEnrollments] = useState<{ id: string; userId: string; createdAt: Date; user: { id: string; name: string | null; email: string; department: { name: string } | null; company: { name: string } | null } }[]>([])
     const [showUnenrolled, setShowUnenrolled] = useState(false)
     const [unenrolledUsers, setUnenrolledUsers] = useState<{ id: string; name: string | null; email: string; department: { name: string } | null; company: { name: string } | null }[]>([])
+    const [selectedEdition, setSelectedEdition] = useState<string>("")
+    const hasEditions = editions.length > 0
 
     const loadData = async () => {
         try {
@@ -110,7 +120,7 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
     }
 
     const handleEnrollUser = async (userId: string) => {
-        const result = await enrollUser(courseId, userId)
+        const result = await enrollUser(courseId, userId, selectedEdition || undefined)
         if (result.success) {
             toast.success(result.message)
             loadData()
@@ -221,6 +231,25 @@ export function CourseAssignments({ courseId, initialCompanyId, initialDepartmen
                     </TabsContent>
 
                     <TabsContent value="individual" className="space-y-4">
+                        {hasEditions && (
+                            <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/20">
+                                <BookOpen className="w-4 h-4 text-primary shrink-0" />
+                                <span className="text-sm font-medium shrink-0">Edizione:</span>
+                                <Select value={selectedEdition} onValueChange={setSelectedEdition}>
+                                    <SelectTrigger className="flex-1">
+                                        <SelectValue placeholder="Seleziona edizione (opzionale)" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="">Nessuna edizione</SelectItem>
+                                        {editions.map(ed => (
+                                            <SelectItem key={ed.id} value={ed.id}>
+                                                {ed.title} ({ed.code})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
                         <div className="flex gap-2">
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
