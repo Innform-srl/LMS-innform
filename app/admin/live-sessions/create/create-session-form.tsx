@@ -1,35 +1,54 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createLiveSession } from "@/app/actions/live-sessions"
-import { useToast } from "@/components/ui/use-toast"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { createLiveSession } from "@/app/actions/live-sessions";
+import { useToast } from "@/components/ui/use-toast";
 
-interface CreateSessionFormProps {
-    courses: { id: string; title: string }[]
+interface Edition {
+    id: string;
+    code: string;
+    title: string;
+    status: string;
 }
 
-export function CreateSessionForm({ courses }: CreateSessionFormProps) {
-    const router = useRouter()
-    const { toast } = useToast()
-    const [loading, setLoading] = useState(false)
+interface CreateSessionFormProps {
+    courses: { id: string; title: string; editions: Edition[] }[];
+    instructors: { id: string; name: string | null; email: string }[];
+    currentUserId: string;
+}
+
+export function CreateSessionForm({ courses, instructors, currentUserId }: CreateSessionFormProps) {
+    const router = useRouter();
+    const { toast } = useToast();
+    const [loading, setLoading] = useState(false);
+    const [selectedCourseId, setSelectedCourseId] = useState<string>("none");
+    const [selectedEditionId, setSelectedEditionId] = useState<string>("none");
+    const [selectedInstructorId, setSelectedInstructorId] = useState<string>(currentUserId);
+
+    const selectedCourse = courses.find((c) => c.id === selectedCourseId);
+    const availableEditions = selectedCourse?.editions || [];
+
+    const handleCourseChange = (value: string) => {
+        setSelectedCourseId(value);
+        setSelectedEditionId("none");
+    };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault()
-        setLoading(true)
+        e.preventDefault();
+        setLoading(true);
 
-        const formData = new FormData(e.currentTarget)
-        const title = formData.get("title") as string
-        const description = formData.get("description") as string
-        const startTime = formData.get("startTime") as string
-        const endTime = formData.get("endTime") as string
-        const meetingUrl = formData.get("meetingUrl") as string
-        const courseId = formData.get("courseId") as string
+        const formData = new FormData(e.currentTarget);
+        const title = formData.get("title") as string;
+        const description = formData.get("description") as string;
+        const startTime = formData.get("startTime") as string;
+        const endTime = formData.get("endTime") as string;
+        const meetingUrl = formData.get("meetingUrl") as string;
 
         try {
             await createLiveSession({
@@ -38,25 +57,27 @@ export function CreateSessionForm({ courses }: CreateSessionFormProps) {
                 startTime: startTime ? new Date(startTime) : undefined,
                 endTime: endTime ? new Date(endTime) : undefined,
                 meetingUrl: meetingUrl || undefined,
-                courseId: courseId === "none" ? undefined : courseId
-            })
+                courseId: selectedCourseId === "none" ? undefined : selectedCourseId,
+                editionId: selectedEditionId === "none" ? undefined : selectedEditionId,
+                instructorId: selectedInstructorId,
+            });
 
             toast({
                 title: "Successo",
                 description: "Sessione creata correttamente",
-            })
+            });
 
-            router.push("/admin/live-sessions")
+            router.push("/admin/live-sessions");
         } catch (_error) {
             toast({
                 title: "Errore",
                 description: "Impossibile creare la sessione",
-                variant: "destructive"
-            })
+                variant: "destructive",
+            });
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
 
     return (
         <form onSubmit={handleSubmit} noValidate className="space-y-6">
@@ -87,8 +108,24 @@ export function CreateSessionForm({ courses }: CreateSessionFormProps) {
             </div>
 
             <div className="space-y-2">
-                <Label htmlFor="courseId">Collega a un Corso (Opzionale)</Label>
-                <Select name="courseId">
+                <Label>Docente</Label>
+                <Select value={selectedInstructorId} onValueChange={setSelectedInstructorId}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Seleziona docente..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {instructors.map((inst) => (
+                            <SelectItem key={inst.id} value={inst.id}>
+                                {inst.name || inst.email}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+
+            <div className="space-y-2">
+                <Label>Collega a un Corso (Opzionale)</Label>
+                <Select value={selectedCourseId} onValueChange={handleCourseChange}>
                     <SelectTrigger>
                         <SelectValue placeholder="Seleziona un corso..." />
                     </SelectTrigger>
@@ -103,6 +140,25 @@ export function CreateSessionForm({ courses }: CreateSessionFormProps) {
                 </Select>
             </div>
 
+            {availableEditions.length > 0 && (
+                <div className="space-y-2">
+                    <Label>Edizione (Opzionale)</Label>
+                    <Select value={selectedEditionId} onValueChange={setSelectedEditionId}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Seleziona edizione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="none">Nessuna edizione</SelectItem>
+                            {availableEditions.map((ed) => (
+                                <SelectItem key={ed.id} value={ed.id}>
+                                    {ed.title} ({ed.code})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            )}
+
             <div className="flex justify-end gap-4">
                 <Button type="button" variant="outline" onClick={() => router.back()}>
                     Annulla
@@ -112,5 +168,5 @@ export function CreateSessionForm({ courses }: CreateSessionFormProps) {
                 </Button>
             </div>
         </form>
-    )
+    );
 }

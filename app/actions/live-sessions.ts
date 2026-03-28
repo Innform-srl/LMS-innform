@@ -1,13 +1,13 @@
-"use server"
+"use server";
 
-import { db } from "@/lib/db"
-import { requirePermission, requireAuth } from "@/lib/permissions"
-import { revalidatePath } from "next/cache"
+import { db } from "@/lib/db";
+import { requirePermission, requireAuth } from "@/lib/permissions";
+import { revalidatePath } from "next/cache";
 
 export async function getLiveSessions() {
-    const check = await requireAuth()
-    if (!check.authorized) return []
-    const session = check.session
+    const check = await requireAuth();
+    if (!check.authorized) return [];
+    const session = check.session;
 
     const liveSessions = await db.liveSession.findMany({
         where: {
@@ -15,109 +15,111 @@ export async function getLiveSessions() {
             course: {
                 enrollments: {
                     some: {
-                        userId: session.user.id
-                    }
-                }
-            }
+                        userId: session.user.id,
+                    },
+                },
+            },
         },
-        orderBy: { startTime: 'asc' },
+        orderBy: { startTime: "asc" },
         include: {
             course: {
-                select: { title: true }
+                select: { title: true },
             },
             instructor: {
-                select: { name: true, email: true }
+                select: { name: true, email: true },
             },
             module: {
-                select: { id: true }
-            }
-        }
-    })
+                select: { id: true },
+            },
+        },
+    });
 
-    return liveSessions
+    return liveSessions;
 }
 
 export async function getAllLiveSessions() {
-    const check = await requirePermission("live-session:manage")
-    if (!check.authorized) return []
+    const check = await requirePermission("live-session:manage");
+    if (!check.authorized) return [];
 
     const liveSessions = await db.liveSession.findMany({
-        orderBy: { startTime: 'asc' },
+        orderBy: { startTime: "asc" },
         include: {
             course: {
-                select: { title: true }
+                select: { title: true },
             },
             instructor: {
-                select: { name: true, email: true }
+                select: { name: true, email: true },
             },
             module: {
-                select: { id: true }
-            }
-        }
-    })
+                select: { id: true },
+            },
+        },
+    });
 
-    return liveSessions
+    return liveSessions;
 }
 
 export async function getUpcomingSessions() {
-    const check = await requireAuth()
-    if (!check.authorized) return []
-    const session = check.session
+    const check = await requireAuth();
+    if (!check.authorized) return [];
+    const session = check.session;
 
-    const now = new Date()
+    const now = new Date();
 
     const liveSessions = await db.liveSession.findMany({
         where: {
             hiddenFromStudents: false,
             endTime: {
-                gte: now
+                gte: now,
             },
             course: {
                 enrollments: {
                     some: {
-                        userId: session.user.id
-                    }
-                }
-            }
+                        userId: session.user.id,
+                    },
+                },
+            },
         },
-        orderBy: { startTime: 'asc' },
+        orderBy: { startTime: "asc" },
         include: {
             course: {
-                select: { title: true }
+                select: { title: true },
             },
             instructor: {
-                select: { name: true }
+                select: { name: true },
             },
             module: {
-                select: { id: true }
-            }
+                select: { id: true },
+            },
         },
-        take: 5
-    })
+        take: 5,
+    });
 
-    return liveSessions
+    return liveSessions;
 }
 
 function extractGoogleMeetCode(url: string): string | null {
-    const match = url.match(/meet\.google\.com\/([a-z]{3}-[a-z]{4}-[a-z]{3})/i)
-    return match ? match[1] : null
+    const match = url.match(/meet\.google\.com\/([a-z]{3}-[a-z]{4}-[a-z]{3})/i);
+    return match ? match[1] : null;
 }
 
 export async function createLiveSession(data: {
-    title: string
-    description?: string
-    startTime?: Date
-    endTime?: Date
-    meetingUrl?: string
-    courseId?: string
+    title: string;
+    description?: string;
+    startTime?: Date;
+    endTime?: Date;
+    meetingUrl?: string;
+    courseId?: string;
+    editionId?: string;
+    instructorId?: string;
 }) {
-    const check = await requirePermission("live-session:manage")
+    const check = await requirePermission("live-session:manage");
     if (!check.authorized) {
-        throw new Error(check.error)
+        throw new Error(check.error);
     }
-    const session = check.session
+    const session = check.session;
 
-    const googleMeetCode = data.meetingUrl ? extractGoogleMeetCode(data.meetingUrl) : null
+    const googleMeetCode = data.meetingUrl ? extractGoogleMeetCode(data.meetingUrl) : null;
 
     await db.liveSession.create({
         data: {
@@ -128,42 +130,49 @@ export async function createLiveSession(data: {
             meetingUrl: data.meetingUrl || null,
             googleMeetCode,
             courseId: data.courseId || null,
-            instructorId: session.user.id
-        }
-    })
+            editionId: data.editionId || null,
+            instructorId: data.instructorId || session.user.id,
+        },
+    });
 
-    revalidatePath("/admin/live-sessions")
-    revalidatePath("/dashboard")
-    revalidatePath("/live-sessions")
+    revalidatePath("/admin/live-sessions");
+    revalidatePath("/dashboard");
+    revalidatePath("/live-sessions");
 }
 
 export async function getLiveSessionById(id: string) {
-    const check = await requirePermission("live-session:manage")
-    if (!check.authorized) return null
+    const check = await requirePermission("live-session:manage");
+    if (!check.authorized) return null;
 
     return db.liveSession.findUnique({
         where: { id },
         include: {
             course: { select: { id: true, title: true } },
+            edition: { select: { id: true, code: true, title: true } },
             instructor: { select: { name: true, email: true } },
         },
-    })
+    });
 }
 
-export async function updateLiveSession(id: string, data: {
-    title: string
-    description?: string
-    startTime?: Date
-    endTime?: Date
-    meetingUrl?: string
-    courseId?: string
-}) {
-    const check = await requirePermission("live-session:manage")
+export async function updateLiveSession(
+    id: string,
+    data: {
+        title: string;
+        description?: string;
+        startTime?: Date;
+        endTime?: Date;
+        meetingUrl?: string;
+        courseId?: string;
+        editionId?: string;
+        instructorId?: string;
+    }
+) {
+    const check = await requirePermission("live-session:manage");
     if (!check.authorized) {
-        throw new Error(check.error)
+        throw new Error(check.error);
     }
 
-    const googleMeetCode = data.meetingUrl ? extractGoogleMeetCode(data.meetingUrl) : null
+    const googleMeetCode = data.meetingUrl ? extractGoogleMeetCode(data.meetingUrl) : null;
 
     await db.liveSession.update({
         where: { id },
@@ -175,48 +184,50 @@ export async function updateLiveSession(id: string, data: {
             meetingUrl: data.meetingUrl || null,
             googleMeetCode,
             courseId: data.courseId || null,
-        }
-    })
+            editionId: data.editionId || null,
+            ...(data.instructorId && { instructorId: data.instructorId }),
+        },
+    });
 
-    revalidatePath("/admin/live-sessions")
-    revalidatePath("/dashboard")
-    revalidatePath("/live-sessions")
+    revalidatePath("/admin/live-sessions");
+    revalidatePath("/dashboard");
+    revalidatePath("/live-sessions");
 }
 
 export async function toggleSessionVisibility(id: string) {
-    const check = await requirePermission("live-session:manage")
+    const check = await requirePermission("live-session:manage");
     if (!check.authorized) {
-        throw new Error(check.error)
+        throw new Error(check.error);
     }
 
     const liveSession = await db.liveSession.findUnique({
         where: { id },
-        select: { hiddenFromStudents: true }
-    })
+        select: { hiddenFromStudents: true },
+    });
 
-    if (!liveSession) throw new Error("Session not found")
+    if (!liveSession) throw new Error("Session not found");
 
     await db.liveSession.update({
         where: { id },
-        data: { hiddenFromStudents: !liveSession.hiddenFromStudents }
-    })
+        data: { hiddenFromStudents: !liveSession.hiddenFromStudents },
+    });
 
-    revalidatePath("/admin/live-sessions")
-    revalidatePath("/dashboard")
-    revalidatePath("/live-sessions")
+    revalidatePath("/admin/live-sessions");
+    revalidatePath("/dashboard");
+    revalidatePath("/live-sessions");
 }
 
 export async function deleteLiveSession(id: string) {
-    const check = await requirePermission("live-session:manage")
+    const check = await requirePermission("live-session:manage");
     if (!check.authorized) {
-        throw new Error(check.error)
+        throw new Error(check.error);
     }
 
     await db.liveSession.delete({
-        where: { id }
-    })
+        where: { id },
+    });
 
-    revalidatePath("/admin/live-sessions")
-    revalidatePath("/dashboard")
-    revalidatePath("/live-sessions")
+    revalidatePath("/admin/live-sessions");
+    revalidatePath("/dashboard");
+    revalidatePath("/live-sessions");
 }

@@ -1,15 +1,15 @@
-import { auth } from "@/lib/auth"
-import { redirect } from "next/navigation"
-import { db } from "@/lib/db"
-import { effectivelyPublishedModuleWhere } from "@/lib/module-utils"
-import { CoursePlayer } from "./course-player"
-import { CourseRating } from "@/components/course-rating"
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { db } from "@/lib/db";
+import { effectivelyPublishedModuleWhere } from "@/lib/module-utils";
+import { CoursePlayer } from "./course-player";
+import { CourseRating } from "@/components/course-rating";
 
 export default async function CoursePlayerPage({ params }: { params: Promise<{ courseId: string }> }) {
-    const session = await auth()
-    if (!session?.user?.id) return redirect("/login")
+    const session = await auth();
+    if (!session?.user?.id) return redirect("/login");
 
-    const { courseId } = await params
+    const { courseId } = await params;
 
     const course = await db.course.findUnique({
         where: { id: courseId },
@@ -19,57 +19,75 @@ export default async function CoursePlayerPage({ params }: { params: Promise<{ c
                 orderBy: { position: "asc" },
                 include: {
                     quiz: true,
-                    liveSession: true
-                }
-            }
-        }
-    })
+                    liveSession: true,
+                },
+            },
+        },
+    });
 
-    if (!course) return redirect("/courses")
+    if (!course) return redirect("/courses");
 
     const enrollment = await db.enrollment.findUnique({
         where: {
             userId_courseId: {
                 userId: session.user.id,
-                courseId: course.id
-            }
+                courseId: course.id,
+            },
         },
         include: {
-            certificate: true
-        }
-    })
+            certificate: true,
+            edition: {
+                select: {
+                    id: true,
+                    code: true,
+                    title: true,
+                    startDate: true,
+                    endDate: true,
+                },
+            },
+        },
+    });
 
-    if (!enrollment) return redirect(`/courses/${course.id}/enroll`)
+    if (!enrollment) return redirect(`/courses/${course.id}/enroll`);
 
     // Get completed modules
     const moduleProgress = await db.moduleProgress.findMany({
         where: {
             userId: session.user.id,
-            moduleId: { in: course.modules.map(m => m.id) },
-            completed: true
+            moduleId: { in: course.modules.map((m) => m.id) },
+            completed: true,
         },
-        select: { moduleId: true }
-    })
+        select: { moduleId: true },
+    });
 
-    const completedModuleIds = new Set(moduleProgress.map(mp => mp.moduleId))
+    const completedModuleIds = new Set(moduleProgress.map((mp) => mp.moduleId));
 
     const userRating = await db.courseRating.findUnique({
         where: {
             userId_courseId: {
                 userId: session.user.id,
-                courseId
-            }
-        }
-    })
+                courseId,
+            },
+        },
+    });
 
     return (
         <div className="min-h-screen bg-gray-900">
             <CoursePlayer
                 course={course}
                 modules={course.modules}
-                enrollment={enrollment}
+                enrollment={{
+                    ...enrollment,
+                    edition: enrollment.edition
+                        ? {
+                              ...enrollment.edition,
+                              startDate: enrollment.edition.startDate?.toISOString() || null,
+                              endDate: enrollment.edition.endDate?.toISOString() || null,
+                          }
+                        : null,
+                }}
                 completedModuleIds={Array.from(completedModuleIds)}
-                userName={session.user.name || session.user.email || 'Studente'}
+                userName={session.user.name || session.user.email || "Studente"}
                 userId={session.user.id}
             />
 
@@ -81,5 +99,5 @@ export default async function CoursePlayerPage({ params }: { params: Promise<{ c
                 />
             </div>
         </div>
-    )
+    );
 }

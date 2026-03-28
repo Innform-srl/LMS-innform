@@ -161,6 +161,7 @@ model Edition {
   // Relazioni
   enrollments     Enrollment[]
   classRegisters  ClassRegister[]
+  liveSessions    LiveSession[]
 
   @@unique([courseId, code])
   @@index([courseId, status])
@@ -542,6 +543,7 @@ model LiveSession {
   endTime      DateTime?
   meetingUrl   String?
   courseId     String?
+  editionId    String?
   instructorId String
 
   // Blended Learning Extensions
@@ -567,6 +569,7 @@ model LiveSession {
   updatedAt DateTime @updatedAt
 
   course       Course?             @relation(fields: [courseId], references: [id])
+  edition      Edition?            @relation(fields: [editionId], references: [id], onDelete: SetNull)
   instructor   User                @relation(fields: [instructorId], references: [id], onDelete: Cascade)
   module       Module?
   physicalRoom PhysicalRoom?       @relation(fields: [physicalRoomId], references: [id])
@@ -575,6 +578,7 @@ model LiveSession {
 
   @@index([startTime])
   @@index([courseId])
+  @@index([editionId])
   @@index([instructorId])
   @@index([sessionType])
 }

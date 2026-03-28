@@ -1,37 +1,39 @@
-"use server"
+"use server";
 
-import { db } from "@/lib/db"
-import { requirePermission, requireAuth } from "@/lib/permissions"
-import { Prisma } from "@prisma/client"
-import { effectivelyPublishedModuleWhere } from "@/lib/module-utils"
-import { reportError } from "@/lib/error-reporting"
+import { db } from "@/lib/db";
+import { requirePermission, requireAuth } from "@/lib/permissions";
+import { Prisma } from "@prisma/client";
+import { effectivelyPublishedModuleWhere } from "@/lib/module-utils";
+import { reportError } from "@/lib/error-reporting";
 
 export async function getTimeTrackingReport(options?: {
-    page?: number
-    pageSize?: number
-    userId?: string
-    courseId?: string
-    status?: string
+    page?: number;
+    pageSize?: number;
+    userId?: string;
+    courseId?: string;
+    editionId?: string;
+    status?: string;
 }) {
-    const check = await requirePermission("reports:view")
+    const check = await requirePermission("reports:view");
     if (!check.authorized) {
-        return { success: false, error: check.error }
+        return { success: false, error: check.error };
     }
 
     try {
-        const page = options?.page || 1
-        const pageSize = options?.pageSize || 50
-        const skip = (page - 1) * pageSize
+        const page = options?.page || 1;
+        const pageSize = options?.pageSize || 50;
+        const skip = (page - 1) * pageSize;
 
         // Build where clause for filtering
-        const where: Prisma.EnrollmentWhereInput = {}
-        if (options?.userId) where.userId = options.userId
-        if (options?.courseId) where.courseId = options.courseId
-        if (options?.status === "completed") where.completed = true
-        else if (options?.status === "in_progress") where.completed = false
+        const where: Prisma.EnrollmentWhereInput = {};
+        if (options?.userId) where.userId = options.userId;
+        if (options?.courseId) where.courseId = options.courseId;
+        if (options?.editionId) where.editionId = options.editionId;
+        if (options?.status === "completed") where.completed = true;
+        else if (options?.status === "in_progress") where.completed = false;
 
         // Get total count for pagination
-        const totalCount = await db.enrollment.count({ where })
+        const totalCount = await db.enrollment.count({ where });
 
         const enrollments = await db.enrollment.findMany({
             where,
@@ -41,29 +43,39 @@ export async function getTimeTrackingReport(options?: {
                         id: true,
                         name: true,
                         email: true,
-                        department: true
-                    }
+                        department: true,
+                    },
                 },
                 course: {
                     select: {
                         id: true,
                         title: true,
-                        minimumDuration: true
-                    }
-                }
+                        minimumDuration: true,
+                    },
+                },
+                edition: {
+                    select: {
+                        id: true,
+                        code: true,
+                        title: true,
+                    },
+                },
             },
             orderBy: { createdAt: "desc" },
             skip,
-            take: pageSize
-        })
+            take: pageSize,
+        });
 
-        const reportData = enrollments.map(enrollment => ({
+        const reportData = enrollments.map((enrollment) => ({
             userId: enrollment.user.id,
             userName: enrollment.user.name || enrollment.user.email || "N/A",
             userEmail: enrollment.user.email,
             userDepartment: enrollment.user.department,
             courseId: enrollment.course.id,
             courseTitle: enrollment.course.title,
+            editionId: enrollment.edition?.id || null,
+            editionCode: enrollment.edition?.code || null,
+            editionTitle: enrollment.edition?.title || null,
             timeSpent: enrollment.timeSpent,
             minimumDuration: enrollment.course.minimumDuration,
             progress: enrollment.progress,
@@ -74,11 +86,11 @@ export async function getTimeTrackingReport(options?: {
             status: enrollment.completed
                 ? "Completato"
                 : enrollment.course.minimumDuration > 0 && enrollment.timeSpent >= enrollment.course.minimumDuration
-                    ? "Tempo OK - In Corso"
-                    : enrollment.course.minimumDuration > 0
-                        ? "Tempo Insufficiente"
-                        : "In Corso"
-        }))
+                  ? "Tempo OK - In Corso"
+                  : enrollment.course.minimumDuration > 0
+                    ? "Tempo Insufficiente"
+                    : "In Corso",
+        }));
 
         return {
             success: true,
@@ -87,26 +99,26 @@ export async function getTimeTrackingReport(options?: {
                 page,
                 pageSize,
                 totalCount,
-                totalPages: Math.ceil(totalCount / pageSize)
-            }
-        }
+                totalPages: Math.ceil(totalCount / pageSize),
+            },
+        };
     } catch (error) {
-        console.error("Error fetching time tracking report:", error)
-        reportError(error, { action: "getTimeTrackingReport" })
-        return { success: false, error: "Errore durante il recupero dei dati" }
+        console.error("Error fetching time tracking report:", error);
+        reportError(error, { action: "getTimeTrackingReport" });
+        return { success: false, error: "Errore durante il recupero dei dati" };
     }
 }
 
 export async function getEngagementReport() {
-    const check = await requirePermission("reports:view")
+    const check = await requirePermission("reports:view");
     if (!check.authorized) {
-        return { success: false, error: check.error }
+        return { success: false, error: check.error };
     }
 
     try {
-        const now = new Date()
-        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
         // Use aggregations instead of fetching all records
         const [
@@ -118,120 +130,125 @@ export async function getEngagementReport() {
             activeUsers7Days,
             activeUsers30Days,
             enrollmentStats,
-            quizAvgScore
+            quizAvgScore,
         ] = await Promise.all([
             db.user.count({ where: { role: "EMPLOYEE" } }),
             db.enrollment.count(),
             db.enrollment.count({ where: { completed: true } }),
             db.quizAttempt.count(),
             db.quizAttempt.count({ where: { passed: true } }),
-            db.moduleProgress.groupBy({
-                by: ['userId'],
-                where: { updatedAt: { gte: sevenDaysAgo } }
-            }).then(r => r.length),
-            db.moduleProgress.groupBy({
-                by: ['userId'],
-                where: { updatedAt: { gte: thirtyDaysAgo } }
-            }).then(r => r.length),
+            db.moduleProgress
+                .groupBy({
+                    by: ["userId"],
+                    where: { updatedAt: { gte: sevenDaysAgo } },
+                })
+                .then((r) => r.length),
+            db.moduleProgress
+                .groupBy({
+                    by: ["userId"],
+                    where: { updatedAt: { gte: thirtyDaysAgo } },
+                })
+                .then((r) => r.length),
             db.enrollment.aggregate({
-                _sum: { timeSpent: true }
+                _sum: { timeSpent: true },
             }),
             db.quizAttempt.aggregate({
-                _avg: { score: true }
-            })
-        ])
+                _avg: { score: true },
+            }),
+        ]);
 
-        const tmsSyncedEnrollments = await db.enrollment.count({ where: { tmsSyncedAt: { not: null } } })
-        const totalStudyTimeMinutes = enrollmentStats._sum.timeSpent || 0
-        const avgStudyTimePerUser = totalUsersCount > 0 ? totalStudyTimeMinutes / totalUsersCount : 0
-        const completionRate = totalEnrollmentsCount > 0 ? (completedEnrollmentsCount / totalEnrollmentsCount) * 100 : 0
-        const quizPassRate = totalQuizAttemptsCount > 0 ? (passedQuizAttemptsCount / totalQuizAttemptsCount) * 100 : 0
+        const tmsSyncedEnrollments = await db.enrollment.count({ where: { tmsSyncedAt: { not: null } } });
+        const totalStudyTimeMinutes = enrollmentStats._sum.timeSpent || 0;
+        const avgStudyTimePerUser = totalUsersCount > 0 ? totalStudyTimeMinutes / totalUsersCount : 0;
+        const completionRate =
+            totalEnrollmentsCount > 0 ? (completedEnrollmentsCount / totalEnrollmentsCount) * 100 : 0;
+        const quizPassRate = totalQuizAttemptsCount > 0 ? (passedQuizAttemptsCount / totalQuizAttemptsCount) * 100 : 0;
 
         // Get top courses - limited query with aggregation
         const topCoursesData = await db.enrollment.groupBy({
-            by: ['courseId'],
+            by: ["courseId"],
             _count: { id: true },
             _sum: { timeSpent: true },
-            orderBy: { _count: { id: 'desc' } },
-            take: 10
-        })
+            orderBy: { _count: { id: "desc" } },
+            take: 10,
+        });
 
-        const courseIds = topCoursesData.map(c => c.courseId)
+        const courseIds = topCoursesData.map((c) => c.courseId);
         const courses = await db.course.findMany({
             where: { id: { in: courseIds } },
-            select: { id: true, title: true }
-        })
-        const courseMap = new Map(courses.map(c => [c.id, c.title]))
+            select: { id: true, title: true },
+        });
+        const courseMap = new Map(courses.map((c) => [c.id, c.title]));
 
         const completedByCourse = await db.enrollment.groupBy({
-            by: ['courseId'],
+            by: ["courseId"],
             where: { courseId: { in: courseIds }, completed: true },
-            _count: { id: true }
-        })
-        const completedMap = new Map(completedByCourse.map(c => [c.courseId, c._count.id]))
+            _count: { id: true },
+        });
+        const completedMap = new Map(completedByCourse.map((c) => [c.courseId, c._count.id]));
 
-        const topCourses = topCoursesData.map(c => ({
+        const topCourses = topCoursesData.map((c) => ({
             courseId: c.courseId,
-            courseTitle: courseMap.get(c.courseId) || 'Unknown',
+            courseTitle: courseMap.get(c.courseId) || "Unknown",
             enrollments: c._count.id,
             completions: completedMap.get(c.courseId) || 0,
             totalTime: c._sum.timeSpent || 0,
-            avgTime: c._count.id > 0 ? (c._sum.timeSpent || 0) / c._count.id : 0
-        }))
+            avgTime: c._count.id > 0 ? (c._sum.timeSpent || 0) / c._count.id : 0,
+        }));
 
         // Get top users by study time - limited query
         const topUsersData = await db.enrollment.groupBy({
-            by: ['userId'],
+            by: ["userId"],
             _sum: { timeSpent: true },
-            orderBy: { _sum: { timeSpent: 'desc' } },
-            take: 10
-        })
+            orderBy: { _sum: { timeSpent: "desc" } },
+            take: 10,
+        });
 
-        const userIds = topUsersData.map(u => u.userId)
+        const userIds = topUsersData.map((u) => u.userId);
         const users = await db.user.findMany({
             where: { id: { in: userIds } },
-            select: { id: true, name: true, email: true, department: { select: { name: true } } }
-        })
-        const userMap = new Map(users.map(u => [u.id, u]))
+            select: { id: true, name: true, email: true, department: { select: { name: true } } },
+        });
+        const userMap = new Map(users.map((u) => [u.id, u]));
 
         // Get module completion counts for top users
         const moduleCompletions = await db.moduleProgress.groupBy({
-            by: ['userId'],
+            by: ["userId"],
             where: { userId: { in: userIds }, completed: true },
-            _count: { id: true }
-        })
-        const moduleCompletionMap = new Map(moduleCompletions.map(m => [m.userId, m._count.id]))
+            _count: { id: true },
+        });
+        const moduleCompletionMap = new Map(moduleCompletions.map((m) => [m.userId, m._count.id]));
 
         // Get quiz pass counts for top users
         const quizPasses = await db.quizAttempt.groupBy({
-            by: ['userId'],
+            by: ["userId"],
             where: { userId: { in: userIds }, passed: true },
-            _count: { id: true }
-        })
-        const quizPassMap = new Map(quizPasses.map(q => [q.userId, q._count.id]))
+            _count: { id: true },
+        });
+        const quizPassMap = new Map(quizPasses.map((q) => [q.userId, q._count.id]));
 
         // Get last activity for top users
         const lastActivities = await db.moduleProgress.findMany({
             where: { userId: { in: userIds } },
-            orderBy: { updatedAt: 'desc' },
-            distinct: ['userId'],
-            select: { userId: true, updatedAt: true }
-        })
-        const lastActivityMap = new Map(lastActivities.map(la => [la.userId, la.updatedAt]))
+            orderBy: { updatedAt: "desc" },
+            distinct: ["userId"],
+            select: { userId: true, updatedAt: true },
+        });
+        const lastActivityMap = new Map(lastActivities.map((la) => [la.userId, la.updatedAt]));
 
-        const topUsers = topUsersData.map(u => {
-            const user = userMap.get(u.userId)
+        const topUsers = topUsersData.map((u) => {
+            const user = userMap.get(u.userId);
             return {
                 userId: u.userId,
-                userName: user?.name || user?.email || 'N/A',
+                userName: user?.name || user?.email || "N/A",
                 userEmail: user?.email || null,
                 department: user?.department?.name || null,
                 studyTime: u._sum.timeSpent || 0,
                 modulesCompleted: moduleCompletionMap.get(u.userId) || 0,
                 quizzesPassed: quizPassMap.get(u.userId) || 0,
-                lastActivity: lastActivityMap.get(u.userId) || null
-            }
-        })
+                lastActivity: lastActivityMap.get(u.userId) || null,
+            };
+        });
 
         // Count inactive users
         const inactiveUsersCount = await db.user.count({
@@ -239,10 +256,10 @@ export async function getEngagementReport() {
                 role: "EMPLOYEE",
                 OR: [
                     { moduleProgress: { none: { updatedAt: { gte: thirtyDaysAgo } } } },
-                    { moduleProgress: { none: {} } }
-                ]
-            }
-        })
+                    { moduleProgress: { none: {} } },
+                ],
+            },
+        });
 
         return {
             success: true,
@@ -256,35 +273,35 @@ export async function getEngagementReport() {
                     completionRate,
                     totalStudyTimeMinutes,
                     avgStudyTimePerUser,
-                    tmsSyncedEnrollments
+                    tmsSyncedEnrollments,
                 },
                 quizStats: {
                     totalAttempts: totalQuizAttemptsCount,
                     passedAttempts: passedQuizAttemptsCount,
                     passRate: quizPassRate,
-                    avgScore: quizAvgScore._avg.score || 0
+                    avgScore: quizAvgScore._avg.score || 0,
                 },
                 topCourses,
                 topUsers,
-                inactiveUsersCount
-            }
-        }
+                inactiveUsersCount,
+            },
+        };
     } catch (error) {
-        console.error("Error fetching engagement report:", error)
-        reportError(error, { action: "getEngagementReport" })
-        return { success: false, error: "Errore durante il recupero dei dati" }
+        console.error("Error fetching engagement report:", error);
+        reportError(error, { action: "getEngagementReport" });
+        return { success: false, error: "Errore durante il recupero dei dati" };
     }
 }
 
 export async function exportTimeTrackingCSV() {
-    const check = await requirePermission("reports:view")
+    const check = await requirePermission("reports:view");
     if (!check.authorized) {
-        return { success: false, error: check.error }
+        return { success: false, error: check.error };
     }
 
-    const result = await getTimeTrackingReport()
+    const result = await getTimeTrackingReport();
     if (!result.success || !result.data) {
-        return { success: false, error: result.error }
+        return { success: false, error: result.error };
     }
 
     // Generate CSV
@@ -300,10 +317,10 @@ export async function exportTimeTrackingCSV() {
         "Progresso (%)",
         "Stato",
         "Data Iscrizione",
-        "Data Completamento"
-    ]
+        "Data Completamento",
+    ];
 
-    const rows = result.data.map(row => [
+    const rows = result.data.map((row) => [
         row.userName,
         row.userEmail || "",
         row.userDepartment || "",
@@ -315,99 +332,90 @@ export async function exportTimeTrackingCSV() {
         row.progress.toFixed(0),
         row.status,
         new Date(row.enrolledAt).toLocaleDateString("it-IT"),
-        row.completedAt ? new Date(row.completedAt).toLocaleDateString("it-IT") : ""
-    ])
+        row.completedAt ? new Date(row.completedAt).toLocaleDateString("it-IT") : "",
+    ]);
 
-    const csv = [
-        headers.join(","),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
-    ].join("\n")
+    const csv = [headers.join(","), ...rows.map((row) => row.map((cell) => `"${cell}"`).join(","))].join("\n");
 
-    return { success: true, csv }
+    return { success: true, csv };
 }
 
 export async function exportEngagementCSV() {
-    const check = await requirePermission("reports:view")
+    const check = await requirePermission("reports:view");
     if (!check.authorized) {
-        return { success: false, error: check.error }
+        return { success: false, error: check.error };
     }
 
-    const result = await getEngagementReport()
+    const result = await getEngagementReport();
     if (!result.success || !result.data) {
-        return { success: false, error: result.error }
+        return { success: false, error: result.error };
     }
 
-    const data = result.data
+    const data = result.data;
 
     // Generate multiple CSV sections
-    let csv = ""
+    let csv = "";
 
     // Section 1: Overview
-    csv += "=== PANORAMICA ENGAGEMENT ===\n"
-    csv += "Metrica,Valore\n"
-    csv += `Utenti Totali,${data.overview.totalUsers}\n`
-    csv += `Utenti Attivi (7gg),${data.overview.activeUsersLast7Days}\n`
-    csv += `Utenti Attivi (30gg),${data.overview.activeUsersLast30Days}\n`
-    csv += `Iscrizioni Totali,${data.overview.totalEnrollments}\n`
-    csv += `Iscrizioni Completate,${data.overview.completedEnrollments}\n`
-    csv += `Tasso Completamento,${data.overview.completionRate.toFixed(1)}%\n`
-    csv += `Tempo Studio Totale (min),${data.overview.totalStudyTimeMinutes}\n`
-    csv += `Tempo Medio per Utente (min),${data.overview.avgStudyTimePerUser.toFixed(1)}\n`
-    csv += `Iscrizioni Sincronizzate TMS,${data.overview.tmsSyncedEnrollments}\n`
-    csv += `Utenti Inattivi (30+ gg),${data.inactiveUsersCount}\n`
-    csv += "\n"
+    csv += "=== PANORAMICA ENGAGEMENT ===\n";
+    csv += "Metrica,Valore\n";
+    csv += `Utenti Totali,${data.overview.totalUsers}\n`;
+    csv += `Utenti Attivi (7gg),${data.overview.activeUsersLast7Days}\n`;
+    csv += `Utenti Attivi (30gg),${data.overview.activeUsersLast30Days}\n`;
+    csv += `Iscrizioni Totali,${data.overview.totalEnrollments}\n`;
+    csv += `Iscrizioni Completate,${data.overview.completedEnrollments}\n`;
+    csv += `Tasso Completamento,${data.overview.completionRate.toFixed(1)}%\n`;
+    csv += `Tempo Studio Totale (min),${data.overview.totalStudyTimeMinutes}\n`;
+    csv += `Tempo Medio per Utente (min),${data.overview.avgStudyTimePerUser.toFixed(1)}\n`;
+    csv += `Iscrizioni Sincronizzate TMS,${data.overview.tmsSyncedEnrollments}\n`;
+    csv += `Utenti Inattivi (30+ gg),${data.inactiveUsersCount}\n`;
+    csv += "\n";
 
     // Section 2: Quiz Stats
-    csv += "=== STATISTICHE QUIZ ===\n"
-    csv += "Metrica,Valore\n"
-    csv += `Tentativi Totali,${data.quizStats.totalAttempts}\n`
-    csv += `Quiz Superati,${data.quizStats.passedAttempts}\n`
-    csv += `Tasso Superamento,${data.quizStats.passRate.toFixed(1)}%\n`
-    csv += `Punteggio Medio,${data.quizStats.avgScore.toFixed(1)}%\n`
-    csv += "\n"
+    csv += "=== STATISTICHE QUIZ ===\n";
+    csv += "Metrica,Valore\n";
+    csv += `Tentativi Totali,${data.quizStats.totalAttempts}\n`;
+    csv += `Quiz Superati,${data.quizStats.passedAttempts}\n`;
+    csv += `Tasso Superamento,${data.quizStats.passRate.toFixed(1)}%\n`;
+    csv += `Punteggio Medio,${data.quizStats.avgScore.toFixed(1)}%\n`;
+    csv += "\n";
 
     // Section 3: Top Courses
-    csv += "=== TOP 10 CORSI ===\n"
-    csv += "Posizione,Corso,Iscrizioni,Completamenti,Tasso Completamento,Tempo Totale (min),Tempo Medio (min)\n"
+    csv += "=== TOP 10 CORSI ===\n";
+    csv += "Posizione,Corso,Iscrizioni,Completamenti,Tasso Completamento,Tempo Totale (min),Tempo Medio (min)\n";
     data.topCourses.forEach((course, index) => {
-        const completionRate = course.enrollments > 0
-            ? ((course.completions / course.enrollments) * 100).toFixed(1)
-            : "0"
-        csv += `${index + 1},"${course.courseTitle}",${course.enrollments},${course.completions},${completionRate}%,${course.totalTime},${course.avgTime.toFixed(1)}\n`
-    })
-    csv += "\n"
+        const completionRate =
+            course.enrollments > 0 ? ((course.completions / course.enrollments) * 100).toFixed(1) : "0";
+        csv += `${index + 1},"${course.courseTitle}",${course.enrollments},${course.completions},${completionRate}%,${course.totalTime},${course.avgTime.toFixed(1)}\n`;
+    });
+    csv += "\n";
 
     // Section 4: Top Users
-    csv += "=== TOP 10 UTENTI ===\n"
-    csv += "Posizione,Utente,Email,Dipartimento,Tempo Studio (min),Moduli Completati,Quiz Superati,Ultima Attività\n"
+    csv += "=== TOP 10 UTENTI ===\n";
+    csv += "Posizione,Utente,Email,Dipartimento,Tempo Studio (min),Moduli Completati,Quiz Superati,Ultima Attività\n";
     data.topUsers.forEach((user, index) => {
-        const lastActivity = user.lastActivity
-            ? new Date(user.lastActivity).toLocaleDateString("it-IT")
-            : "N/A"
-        csv += `${index + 1},"${user.userName}","${user.userEmail || ""}","${user.department || ""}",${user.studyTime},${user.modulesCompleted},${user.quizzesPassed},"${lastActivity}"\n`
-    })
+        const lastActivity = user.lastActivity ? new Date(user.lastActivity).toLocaleDateString("it-IT") : "N/A";
+        csv += `${index + 1},"${user.userName}","${user.userEmail || ""}","${user.department || ""}",${user.studyTime},${user.modulesCompleted},${user.quizzesPassed},"${lastActivity}"\n`;
+    });
 
-    return { success: true, csv }
+    return { success: true, csv };
 }
 
 // ============================================
 // MODULE-LEVEL TIME TRACKING REPORTS
 // ============================================
 
-export async function getModuleTimeTrackingReport(filters?: {
-    userId?: string
-    courseId?: string
-}) {
-    const check = await requirePermission("reports:view")
+export async function getModuleTimeTrackingReport(filters?: { userId?: string; courseId?: string }) {
+    const check = await requirePermission("reports:view");
     if (!check.authorized) {
-        return { success: false, error: check.error }
+        return { success: false, error: check.error };
     }
 
     try {
         // Build where clause for enrollments
-        const enrollmentWhere: Prisma.EnrollmentWhereInput = {}
-        if (filters?.userId) enrollmentWhere.userId = filters.userId
-        if (filters?.courseId) enrollmentWhere.courseId = filters.courseId
+        const enrollmentWhere: Prisma.EnrollmentWhereInput = {};
+        if (filters?.userId) enrollmentWhere.userId = filters.userId;
+        if (filters?.courseId) enrollmentWhere.courseId = filters.courseId;
 
         // Get all module progress with related data
         const moduleProgressData = await db.moduleProgress.findMany({
@@ -419,9 +427,9 @@ export async function getModuleTimeTrackingReport(filters?: {
                         name: true,
                         email: true,
                         department: {
-                            select: { name: true }
-                        }
-                    }
+                            select: { name: true },
+                        },
+                    },
                 },
                 module: {
                     select: {
@@ -433,27 +441,22 @@ export async function getModuleTimeTrackingReport(filters?: {
                         course: {
                             select: {
                                 id: true,
-                                title: true
-                            }
-                        }
-                    }
-                }
+                                title: true,
+                            },
+                        },
+                    },
+                },
             },
-            orderBy: [
-                { module: { course: { title: "asc" } } },
-                { module: { position: "asc" } }
-            ]
-        })
+            orderBy: [{ module: { course: { title: "asc" } } }, { module: { position: "asc" } }],
+        });
 
         // Filter by courseId if specified
-        let filteredData = moduleProgressData
+        let filteredData = moduleProgressData;
         if (filters?.courseId) {
-            filteredData = moduleProgressData.filter(
-                mp => mp.module.course.id === filters.courseId
-            )
+            filteredData = moduleProgressData.filter((mp) => mp.module.course.id === filters.courseId);
         }
 
-        const reportData = filteredData.map(mp => ({
+        const reportData = filteredData.map((mp) => ({
             moduleProgressId: mp.id,
             userId: mp.user.id,
             userName: mp.user.name || mp.user.email || "N/A",
@@ -473,33 +476,32 @@ export async function getModuleTimeTrackingReport(filters?: {
             lastActivity: mp.updatedAt,
             status: mp.completed
                 ? "Completato"
-                : mp.module.minimumDuration && mp.module.minimumDuration > 0 && mp.timeSpent >= (mp.module.minimumDuration * 60)
-                    ? "Tempo OK - In Corso"
-                    : mp.module.minimumDuration && mp.module.minimumDuration > 0
-                        ? "Tempo Insufficiente"
-                        : "In Corso"
-        }))
+                : mp.module.minimumDuration &&
+                    mp.module.minimumDuration > 0 &&
+                    mp.timeSpent >= mp.module.minimumDuration * 60
+                  ? "Tempo OK - In Corso"
+                  : mp.module.minimumDuration && mp.module.minimumDuration > 0
+                    ? "Tempo Insufficiente"
+                    : "In Corso",
+        }));
 
-        return { success: true, data: reportData }
+        return { success: true, data: reportData };
     } catch (error) {
-        console.error("Error fetching module time tracking report:", error)
-        reportError(error, { action: "getModuleTimeTrackingReport" })
-        return { success: false, error: "Errore durante il recupero dei dati" }
+        console.error("Error fetching module time tracking report:", error);
+        reportError(error, { action: "getModuleTimeTrackingReport" });
+        return { success: false, error: "Errore durante il recupero dei dati" };
     }
 }
 
-export async function exportModuleTimeTrackingCSV(filters?: {
-    userId?: string
-    courseId?: string
-}) {
-    const check = await requirePermission("reports:view")
+export async function exportModuleTimeTrackingCSV(filters?: { userId?: string; courseId?: string }) {
+    const check = await requirePermission("reports:view");
     if (!check.authorized) {
-        return { success: false, error: check.error }
+        return { success: false, error: check.error };
     }
 
-    const result = await getModuleTimeTrackingReport(filters)
+    const result = await getModuleTimeTrackingReport(filters);
     if (!result.success || !result.data) {
-        return { success: false, error: result.error }
+        return { success: false, error: result.error };
     }
 
     const headers = [
@@ -516,10 +518,10 @@ export async function exportModuleTimeTrackingCSV(filters?: {
         "Stato",
         "Completato",
         "Data Completamento",
-        "Ultima Attività"
-    ]
+        "Ultima Attività",
+    ];
 
-    const rows = result.data.map(row => [
+    const rows = result.data.map((row) => [
         row.userName,
         row.userEmail || "",
         row.userDepartment || "",
@@ -533,26 +535,23 @@ export async function exportModuleTimeTrackingCSV(filters?: {
         row.status,
         row.completed ? "Sì" : "No",
         row.completedAt ? new Date(row.completedAt).toLocaleDateString("it-IT") : "",
-        new Date(row.lastActivity).toLocaleDateString("it-IT")
-    ])
+        new Date(row.lastActivity).toLocaleDateString("it-IT"),
+    ]);
 
-    const csv = [
-        headers.join(","),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
-    ].join("\n")
+    const csv = [headers.join(","), ...rows.map((row) => row.map((cell) => `"${cell}"`).join(","))].join("\n");
 
-    return { success: true, csv }
+    return { success: true, csv };
 }
 
 // User's personal module time analytics
 export async function getUserModuleTimeAnalytics() {
-    const check = await requireAuth()
+    const check = await requireAuth();
     if (!check.authorized) {
-        return { success: false, error: check.error }
+        return { success: false, error: check.error };
     }
 
     try {
-        const userId = check.session.user.id
+        const userId = check.session.user.id;
 
         // Get user's enrollments with courses
         const enrollments = await db.enrollment.findMany({
@@ -570,15 +569,15 @@ export async function getUserModuleTimeAnalytics() {
                                 title: true,
                                 position: true,
                                 minimumDuration: true,
-                                contentType: true
+                                contentType: true,
                             },
-                            orderBy: { position: "asc" }
-                        }
-                    }
-                }
+                            orderBy: { position: "asc" },
+                        },
+                    },
+                },
             },
-            orderBy: { createdAt: "desc" }
-        })
+            orderBy: { createdAt: "desc" },
+        });
 
         // Get all module progress for this user
         const moduleProgress = await db.moduleProgress.findMany({
@@ -589,21 +588,19 @@ export async function getUserModuleTimeAnalytics() {
                 watchedSeconds: true,
                 completed: true,
                 completedAt: true,
-                updatedAt: true
-            }
-        })
+                updatedAt: true,
+            },
+        });
 
         // Create a map for quick lookup
-        const progressMap = new Map(
-            moduleProgress.map(mp => [mp.moduleId, mp])
-        )
+        const progressMap = new Map(moduleProgress.map((mp) => [mp.moduleId, mp]));
 
         // Build the analytics data
-        const courseAnalytics = enrollments.map(enrollment => {
-            const courseModules = enrollment.course.modules.map(module => {
-                const progress = progressMap.get(module.id)
-                const timeSpent = progress?.timeSpent || 0
-                const minimumDurationSec = (module.minimumDuration || 0) * 60
+        const courseAnalytics = enrollments.map((enrollment) => {
+            const courseModules = enrollment.course.modules.map((module) => {
+                const progress = progressMap.get(module.id);
+                const timeSpent = progress?.timeSpent || 0;
+                const minimumDurationSec = (module.minimumDuration || 0) * 60;
 
                 return {
                     moduleId: module.id,
@@ -616,15 +613,16 @@ export async function getUserModuleTimeAnalytics() {
                     completed: progress?.completed || false,
                     completedAt: progress?.completedAt ?? null,
                     lastActivity: progress?.updatedAt ?? null,
-                    timePercentage: minimumDurationSec > 0
-                        ? Math.min(Math.round((timeSpent / minimumDurationSec) * 100), 100)
-                        : 100
-                }
-            })
+                    timePercentage:
+                        minimumDurationSec > 0
+                            ? Math.min(Math.round((timeSpent / minimumDurationSec) * 100), 100)
+                            : 100,
+                };
+            });
 
-            const totalTimeSpent = courseModules.reduce((sum, m) => sum + m.timeSpent, 0)
-            const completedModules = courseModules.filter(m => m.completed).length
-            const totalModules = courseModules.length
+            const totalTimeSpent = courseModules.reduce((sum, m) => sum + m.timeSpent, 0);
+            const completedModules = courseModules.filter((m) => m.completed).length;
+            const totalModules = courseModules.length;
 
             return {
                 courseId: enrollment.course.id,
@@ -636,15 +634,15 @@ export async function getUserModuleTimeAnalytics() {
                 totalTimeSpent,
                 completedModules,
                 totalModules,
-                modules: courseModules
-            }
-        })
+                modules: courseModules,
+            };
+        });
 
         // Calculate totals
-        const totalStudyTime = courseAnalytics.reduce((sum, c) => sum + c.totalTimeSpent, 0)
-        const totalCompletedModules = courseAnalytics.reduce((sum, c) => sum + c.completedModules, 0)
-        const totalModules = courseAnalytics.reduce((sum, c) => sum + c.totalModules, 0)
-        const completedCourses = courseAnalytics.filter(c => c.enrollmentCompleted).length
+        const totalStudyTime = courseAnalytics.reduce((sum, c) => sum + c.totalTimeSpent, 0);
+        const totalCompletedModules = courseAnalytics.reduce((sum, c) => sum + c.completedModules, 0);
+        const totalModules = courseAnalytics.reduce((sum, c) => sum + c.totalModules, 0);
+        const completedCourses = courseAnalytics.filter((c) => c.enrollmentCompleted).length;
 
         return {
             success: true,
@@ -654,14 +652,14 @@ export async function getUserModuleTimeAnalytics() {
                     totalCompletedModules,
                     totalModules,
                     totalCourses: enrollments.length,
-                    completedCourses
+                    completedCourses,
                 },
-                courses: courseAnalytics
-            }
-        }
+                courses: courseAnalytics,
+            },
+        };
     } catch (error) {
-        console.error("Error fetching user module time analytics:", error)
-        reportError(error, { action: "getUserModuleTimeAnalytics" })
-        return { success: false, error: "Errore durante il recupero dei dati" }
+        console.error("Error fetching user module time analytics:", error);
+        reportError(error, { action: "getUserModuleTimeAnalytics" });
+        return { success: false, error: "Errore durante il recupero dei dati" };
     }
 }

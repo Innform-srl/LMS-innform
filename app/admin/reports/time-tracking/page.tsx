@@ -1,119 +1,129 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { getTimeTrackingReport, exportTimeTrackingCSV } from "@/app/actions/reports"
-import Link from "next/link"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { getTimeTrackingReport, exportTimeTrackingCSV } from "@/app/actions/reports";
+import Link from "next/link";
 
 type ReportRow = {
-    userId: string
-    userName: string
-    userEmail: string | null
-    userDepartment: string | null
-    courseId: string
-    courseTitle: string
-    timeSpent: number
-    minimumDuration: number
-    progress: number
-    completed: boolean
-    completedAt: Date | null
-    enrolledAt: Date
-    status: string
-}
+    userId: string;
+    userName: string;
+    userEmail: string | null;
+    userDepartment: string | null;
+    courseId: string;
+    courseTitle: string;
+    editionId: string | null;
+    editionCode: string | null;
+    editionTitle: string | null;
+    timeSpent: number;
+    minimumDuration: number;
+    progress: number;
+    completed: boolean;
+    completedAt: Date | null;
+    enrolledAt: Date;
+    status: string;
+};
 
 export default function TimeTrackingReportPage() {
-    const [data, setData] = useState<ReportRow[]>([])
-    const [filteredData, setFilteredData] = useState<ReportRow[]>([])
-    const [loading, setLoading] = useState(true)
-    const [searchTerm, setSearchTerm] = useState("")
-    const [departmentFilter, setDepartmentFilter] = useState("")
-    const [statusFilter, setStatusFilter] = useState("")
+    const [data, setData] = useState<ReportRow[]>([]);
+    const [filteredData, setFilteredData] = useState<ReportRow[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [departmentFilter, setDepartmentFilter] = useState("");
+    const [statusFilter, setStatusFilter] = useState("");
 
     const loadData = async () => {
-        setLoading(true)
-        const result = await getTimeTrackingReport()
+        setLoading(true);
+        const result = await getTimeTrackingReport();
         if (result.success && result.data) {
             // Map the data to flatten userDepartment object to string
             const mappedData = result.data.map((row) => ({
                 ...row,
-                userDepartment: typeof row.userDepartment === 'object' && row.userDepartment !== null ? row.userDepartment.name : null
-            })) as ReportRow[]
-            setData(mappedData)
+                userDepartment:
+                    typeof row.userDepartment === "object" && row.userDepartment !== null
+                        ? row.userDepartment.name
+                        : null,
+            })) as ReportRow[];
+            setData(mappedData);
         }
-        setLoading(false)
-    }
+        setLoading(false);
+    };
 
     const filterData = () => {
-        let filtered = data
+        let filtered = data;
 
         if (searchTerm) {
-            filtered = filtered.filter(row =>
-                row.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                row.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                row.userEmail?.toLowerCase().includes(searchTerm.toLowerCase())
-            )
+            filtered = filtered.filter(
+                (row) =>
+                    row.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    row.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    row.userEmail?.toLowerCase().includes(searchTerm.toLowerCase())
+            );
         }
 
         if (departmentFilter) {
-            filtered = filtered.filter(row => row.userDepartment === departmentFilter)
+            filtered = filtered.filter((row) => row.userDepartment === departmentFilter);
         }
 
         if (statusFilter) {
-            filtered = filtered.filter(row => row.status === statusFilter)
+            filtered = filtered.filter((row) => row.status === statusFilter);
         }
 
-        setFilteredData(filtered)
-    }
+        setFilteredData(filtered);
+    };
 
     useEffect(() => {
-        loadData()
-    }, [])
+        loadData();
+    }, []);
 
     useEffect(() => {
-        filterData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [data, searchTerm, departmentFilter, statusFilter])
+        filterData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data, searchTerm, departmentFilter, statusFilter]);
 
     const handleExportCSV = async () => {
-        const result = await exportTimeTrackingCSV()
+        const result = await exportTimeTrackingCSV();
         if (result.success && result.csv) {
-            const blob = new Blob([result.csv], { type: "text/csv" })
-            const url = window.URL.createObjectURL(blob)
-            const a = document.createElement("a")
-            a.href = url
-            a.download = `time-tracking-report-${new Date().toISOString().split('T')[0]}.csv`
-            a.click()
-            window.URL.revokeObjectURL(url)
+            const blob = new Blob([result.csv], { type: "text/csv" });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `time-tracking-report-${new Date().toISOString().split("T")[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
         }
-    }
+    };
 
-    const departments = Array.from(new Set(data.map(row => row.userDepartment).filter(Boolean)))
-    const statuses = Array.from(new Set(data.map(row => row.status)))
+    const departments = Array.from(new Set(data.map((row) => row.userDepartment).filter(Boolean)));
+    const statuses = Array.from(new Set(data.map((row) => row.status)));
 
     const getStatusColor = (status: string) => {
-        if (status === "Completato") return "text-green-600"
-        if (status === "Tempo OK - In Corso") return "text-blue-600"
-        if (status === "Tempo Insufficiente") return "text-orange-600"
-        return "text-muted-foreground"
-    }
+        if (status === "Completato") return "text-green-600";
+        if (status === "Tempo OK - In Corso") return "text-blue-600";
+        if (status === "Tempo Insufficiente") return "text-orange-600";
+        return "text-muted-foreground";
+    };
 
     const getProgressColor = (timeSpent: number, minimumDuration: number) => {
-        if (minimumDuration === 0) return "bg-blue-500"
-        const percentage = (timeSpent / minimumDuration) * 100
-        if (percentage >= 100) return "bg-green-500"
-        if (percentage >= 80) return "bg-yellow-500"
-        if (percentage >= 50) return "bg-orange-500"
-        return "bg-red-500"
-    }
+        if (minimumDuration === 0) return "bg-blue-500";
+        const percentage = (timeSpent / minimumDuration) * 100;
+        if (percentage >= 100) return "bg-green-500";
+        if (percentage >= 80) return "bg-yellow-500";
+        if (percentage >= 50) return "bg-orange-500";
+        return "bg-red-500";
+    };
 
     return (
         <div className="min-h-screen bg-background text-foreground p-8 transition-colors duration-300">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
-                    <Link href="/admin" className="text-sm text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1">
+                    <Link
+                        href="/admin"
+                        className="text-sm text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1"
+                    >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
@@ -142,8 +152,10 @@ export default function TimeTrackingReportPage() {
                                 className="bg-background border border-border rounded-md px-3 py-2 text-foreground"
                             >
                                 <option value="">Tutti i dipartimenti</option>
-                                {departments.map(dept => (
-                                    <option key={dept} value={dept!}>{dept}</option>
+                                {departments.map((dept) => (
+                                    <option key={dept} value={dept!}>
+                                        {dept}
+                                    </option>
                                 ))}
                             </select>
                             <select
@@ -152,16 +164,20 @@ export default function TimeTrackingReportPage() {
                                 className="bg-background border border-border rounded-md px-3 py-2 text-foreground"
                             >
                                 <option value="">Tutti gli stati</option>
-                                {statuses.map(status => (
-                                    <option key={status} value={status}>{status}</option>
+                                {statuses.map((status) => (
+                                    <option key={status} value={status}>
+                                        {status}
+                                    </option>
                                 ))}
                             </select>
-                            <Button
-                                onClick={handleExportCSV}
-                                className="bg-green-600 hover:bg-green-700 text-white"
-                            >
+                            <Button onClick={handleExportCSV} className="bg-green-600 hover:bg-green-700 text-white">
                                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
                                 </svg>
                                 Export a CSV
                             </Button>
@@ -189,7 +205,7 @@ export default function TimeTrackingReportPage() {
                         <CardHeader>
                             <CardDescription>Completamenti</CardDescription>
                             <CardTitle className="text-3xl text-green-500">
-                                {filteredData.filter(row => row.completed).length}
+                                {filteredData.filter((row) => row.completed).length}
                             </CardTitle>
                         </CardHeader>
                     </Card>
@@ -213,6 +229,7 @@ export default function TimeTrackingReportPage() {
                                         <tr className="border-b border-border text-left text-sm text-muted-foreground">
                                             <th className="pb-3 pr-4">Utente</th>
                                             <th className="pb-3 pr-4">Corso</th>
+                                            <th className="pb-3 pr-4">Edizione</th>
                                             <th className="pb-3 pr-4">Tempo Trascorso</th>
                                             <th className="pb-3 pr-4">Tempo Richiesto</th>
                                             <th className="pb-3 pr-4">Progresso</th>
@@ -221,26 +238,42 @@ export default function TimeTrackingReportPage() {
                                     </thead>
                                     <tbody>
                                         {filteredData.map((row, index) => (
-                                            <tr key={index} className="border-b border-border hover:bg-muted/50 transition-colors">
+                                            <tr
+                                                key={index}
+                                                className="border-b border-border hover:bg-muted/50 transition-colors"
+                                            >
                                                 <td className="py-4 pr-4">
                                                     <div className="font-medium text-foreground">{row.userName}</div>
                                                     <div className="text-xs text-muted-foreground">{row.userEmail}</div>
                                                     {row.userDepartment && (
-                                                        <div className="text-xs text-muted-foreground">{row.userDepartment}</div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {row.userDepartment}
+                                                        </div>
                                                     )}
                                                 </td>
                                                 <td className="py-4 pr-4 text-muted-foreground">{row.courseTitle}</td>
+                                                <td className="py-4 pr-4 text-sm text-muted-foreground">
+                                                    {row.editionCode ? (
+                                                        <span className="font-mono text-xs">{row.editionCode}</span>
+                                                    ) : (
+                                                        "—"
+                                                    )}
+                                                </td>
                                                 <td className="py-4 pr-4">
                                                     <div className="text-foreground font-semibold">
                                                         {Math.floor(row.timeSpent / 60)}h {row.timeSpent % 60}m
                                                     </div>
-                                                    <div className="text-xs text-muted-foreground">{row.timeSpent} min</div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {row.timeSpent} min
+                                                    </div>
                                                 </td>
                                                 <td className="py-4 pr-4">
                                                     <div className="text-muted-foreground">
                                                         {Math.floor(row.minimumDuration / 60)}h
                                                     </div>
-                                                    <div className="text-xs text-muted-foreground">{row.minimumDuration} min</div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {row.minimumDuration} min
+                                                    </div>
                                                 </td>
                                                 <td className="py-4 pr-4">
                                                     <div className="flex items-center gap-2">
@@ -248,17 +281,22 @@ export default function TimeTrackingReportPage() {
                                                             <div
                                                                 className={`h-full rounded-full ${getProgressColor(row.timeSpent, row.minimumDuration)}`}
                                                                 style={{
-                                                                    width: row.minimumDuration > 0
-                                                                        ? `${Math.min((row.timeSpent / row.minimumDuration) * 100, 100)}%`
-                                                                        : `${row.progress}%`
+                                                                    width:
+                                                                        row.minimumDuration > 0
+                                                                            ? `${Math.min((row.timeSpent / row.minimumDuration) * 100, 100)}%`
+                                                                            : `${row.progress}%`,
                                                                 }}
                                                             />
                                                         </div>
-                                                        <span className="text-sm text-muted-foreground">{Math.round(row.progress)}%</span>
+                                                        <span className="text-sm text-muted-foreground">
+                                                            {Math.round(row.progress)}%
+                                                        </span>
                                                     </div>
                                                 </td>
                                                 <td className="py-4">
-                                                    <span className={`text-sm font-semibold ${getStatusColor(row.status)}`}>
+                                                    <span
+                                                        className={`text-sm font-semibold ${getStatusColor(row.status)}`}
+                                                    >
                                                         {row.status}
                                                     </span>
                                                 </td>
@@ -272,5 +310,5 @@ export default function TimeTrackingReportPage() {
                 </Card>
             </div>
         </div>
-    )
+    );
 }
